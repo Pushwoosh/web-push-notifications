@@ -1,0 +1,17 @@
+{
+    "name": "Pushwoosh GCM Notifications example",
+    "description": "Pushwoosh SDK for building Your Chrome extension or application",
+    "manifest_version": 2,
+    "app": {
+        "background": {
+            "scripts": ["pushwoosh.js", "background.js"]
+        }
+    },
+    "permissions": [
+        "gcm", "storage", "notifications", "http://*/*"
+    ],
+    "icons": {
+        "64" : "logo.png"
+    },
+    "version": "0.0.0.1"
+}
