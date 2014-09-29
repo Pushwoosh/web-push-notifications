@@ -8,7 +8,7 @@
         }
     },
     "permissions": [
-        "gcm", "storage", "notifications", "http://*/*"
+        "gcm", "storage", "notifications", "http://*/*", "https://*/*"
     ],
     "icons": {
         "64" : "logo.png"
