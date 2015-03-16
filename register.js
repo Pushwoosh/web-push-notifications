@@ -95,8 +95,20 @@ function unregisterCallback() {
 }
 
 window.onload = function() {
-    document.getElementById("unregister").disabled = true;
     document.getElementById("register").onclick = register;
     document.getElementById("unregister").onclick = unregister;
-    setStatus("You have not registered yet. Please provider sender ID and register.");
+    chrome.storage.local.get("registered", function(result) {
+        // If already registered
+        if (result["registered"]) {
+            setStatus("You are already registered. Unregister if you do not want to receive pushes.");
+            document.getElementById("register").disabled = true;
+            document.getElementById("unregister").disabled = false;
+        }
+        else {
+            setStatus("You have not registered yet. Please provider sender ID and register.");
+            document.getElementById("register").disabled = false;
+            document.getElementById("unregister").disabled = true;
+        }
+    });
+
 };
