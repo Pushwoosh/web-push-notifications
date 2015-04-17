@@ -57,7 +57,7 @@ function initialiseState() {
                 // Set your UI to show they have subscribed for
                 // push messages
                 isPushEnabled = true;
-                console.log("Ready to get pushes");
+                console.log("Ready to get pushes. Push token is " + pushToken);
             })
             .catch(function(err) {
                 console.warn('Error during getSubscription()', err);
