@@ -1,11 +1,13 @@
-var APPLICATION_CODE = "XXXXX-XXXXX";
+var APPLICATION_CODE = "XXXXX-XXXXX"; // You Application Code from Pushwoosh
 var pushwooshUrl = "https://cp.pushwoosh.com/json/1.3/";
 var hwid = "hwid";
+var url = null;
+
 
 self.addEventListener('push', function (event) {
-// Since there is no payload data with the first version
-// of push messages, we'll grab some data from
-// an API and use it to populate a notification
+    // Since there is no payload data with the first version
+    // of push messages, we'll grab some data from
+    // an API and use it to populate a notification
     event.waitUntil(
         fetch(pushwooshUrl + 'getLastMessage', {
             method: 'post',
@@ -35,13 +37,12 @@ self.addEventListener('push', function (event) {
                 var message = notification.content;
                 var icon = notification.chromeIcon || 'https://cp.pushwoosh.com/img/logo-medium.png';
                 var messageHash = notification.messageHash;
-                var url = notification.url;
+                url = notification.url;
 
                 return self.registration.showNotification(title, {
                     body: message,
                     icon: icon,
-                    tag: messageHash,
-                    url: url
+                    tag: messageHash
                 });
             });
         }).catch(function (err) {
@@ -59,50 +60,59 @@ self.addEventListener('push', function (event) {
 });
 
 
-self.addEventListener('notificationclick', function(event) {  
-  var messageHash = event.notification.tag;
-  console.log(event.notificaiton);
-  console.log(event);
-  console.log("Push open hwid = " + hwid + " messageHash = " + messageHash);
-     event.waitUntil(
+self.addEventListener('notificationclick', function (event) {
+    var messageHash = event.notification.tag;
+    console.log(event);
+    console.log("Push open hwid = " + hwid + " messageHash = " + messageHash);
+    event.waitUntil(
         fetch(pushwooshUrl + 'pushStat', {
             method: 'post',
             headers: {
                 "Content-Type": "text/plain;charset=UTF-8"
             },
-            body: '{"request": {"application": "' + APPLICATION_CODE + '","hwid": "' + hwid + '", "hash": "' + messageHash+ '"}}'
+            body: '{"request": {"application": "' + APPLICATION_CODE + '","hwid": "' + hwid + '", "hash": "' + messageHash + '"}}'
         }).then(function (response) {
-          console.log(response);
-        }
-    ));
-  // Android doesn't close the notification when you click on it  
-  // See: http://crbug.com/463146  
-  event.notification.close();
+                console.log(response);
+            }
+        ));
+    // Android doesn't close the notification when you click on it
+    // See: http://crbug.com/463146
+    event.notification.close();
 
-   // This looks to see if the current is already open and  
-  // focuses if it is  
-  event.waitUntil(
-    clients.matchAll({  
-      type: "window"  
-    })
-    .then(function(clientList) {  
-      for (var i = 0; i < clientList.length; i++) {  
-        var client = clientList[i];  
-        if (client.url == '/' && 'focus' in client)  
-          return client.focus();  
-      }  
-      if (clients.openWindow) {
-        if (event.notification.url)
-          return clients.openWindow(event.notification.url);
-        return clients.openWindow('/');  
-      }
-    })
-  );
+    // This looks to see if the current is already open and
+    // focuses if it is
+    event.waitUntil(
+        clients.matchAll({
+            type: "window"
+        }).then(function (clientList) {
+            if (clients.openWindow) {
+                if (url) {
+                    var openUrl = url;
+                    url = null;
+                    return clients.openWindow(openUrl);
+                }
+                return clients.openWindow('/');
+            }
+        })
+    );
 });
 
 self.addEventListener('message', function (evt) {
-  console.log('postMessage received', evt.data);
-  pushwooshUrl = evt.data.pushwooshUrl;
-  APPLICATION_CODE = evt.data.applicationCode;
-  hwid = evt.data.hwid;
+    console.log('postMessage received', evt.data);
+    pushwooshUrl = evt.data.pushwooshUrl;
+    APPLICATION_CODE = evt.data.applicationCode;
+    hwid = evt.data.hwid;
+});
+
+// refresh caches
+self.addEventListener('activate', function (event) {
+    event.waitUntil(
+        caches.keys().then(function (cacheNames) {
+            return Promise.all(
+                cacheNames.map(function (cacheName) {
+                    return caches.delete(cacheName);
+                })
+            );
+        })
+    );
 });
