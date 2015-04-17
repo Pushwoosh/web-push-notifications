@@ -8,10 +8,10 @@
         }
     },
     "permissions": [
-        "gcm", "storage", "notifications", "http://*/*"
+        "gcm", "storage", "notifications", "http://*/*", "https://*/*"
     ],
     "icons": {
         "64" : "logo.png"
     },
-    "version": "0.0.0.1"
+    "version": "0.0.0.3"
 }

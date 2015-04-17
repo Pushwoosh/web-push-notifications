@@ -27,7 +27,11 @@ function messageReceived(message) {
         }
     });
 
-    chrome.storage.local.set({messageHash: message.data.p});
+    chrome.storage.local.set({
+        messageHash: message.data.p,
+        richPageOld: message.data.h,
+        url: message.data.l
+    });
 }
 
 var appWindow = null;
@@ -57,6 +61,15 @@ function firstTimeRegistration() {
 
 function pushClickEvent() {
     pushwooshStatistics();
+    chrome.storage.local.get(['url', 'richPageOld'], function(items)  {
+        if (items.url) {
+            window.open(items.url, '_newtab');
+        }
+        else if (items.richPageOld) {
+            window.open('https://cp.pushwoosh.com/pages/' + items.richPageOld, '_newtab');
+        }
+        chrome.storage.local.remove(['url', 'richPageOld']);
+    });
     if (appWindow != null) {
         console.log('Window is restored');
         appWindow.show();
