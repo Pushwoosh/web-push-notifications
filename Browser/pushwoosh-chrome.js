@@ -1,7 +1,8 @@
-var isPushEnabled = false;
-var hwid = "";
-var APPLICATION_CODE = "XXXXX-XXXXX"; // You Application Code from Pushwoosh
+var APPLICATION_CODE = "XXXXX-XXXXX"; // Your Application Code from Pushwoosh
 var pushwooshUrl = "https://cp.pushwoosh.com/json/1.3/";
+var hwid = "";
+var isPushEnabled = false;
+
 
 window.addEventListener('load', function() {
     // Check that service workers are supported, if so, progressively

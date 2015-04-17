@@ -1,4 +1,4 @@
-var APPLICATION_CODE = "XXXXX-XXXXX"; // You Application Code from Pushwoosh
+var APPLICATION_CODE = "XXXXX-XXXXX"; // Your Application Code from Pushwoosh
 var pushwooshUrl = "https://cp.pushwoosh.com/json/1.3/";
 var hwid = "hwid";
 var url = null;
