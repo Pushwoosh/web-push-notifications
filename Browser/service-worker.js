@@ -1,4 +1,6 @@
 var APPLICATION_CODE = "XXXXX-XXXXX"; // Your Application Code from Pushwoosh
+var pushDefaultImage = 'https://cp.pushwoosh.com/img/logo-medium.png';
+var pushDefaultTitle = 'Title';
 var pushwooshUrl = "https://cp.pushwoosh.com/json/1.3/";
 var hwid = "hwid";
 var url = null;
@@ -33,9 +35,9 @@ self.addEventListener('push', function (event) {
                 var notification = data.response.notification;
                 console.log(notification);
 
-                var title = notification.chromeTitle || 'Title';
+                var title = notification.chromeTitle || pushDefaultTitle;
                 var message = notification.content;
-                var icon = notification.chromeIcon || 'https://cp.pushwoosh.com/img/logo-medium.png';
+                var icon = notification.chromeIcon || pushDefaultImage;
                 var messageHash = notification.messageHash;
                 url = notification.url;
 
