@@ -5,7 +5,7 @@ Recommended way:
 https://github.com/Pushwoosh/chrome-push-notifications/tree/master/Browser/
 
 Guide:  
-In progress
+https://www.pushwoosh.com/programming-push-notification/chrome/chrome-web-push/
 
 
 =========================
