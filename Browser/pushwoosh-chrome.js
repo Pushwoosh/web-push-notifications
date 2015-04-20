@@ -1,71 +1,90 @@
 var APPLICATION_CODE = "XXXXX-XXXXX"; // Your Application Code from Pushwoosh
+var SERVICE_WORKER_URL = '/service-worker.js';
 var pushwooshUrl = "https://cp.pushwoosh.com/json/1.3/";
 var hwid = "";
 var isPushEnabled = false;
-
 
 window.addEventListener('load', function() {
     // Check that service workers are supported, if so, progressively
     // enhance and add push messaging support, otherwise continue without it.
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/service-worker.js')
-            .then(initialiseState);
+        navigator.serviceWorker.register(SERVICE_WORKER_URL)
+            .then(function(serviceWorkerRegistration) {
+                // Are Notifications supported in the service worker?
+                if (!('showNotification' in ServiceWorkerRegistration.prototype)) {
+                    console.warn('Notifications aren\'t supported.');
+                    return;
+                }
+
+                // Check the current Notification permission.
+                // If its denied, it's a permanent block until the
+                // user changes the permission
+                if (Notification.permission === 'denied') {
+                    console.warn('The user has blocked notifications.');
+                    return;
+                }
+
+                // Check if push messaging is supported
+                if (!('PushManager' in window)) {
+                    console.warn('Push messaging isn\'t supported.');
+                    return;
+                }
+
+                serviceWorkerRegistration.pushManager.getSubscription()
+                    .then(function(subscription) {
+                        // Enable any UI which subscribes / unsubscribes from
+                        // push messages.
+                        if (!subscription) {
+                            // subscribe for push notifications
+                            serviceWorkerRegistration.pushManager.subscribe()
+                                .then(function(subscription) {
+                                    // The subscription was successful
+                                    isPushEnabled = true;
+                                    console.log(subscription);
+                                    pushToken = subscription.subscriptionId;
+                                    hwid = generateHwid(pushToken);
+                                    pushwooshRegisterDevice(pushToken, hwid);
+                                })
+                                .catch(function(e) {
+                                    if (Notification.permission === 'denied') {
+                                        // The user denied the notification permission which
+                                        // means we failed to subscribe and the user will need
+                                        // to manually change the notification permission to
+                                        // subscribe to push messages
+                                        console.warn('Permission for Notifications was denied');
+                                    } else {
+                                        // A problem occurred with the subscription; common reasons
+                                        // include network errors, and lacking gcm_sender_id and/or
+                                        // gcm_user_visible_only in the manifest.
+                                        console.error('Unable to subscribe to push.', e);
+                                    }
+                                });
+                            return;
+                        }
+
+                        // Keep your server in sync with the latest subscriptionId
+                        var pushToken = subscription.subscriptionId;
+                        hwid = generateHwid(pushToken);
+                        if (navigator.serviceWorker.controller) {
+                            navigator.serviceWorker.controller.postMessage({'hwid': hwid, 'applicationCode': APPLICATION_CODE, 'pushwooshUrl': pushwooshUrl});
+                        }
+
+                        // Set your UI to show they have subscribed for
+                        // push messages
+                        isPushEnabled = true;
+                        console.log("Ready to get pushes. Push token is " + pushToken);
+                    })
+                    .catch(function(err) {
+                        console.warn('Error during getSubscription()', err);
+                    });
+            })
+            .catch(function(err) {
+                console.log('Error while service worker registration', err);
+            });
     } else {
         console.warn('Service workers aren\'t supported in this browser.');
     }
 });
-
-// Once the service worker is registered set the initial state
-function initialiseState() {
-    // Are Notifications supported in the service worker?
-    if (!('showNotification' in ServiceWorkerRegistration.prototype)) {
-        console.warn('Notifications aren\'t supported.');
-        return;
-    }
-
-    // Check the current Notification permission.
-    // If its denied, it's a permanent block until the
-    // user changes the permission
-    if (Notification.permission === 'denied') {
-        console.warn('The user has blocked notifications.');
-        return;
-    }
-
-    // Check if push messaging is supported
-    if (!('PushManager' in window)) {
-        console.warn('Push messaging isn\'t supported.');
-        return;
-    }
-    // We need the service worker registration to check for a subscription
-    navigator.serviceWorker.ready.then(function(serviceWorkerRegistration) {
-        // Do we already have a push message subscription?
-        serviceWorkerRegistration.pushManager.getSubscription()
-            .then(function(subscription) {
-                // Enable any UI which subscribes / unsubscribes from
-                // push messages.
-                if (!subscription) {
-                    subscribe();
-                    return;
-                }
-
-                // Keep your server in sync with the latest subscriptionId
-                var pushToken = subscription.subscriptionId;
-                hwid = generateHwid(pushToken);
-                if (navigator.serviceWorker.controller) {
-                    navigator.serviceWorker.controller.postMessage({'hwid': hwid, 'applicationCode': APPLICATION_CODE, 'pushwooshUrl': pushwooshUrl});
-                }
-
-                // Set your UI to show they have subscribed for
-                // push messages
-                isPushEnabled = true;
-                console.log("Ready to get pushes. Push token is " + pushToken);
-            })
-            .catch(function(err) {
-                console.warn('Error during getSubscription()', err);
-            });
-    });
-}
-
 
 function subscribe() {
     console.log("Try to subscribe for push notifications");

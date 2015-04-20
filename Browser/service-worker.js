@@ -99,9 +99,11 @@ self.addEventListener('notificationclick', function (event) {
 
 self.addEventListener('message', function (evt) {
     console.log('postMessage received', evt.data);
-    pushwooshUrl = evt.data.pushwooshUrl;
-    APPLICATION_CODE = evt.data.applicationCode;
-    hwid = evt.data.hwid;
+    if (evt.data.applicationCode) {
+        pushwooshUrl = evt.data.pushwooshUrl;
+        APPLICATION_CODE = evt.data.applicationCode;
+        hwid = evt.data.hwid;
+    }
 });
 
 // refresh caches
