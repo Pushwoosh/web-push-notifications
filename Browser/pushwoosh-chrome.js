@@ -36,12 +36,14 @@ window.addEventListener('load', function() {
                         // push messages.
                         if (!subscription) {
                             // subscribe for push notifications
-                            serviceWorkerRegistration.pushManager.subscribe()
-                                .then(function(subscription) {
+                            serviceWorkerRegistration.pushManager.subscribe({
+                                name: 'push',
+                                userVisibleOnly: true
+                            }).then(function(subscription) {
                                     // The subscription was successful
                                     isPushEnabled = true;
                                     console.log(subscription);
-                                    pushToken = subscription.subscriptionId;
+                                    pushToken = getPushToken(subscription);
                                     hwid = generateHwid(pushToken);
                                     pushwooshRegisterDevice(pushToken, hwid);
                                 })
@@ -62,8 +64,8 @@ window.addEventListener('load', function() {
                             return;
                         }
 
-                        // Keep your server in sync with the latest subscriptionId
-                        var pushToken = subscription.subscriptionId;
+                        // Keep your server in sync with the latest hwid/pushToken
+                        var pushToken = getPushToken(subscription);
                         hwid = generateHwid(pushToken);
                         if (navigator.serviceWorker.controller) {
                             navigator.serviceWorker.controller.postMessage({'hwid': hwid, 'applicationCode': APPLICATION_CODE, 'pushwooshUrl': pushwooshUrl});
@@ -94,7 +96,7 @@ function subscribe() {
                 // The subscription was successful
                 isPushEnabled = true;
                 console.log(subscription);
-                pushToken = subscription.subscriptionId;
+                pushToken = getPushToken(subscription);
                 hwid = generateHwid(pushToken);
                 pushwooshRegisterDevice(pushToken, hwid);
             })
@@ -131,7 +133,7 @@ function unsubscribe() {
                     return;
                 }
 
-                var pushToken = pushSubscription.subscriptionId;
+                var pushToken = getPushToken(pushSubscription);
 
                 // We have a subscription, so call unsubscribe on it
                 pushSubscription.unsubscribe().then(function(successful) {
@@ -245,6 +247,20 @@ function pushwooshUnregisterDevice(hwid) {
         console.log('Exception while unregistering the device: ' + e);
         return;
     }
+}
+
+
+function getPushToken(pushSubscription) {
+    var pushToken = '';
+    if (pushSubscription.subscriptionId) {
+        pushToken = pushSubscription.subscriptionId;
+        console.log("Chrome 42, 43, 44: " + pushToken);
+    }
+    else {
+        pushToken = pushSubscription.endpoint.split('/').pop();
+        console.log("Chrome 45+: " + pushToken);
+    }
+    return pushToken;
 }
 
 
