@@ -96,9 +96,10 @@ function subscribe() {
                 // The subscription was successful
                 isPushEnabled = true;
                 console.log(subscription);
-                pushToken = getPushToken(subscription);
+                var pushToken = getPushToken(subscription);
                 hwid = generateHwid(pushToken);
                 pushwooshRegisterDevice(pushToken, hwid);
+                return true;
             })
             .catch(function(e) {
                 if (Notification.permission === 'denied') {
@@ -113,6 +114,7 @@ function subscribe() {
                     // gcm_user_visible_only in the manifest.
                     console.error('Unable to subscribe to push.', e);
                 }
+                return false;
             });
     });
 }
