@@ -91,8 +91,10 @@ window.addEventListener('load', function() {
 function subscribe() {
     console.log("Try to subscribe for push notifications");
     navigator.serviceWorker.ready.then(function(serviceWorkerRegistration) {
-        serviceWorkerRegistration.pushManager.subscribe()
-            .then(function(subscription) {
+        serviceWorkerRegistration.pushManager.subscribe({
+                name: 'push',
+                userVisibleOnly: true
+            }).then(function(subscription) {
                 // The subscription was successful
                 isPushEnabled = true;
                 console.log(subscription);
