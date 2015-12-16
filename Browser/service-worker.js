@@ -4,7 +4,7 @@ var pushDefaultTitle = 'Title';
 var pushwooshUrl = "https://cp.pushwoosh.com/json/1.3/";
 var hwid = "hwid";
 var url = null;
-
+var DEBUG_MODE = false;
 
 self.addEventListener('push', function (event) {
     // Since there is no payload data with the first version
@@ -50,13 +50,15 @@ self.addEventListener('push', function (event) {
         }).catch(function (err) {
             console.error('Unable to retrieve data', err);
 
-            var title = 'An error occurred';
-            var message = 'We were unable to get the information for this push message';
-            var notificationTag = 'notification-error';
-            return self.registration.showNotification(title, {
-                body: message,
-                tag: notificationTag
-            });
+	        if (DEBUG_MODE) {
+		        var title = 'An error occurred';
+		        var message = 'We were unable to get the information for this push message';
+		        var notificationTag = 'notification-error';
+		        return self.registration.showNotification(title, {
+			        body: message,
+			        tag: notificationTag
+		        });
+	        }
         })
     );
 });
