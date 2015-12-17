@@ -2,9 +2,10 @@ var APPLICATION_CODE = "XXXXX-XXXXX"; // Your Application Code from Pushwoosh
 var pushDefaultImage = 'https://cp.pushwoosh.com/img/logo-medium.png';
 var pushDefaultTitle = 'Title';
 var pushwooshUrl = "https://cp.pushwoosh.com/json/1.3/";
+var HIDE_NOTIFICATION_AFTER = false; // in seconds, or false then notification will be hide automatically after 30 seconds
+var DEBUG_MODE = false;
 var hwid = "hwid";
 var url = null;
-var DEBUG_MODE = false;
 
 self.addEventListener('push', function (event) {
     // Since there is no payload data with the first version
@@ -45,6 +46,10 @@ self.addEventListener('push', function (event) {
                     body: message,
                     icon: icon,
                     tag: messageHash
+                }).then(function() {
+	                if (HIDE_NOTIFICATION_AFTER) {
+		                setTimeout(closeNotifications, HIDE_NOTIFICATION_AFTER * 1000);
+	                }
                 });
             });
         }).catch(function (err) {
@@ -79,26 +84,16 @@ self.addEventListener('notificationclick', function (event) {
                 console.log(response);
             }
         ));
+
     // Android doesn't close the notification when you click on it
     // See: http://crbug.com/463146
     event.notification.close();
 
-    // This looks to see if the current is already open and
-    // focuses if it is
-    event.waitUntil(
-        clients.matchAll({
-            type: "window"
-        }).then(function (clientList) {
-            if (clients.openWindow) {
-                if (url) {
-                    var openUrl = url;
-                    url = null;
-                    return clients.openWindow(openUrl);
-                }
-                return clients.openWindow('/');
-            }
-        })
-    );
+	if (url) {
+		var openUrl = url;
+		url = null;
+		return clients.openWindow(openUrl);
+	}
 });
 
 self.addEventListener('message', function (evt) {
@@ -122,3 +117,11 @@ self.addEventListener('activate', function (event) {
         })
     );
 });
+
+function closeNotifications() {
+	self.registration.getNotifications().then(function (notifications) {
+		for (var i = 0; i < notifications.length; ++i) {
+			notifications[i].close();
+		}
+	});
+}
