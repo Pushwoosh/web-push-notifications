@@ -4,7 +4,13 @@ var pushwooshUrl = "https://cp.pushwoosh.com/json/1.3/";
 var hwid = "";
 var isPushEnabled = false;
 
+// Try to subscribe for a push notification when page is loaded
 window.addEventListener('load', function () {
+	subscribe();
+});
+
+
+function subscribe() {
 	// Check that service workers are supported, if so, progressively
 	// enhance and add push messaging support, otherwise continue without it.
 	if ('serviceWorker' in navigator) {
@@ -32,8 +38,7 @@ window.addEventListener('load', function () {
 
 				serviceWorkerRegistration.pushManager.getSubscription()
 					.then(function (subscription) {
-						// Enable any UI which subscribes / unsubscribes from
-						// push messages.
+						// Enable any UI which subscribes / unsubscribes from push messages.
 						if (!subscription) {
 							// subscribe for push notifications
 							serviceWorkerRegistration.pushManager.subscribe({
@@ -74,8 +79,7 @@ window.addEventListener('load', function () {
 							});
 						}
 
-						// Set your UI to show they have subscribed for
-						// push messages
+						// Set your UI to show they have subscribed for push messages
 						isPushEnabled = true;
 						console.log("Ready to get pushes. Push token is " + pushToken);
 					}).catch(function (err) {
@@ -87,38 +91,6 @@ window.addEventListener('load', function () {
 	} else {
 		console.warn('Service workers aren\'t supported in this browser.');
 	}
-});
-
-function subscribe() {
-	console.log("Try to subscribe for push notifications");
-	navigator.serviceWorker.ready.then(function (serviceWorkerRegistration) {
-		serviceWorkerRegistration.pushManager.subscribe({
-			name: 'push',
-			userVisibleOnly: true
-		}).then(function (subscription) {
-			// The subscription was successful
-			isPushEnabled = true;
-			console.log(subscription);
-			var pushToken = getPushToken(subscription);
-			hwid = generateHwid(pushToken);
-			pushwooshRegisterDevice(pushToken, hwid);
-			return true;
-		}).catch(function (e) {
-			if (Notification.permission === 'denied') {
-				// The user denied the notification permission which
-				// means we failed to subscribe and the user will need
-				// to manually change the notification permission to
-				// subscribe to push messages
-				console.warn('Permission for Notifications was denied');
-			} else {
-				// A problem occurred with the subscription; common reasons
-				// include network errors, and lacking gcm_sender_id and/or
-				// gcm_user_visible_only in the manifest.
-				console.error('Unable to subscribe to push.', e);
-			}
-			return false;
-		});
-	});
 }
 
 
@@ -156,7 +128,7 @@ function unsubscribe() {
 	});
 }
 
-// For more information see Pushwoosh API guide https://www.pushwoosh.com/programming-push-notification/pushwoosh-push-notification-remote-api/
+// For more information see Pushwoosh API guide http://docs.pushwoosh.com/docs/createmessage
 
 function createUUID(pushToken) {
 	var s = [];
@@ -182,10 +154,10 @@ function pushwooshRegisterDevice(pushToken, hwid) {
 				"request": {
 					"application": APPLICATION_CODE,
 					"push_token": pushToken,
-					"language": window.navigator.language || 'en',  // optional
+					"language": window.navigator.language || 'en',  // Language locale of the device, must be a lowercase two-letter code according to the ISO-639-1 standard
 					"hwid": hwid,
 					"timezone": (new Date).getTimezoneOffset(), // offset in seconds
-					"device_model": get_browser_version(),
+					"device_model": getBrowserVersion(),
 					"device_type": 11
 				}
 			};
@@ -267,7 +239,7 @@ function getPushToken(pushSubscription) {
 }
 
 
-function get_browser_version() {
+function getBrowserVersion() {
 	var ua = navigator.userAgent, tem,
 		M = ua.match(/(opera|chrome|safari|firefox|msie|trident(?=\/))\/?\s*(\d+)/i) || [];
 	if (/trident/i.test(M[1])) {
