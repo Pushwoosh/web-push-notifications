@@ -1,6 +1,7 @@
 var APPLICATION_CODE = "XXXXX-XXXXX"; // Your Application Code from Pushwoosh
 var pushDefaultImage = 'https://cp.pushwoosh.com/img/logo-medium.png';
 var pushDefaultTitle = 'Title';
+var pushDefaultUrl = '/';
 var pushwooshUrl = "https://cp.pushwoosh.com/json/1.3/";
 var HIDE_NOTIFICATION_AFTER = false; // in seconds, or false then notification will be hide automatically after 30 seconds
 var DEBUG_MODE = false;
@@ -95,7 +96,7 @@ self.addEventListener('notificationclick', function (event) {
 		return clients.openWindow(openUrl);
 	}
 	else {
-		return clients.openWindow('/');
+		return clients.openWindow(pushDefaultUrl);
 	}
 });
 
