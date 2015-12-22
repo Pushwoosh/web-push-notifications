@@ -9,6 +9,7 @@ var hwid = "hwid";
 var url = null;
 
 self.addEventListener('push', function (event) {
+	setUpHwid();
 	// Since there is no payload data with the first version
 	// of push messages, we'll grab some data from
 	// an API and use it to populate a notification
@@ -71,6 +72,7 @@ self.addEventListener('push', function (event) {
 
 
 self.addEventListener('notificationclick', function (event) {
+	setUpHwid();
 	var messageHash = event.notification.tag;
 	console.log(event);
 	console.log("Push open hwid = " + hwid + " messageHash = " + messageHash);
@@ -100,15 +102,6 @@ self.addEventListener('notificationclick', function (event) {
 	}
 });
 
-self.addEventListener('message', function (evt) {
-	console.log('postMessage received', evt.data);
-	if (evt.data.applicationCode) {
-		pushwooshUrl = evt.data.pushwooshUrl;
-		APPLICATION_CODE = evt.data.applicationCode;
-		hwid = evt.data.hwid;
-	}
-});
-
 // refresh caches
 self.addEventListener('activate', function (event) {
 	event.waitUntil(
@@ -126,6 +119,41 @@ function closeNotifications() {
 	self.registration.getNotifications().then(function (notifications) {
 		for (var i = 0; i < notifications.length; ++i) {
 			notifications[i].close();
+		}
+	});
+}
+
+// For more information see Pushwoosh API guide http://docs.pushwoosh.com/docs/createmessage
+
+function createUUID(pushToken) {
+	var s = [];
+	var hexDigits = "0123456789abcdef";
+	for (var i = 0; i < 32; i++) {
+		s[i] = hexDigits.substr(pushToken.charCodeAt(i) % hexDigits.length, 1);
+	}
+	return s.join("");
+}
+
+function generateHwid(pushToken) {
+	var hwid = APPLICATION_CODE + '_' + createUUID(pushToken);
+	return hwid;
+}
+
+function getPushToken(pushSubscription) {
+	var pushToken = '';
+	if (pushSubscription.subscriptionId) {
+		pushToken = pushSubscription.subscriptionId;
+	}
+	else {
+		pushToken = pushSubscription.endpoint.split('/').pop();
+	}
+	return pushToken;
+}
+
+function setUpHwid() {
+	self.registration.pushManager.getSubscription().then(function (subscription) {
+		if (subscription) {
+			hwid = generateHwid(getPushToken(subscription));
 		}
 	});
 }

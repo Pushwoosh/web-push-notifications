@@ -71,13 +71,6 @@ function subscribe() {
 						// Keep your server in sync with the latest hwid/pushToken
 						var pushToken = getPushToken(subscription);
 						hwid = generateHwid(pushToken);
-						if (navigator.serviceWorker.controller) {
-							navigator.serviceWorker.controller.postMessage({
-								'hwid': hwid,
-								'applicationCode': APPLICATION_CODE,
-								'pushwooshUrl': pushwooshUrl
-							});
-						}
 
 						// Set your UI to show they have subscribed for push messages
 						isPushEnabled = true;
