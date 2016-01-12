@@ -2,7 +2,6 @@ var APPLICATION_CODE = "XXXXX-XXXXX"; // Your Application Code from Pushwoosh
 var SERVICE_WORKER_URL = '/service-worker.js';
 var pushwooshUrl = "https://cp.pushwoosh.com/json/1.3/";
 var hwid = "";
-var isPushEnabled = false;
 
 // Try to subscribe for a push notification when page is loaded
 window.addEventListener('load', function () {
@@ -46,8 +45,6 @@ function subscribe() {
 								userVisibleOnly: true
 							}).then(function (subscription) {
 								// The subscription was successful
-								isPushEnabled = true;
-								console.log(subscription);
 								pushToken = getPushToken(subscription);
 								hwid = generateHwid(pushToken);
 								pushwooshRegisterDevice(pushToken, hwid);
@@ -73,7 +70,6 @@ function subscribe() {
 						hwid = generateHwid(pushToken);
 
 						// Set your UI to show they have subscribed for push messages
-						isPushEnabled = true;
 						console.log("Ready to get pushes. Push token is " + pushToken);
 					}).catch(function (err) {
 						console.warn('Error during getSubscription()', err);
@@ -97,22 +93,18 @@ function unsubscribe() {
 				if (!pushSubscription) {
 					// No subscription object, so set the state
 					// to allow the user to subscribe to push
-					isPushEnabled = false;
 					return;
 				}
 
 				var pushToken = getPushToken(pushSubscription);
-
 				// We have a subscription, so call unsubscribe on it
 				pushSubscription.unsubscribe().then(function (successful) {
-					isPushEnabled = false;
 					pushwooshUnregisterDevice(generateHwid(pushToken));
 				}).catch(function (e) {
 					// We failed to unsubscribe, this can lead to
 					// an unusual state, so may be best to remove
 					// the users data from your data store and
 					// inform the user that you have done so
-
 					console.log('Unsubscription error: ', e);
 				});
 			}).catch(function (e) {
@@ -121,7 +113,26 @@ function unsubscribe() {
 	});
 }
 
-// For more information see Pushwoosh API guide http://docs.pushwoosh.com/docs/createmessage
+/**
+ * Set tags for device
+ * @param {Object} tags
+ */
+function setTags(tags) {
+	navigator.serviceWorker.ready.then(function (serviceWorkerRegistration) {
+		serviceWorkerRegistration.pushManager.getSubscription().then(
+			function (pushSubscription) {
+				if (!pushSubscription) {
+					return;
+				}
+
+				var pushToken = getPushToken(pushSubscription);
+				var hwid = generateHwid(pushToken);
+				pushwooshSetTags(hwid, tags);
+			}).catch(function (e) {
+				console.error('Error thrown while setTags from push messaging.', e);
+			});
+	});
+}
 
 function createUUID(pushToken) {
 	var s = [];
@@ -136,87 +147,6 @@ function generateHwid(pushToken) {
 	var hwid = APPLICATION_CODE + '_' + createUUID(pushToken);
 	return hwid;
 }
-
-// Registers device for the application
-function pushwooshRegisterDevice(pushToken, hwid) {
-	console.log('Trying to send registerDevice call to Pushwoosh with pushToken=' + pushToken + ' hwid=' + hwid);
-	try {
-		var xhr = new XMLHttpRequest(),
-			url = pushwooshUrl + 'registerDevice',
-			params = {
-				"request": {
-					"application": APPLICATION_CODE,
-					"push_token": pushToken,
-					"language": window.navigator.language || 'en',  // Language locale of the device, must be a lowercase two-letter code according to the ISO-639-1 standard
-					"hwid": hwid,
-					"timezone": (new Date).getTimezoneOffset(), // offset in seconds
-					"device_model": getBrowserVersion(),
-					"device_type": 11
-				}
-			};
-
-		xhr.open('POST', url, true);
-		xhr.setRequestHeader('Content-Type', 'text/plain;charset=UTF-8');
-		xhr.send(JSON.stringify(params));
-		xhr.onload = function () {
-			if (this.status == 200) {
-				var response = JSON.parse(this.responseText);
-				if (response.status_code == 200) {
-					console.log('registerDevice call to Pushwoosh has been successful');
-				}
-				else {
-					console.log('Error occurred during the registerDevice call to Pushwoosh: ' + response.status_message);
-				}
-			} else {
-				console.log('Error occurred, status code:' + this.status);
-			}
-		};
-		xhr.onerror = function () {
-			console.log('Pushwoosh response status code to registerDevice call is not 200')
-		};
-	} catch (e) {
-		console.log('Exception while registering the device with Pushwoosh: ' + e);
-		return;
-	}
-}
-
-// Remove device from the application
-function pushwooshUnregisterDevice(hwid) {
-	console.log('Performing unregisterDevice call to Pushwoosh with hwid=' + hwid);
-	try {
-		var xhr = new XMLHttpRequest(),
-			url = pushwooshUrl + "unregisterDevice",
-			params = {
-				request: {
-					application: APPLICATION_CODE,
-					hwid: hwid
-				}
-			};
-		xhr.open('POST', url, true);
-		xhr.setRequestHeader('Content-Type', 'text/plain;charset=UTF-8');
-		xhr.send(JSON.stringify(params));
-		xhr.onload = function () {
-			if (this.status == 200) {
-				var response = JSON.parse(this.responseText);
-				if (response.status_code == 200) {
-					console.log('unregisterDevice call to Pushwoosh has been successful');
-				}
-				else {
-					console.log('Error occurred during the unregisterDevice call to Pushwoosh:: ' + response.status_message);
-				}
-			} else {
-				console.log('Error occurred, status code::' + this.status);
-			}
-		};
-		xhr.onerror = function () {
-			console.log('Pushwoosh response status code to unregisterDevice call in not 200')
-		};
-	} catch (e) {
-		console.log('Exception while unregistering the device: ' + e);
-		return;
-	}
-}
-
 
 function getPushToken(pushSubscription) {
 	var pushToken = '';
@@ -247,4 +177,84 @@ function getBrowserVersion() {
 	if ((tem = ua.match(/version\/([.\d]+)/i)) != null)
 		M.splice(1, 1, tem[1]);
 	return M.join(' ');
+}
+
+/**
+ * Call Pushwoosh registerDevice API method
+ * For more information see Pushwoosh API guide http://docs.pushwoosh.com/docs/createmessage
+ * @param {string} pushToken
+ * @param {string} hwid
+ */
+function pushwooshRegisterDevice(pushToken, hwid) {
+	doPushwooshApiMethod('registerDevice', {
+			"application": APPLICATION_CODE,
+			"push_token": pushToken,
+			"language": window.navigator.language || 'en',  // Language locale of the device, must be a lowercase two-letter code according to the ISO-639-1 standard
+			"hwid": hwid,
+			"timezone": (new Date).getTimezoneOffset(), // offset in seconds
+			"device_model": getBrowserVersion(),
+			"device_type": 11
+		}
+	);
+}
+
+/**
+ * Call Pushwoosh unregisterDevice API method
+ * @param {string} hwid
+ */
+function pushwooshUnregisterDevice(hwid) {
+	doPushwooshApiMethod('unregisterDevice', {
+		application: APPLICATION_CODE,
+		hwid: hwid
+	});
+}
+
+/**
+ * Call Pushwoosh setTags API method
+ * @param {string} hwid
+ * @param {Object} tags
+ */
+function pushwooshSetTags(hwid, tags) {
+	doPushwooshApiMethod('setTags', {
+		application: APPLICATION_CODE,
+		hwid: hwid,
+		tags: tags
+	});
+}
+
+/**
+ * Call Pushwoosh API method
+ * @param {string} methodName
+ * @param {Object} arguments
+ */
+function doPushwooshApiMethod(methodName, arguments) {
+	console.log('Performing %s call to Pushwoosh with arguments: %s', methodName, JSON.stringify(arguments));
+	try {
+		var xhr = new XMLHttpRequest(),
+			url = pushwooshUrl + methodName,
+			params = {
+				request: arguments
+			};
+		xhr.open('POST', url, true);
+		xhr.setRequestHeader('Content-Type', 'text/plain;charset=UTF-8');
+		xhr.send(JSON.stringify(params));
+		xhr.onload = function () {
+			if (this.status == 200) {
+				var response = JSON.parse(this.responseText);
+				if (response.status_code == 200) {
+					console.log('%s call to Pushwoosh has been successful', methodName);
+				}
+				else {
+					console.log('Error occurred during the %s call to Pushwoosh: %s', response.status_message);
+				}
+			} else {
+				console.log('Error occurred, status code: %s', this.status);
+			}
+		};
+		xhr.onerror = function () {
+			console.log('Pushwoosh response status code to %s call in not 200', methodName)
+		};
+	} catch (e) {
+		console.log('Exception while %s the device: %s', methodName, e);
+	}
 }
