@@ -156,7 +156,7 @@ function getPushToken(pushSubscription) {
 	}
 	else {
 		pushToken = pushSubscription.endpoint.split('/').pop();
-		console.log("Chrome 45+: " + pushToken);
+		console.log("Chrome 45+ or Firefox: " + pushToken);
 	}
 	return pushToken;
 }
@@ -186,6 +186,13 @@ function getBrowserVersion() {
  * @param {string} hwid
  */
 function pushwooshRegisterDevice(pushToken, hwid) {
+	var deviceType = 11; // chrome
+
+	var isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+	if (isFirefox) {
+		deviceType = 12;
+	}
+
 	doPushwooshApiMethod('registerDevice', {
 			"application": APPLICATION_CODE,
 			"push_token": pushToken,
@@ -193,7 +200,7 @@ function pushwooshRegisterDevice(pushToken, hwid) {
 			"hwid": hwid,
 			"timezone": (new Date).getTimezoneOffset(), // offset in seconds
 			"device_model": getBrowserVersion(),
-			"device_type": 11
+			"device_type": deviceType
 		}
 	);
 }
