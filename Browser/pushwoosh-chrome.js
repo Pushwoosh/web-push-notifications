@@ -47,7 +47,8 @@ function subscribe() {
 								// The subscription was successful
 								pushToken = getPushToken(subscription);
 								hwid = generateHwid(pushToken);
-								pushwooshRegisterDevice(pushToken, hwid);
+								var encryptionKey = getEncryptionKey(subscription);
+								pushwooshRegisterDevice(pushToken, hwid, encryptionKey);
 							}).catch(function (e) {
 								if (Notification.permission === 'denied') {
 									// The user denied the notification permission which
@@ -65,12 +66,12 @@ function subscribe() {
 							return;
 						}
 
-						// Keep your server in sync with the latest hwid/pushToken
+						// Keep your server in sync with the latest hwid/pushToken/encryptionKey
 						var pushToken = getPushToken(subscription);
 						hwid = generateHwid(pushToken);
-
+						var encryptionKey = getEncryptionKey(subscription);
 						// Set your UI to show they have subscribed for push messages
-						console.log("Ready to get pushes. Push token is " + pushToken);
+						console.log("Ready to get pushes. Push token is " + pushToken + "; Encryption Key is " + encryptionKey);
 					}).catch(function (err) {
 						console.warn('Error during getSubscription()', err);
 					});
@@ -148,6 +149,12 @@ function generateHwid(pushToken) {
 	return hwid;
 }
 
+function getEncryptionKey(pushSubscription) {
+	var rawKey = pushSubscription.getKey ? pushSubscription.getKey('p256dh') : '';
+	var key = rawKey ? btoa(String.fromCharCode.apply(null, new Uint8Array(rawKey))) : '';
+	return key;
+}
+
 function getPushToken(pushSubscription) {
 	var pushToken = '';
 	if (pushSubscription.subscriptionId) {
@@ -184,8 +191,9 @@ function getBrowserVersion() {
  * For more information see Pushwoosh API guide http://docs.pushwoosh.com/docs/createmessage
  * @param {string} pushToken
  * @param {string} hwid
+ * @param {string} encryptionKey
  */
-function pushwooshRegisterDevice(pushToken, hwid) {
+function pushwooshRegisterDevice(pushToken, hwid, encryptionKey) {
 	var deviceType = 11; // chrome
 
 	var isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
@@ -200,7 +208,8 @@ function pushwooshRegisterDevice(pushToken, hwid) {
 			"hwid": hwid,
 			"timezone": (new Date).getTimezoneOffset(), // offset in seconds
 			"device_model": getBrowserVersion(),
-			"device_type": deviceType
+			"device_type": deviceType,
+			"public_key": encryptionKey
 		}
 	);
 }

@@ -7,67 +7,96 @@ var HIDE_NOTIFICATION_AFTER = false; // in seconds, or false then notification w
 var DEBUG_MODE = false;
 var hwid = "hwid";
 var url = null;
+var deviceType = navigator.userAgent.toLowerCase().indexOf('firefox') > -1 ? 12 : 11;
 
 self.addEventListener('push', function (event) {
 	setUpHwid();
 	// Since there is no payload data with the first version
 	// of push messages, we'll grab some data from
 	// an API and use it to populate a notification
-	event.waitUntil(
-		fetch(pushwooshUrl + 'getLastMessage', {
-			method: 'post',
-			headers: {
-				"Content-Type": "text/plain;charset=UTF-8"
-			},
-			body: '{"request": {"application": "' + APPLICATION_CODE + '","hwid": "' + hwid + '"}}'
-		}).then(function (response) {
-			if (response.status !== 200) {
-				// Either show a message to the user explaining the error
-				// or enter a generic message and handle the
-				// onnotificationclick event to direct the user to a web page
-				console.log('Looks like there was a problem. Status Code: ' + response.status);
-				throw new Error();
-			}
+	console.info("Recv'd a push message: ", JSON.stringify(event));
+	if (event.data) {
+		var content = event.data.text();
+		content = JSON.parse(content);
+		var title = content['header']|| pushDefaultTitle;
+		var message = content['body'];
+		var icon = content['i'] || pushDefaultImage;
+		var messageHash = content['p'];
+		url = content['l'];
 
-			// Examine the text in the response
-			return response.json().then(function (data) {
-				if (!data.response.notification) {
-					console.error('The API returned an error.', data.error);
+		return self.registration.showNotification(title, {
+			body: message,
+			icon: icon,
+			tag: messageHash
+		}).then(function () {
+			if (HIDE_NOTIFICATION_AFTER) {
+				setTimeout(closeNotifications, HIDE_NOTIFICATION_AFTER * 1000);
+			}
+		});
+	}
+	else {
+		event.waitUntil(
+			fetch(pushwooshUrl + 'getLastMessage', {
+				method: 'post',
+				headers: {
+					"Content-Type": "text/plain;charset=UTF-8"
+				},
+				body: JSON.stringify({
+					"request": {
+						"application": APPLICATION_CODE,
+						"hwid": hwid,
+						"device_type": deviceType
+					}
+				})
+			}).then(function (response) {
+				if (response.status !== 200) {
+					// Either show a message to the user explaining the error
+					// or enter a generic message and handle the
+					// onnotificationclick event to direct the user to a web page
+					console.log('Looks like there was a problem. Status Code: ' + response.status);
 					throw new Error();
 				}
-				var notification = data.response.notification;
-				console.log(notification);
 
-				var title = notification.chromeTitle || pushDefaultTitle;
-				var message = notification.content;
-				var icon = notification.chromeIcon || pushDefaultImage;
-				var messageHash = notification.messageHash;
-				url = notification.url;
-
-				return self.registration.showNotification(title, {
-					body: message,
-					icon: icon,
-					tag: messageHash
-				}).then(function () {
-					if (HIDE_NOTIFICATION_AFTER) {
-						setTimeout(closeNotifications, HIDE_NOTIFICATION_AFTER * 1000);
+				// Examine the text in the response
+				return response.json().then(function (data) {
+					if (!data.response.notification) {
+						console.error('The API returned an error.', data.error);
+						throw new Error();
 					}
-				});
-			});
-		}).catch(function (err) {
-			console.error('Unable to retrieve data', err);
+					var notification = data.response.notification;
+					console.log(notification);
 
-			if (DEBUG_MODE) {
-				var title = 'An error occurred';
-				var message = 'We were unable to get the information for this push message';
-				var notificationTag = 'notification-error';
-				return self.registration.showNotification(title, {
-					body: message,
-					tag: notificationTag
+					var title = notification.chromeTitle || pushDefaultTitle;
+					var message = notification.content;
+					var icon = notification.chromeIcon || pushDefaultImage;
+					var messageHash = notification.messageHash;
+					url = notification.url;
+
+					return self.registration.showNotification(title, {
+						body: message,
+						icon: icon,
+						tag: messageHash
+					}).then(function () {
+						if (HIDE_NOTIFICATION_AFTER) {
+							setTimeout(closeNotifications, HIDE_NOTIFICATION_AFTER * 1000);
+						}
+					});
 				});
-			}
-		})
-	);
+			}).catch(function (err) {
+				console.error('Unable to retrieve data', err);
+
+				if (DEBUG_MODE) {
+					var title = 'An error occurred';
+					var message = 'We were unable to get the information for this push message';
+					var notificationTag = 'notification-error';
+					return self.registration.showNotification(title, {
+						body: message,
+						tag: notificationTag
+					});
+				}
+			})
+		);
+	}
 });
 
 
