@@ -1,17 +1,20 @@
-Chrome push notifications
+Web push notifications.
 =========================
 
-Recommended way:  
+Scripts:
 https://github.com/Pushwoosh/chrome-push-notifications/tree/master/Browser/
 
-Guide:  
+Guide for Chrome push:  
 https://www.pushwoosh.com/programming-push-notification/chrome/chrome-web-push/
+http://docs.pushwoosh.com/docs/chrome-web-push-for-http-websites
 
+Guide for Firefox push:  
+http://docs.pushwoosh.com/docs/firefox-web-push
 
 =========================
 
-The old way (push notifications for Google Chrome via Extension):  
+Push notifications for Google Chrome via Extension (Deprecated):  
 https://github.com/Pushwoosh/chrome-push-notifications/tree/master/ViaExtension
 
 Guide:  
-https://www.pushwoosh.com/programming-push-notification/chrome/chrome-extension-notifications/
+http://docs.pushwoosh.com/docs/chrome-extension

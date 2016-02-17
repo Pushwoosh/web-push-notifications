@@ -1,8 +1,14 @@
-Chrome push notifications
+Web push notifications
 =========================
 
-Available from version 42 of Google Chrome browser
+Available from version 42 of Google Chrome browser.
 
-Guide:  
-https://www.pushwoosh.com/programming-push-notification/chrome/chrome-web-push/
+Google Chrome guide:  
+http://docs.pushwoosh.com/docs/chrome-web-push
+http://docs.pushwoosh.com/docs/chrome-web-push-for-http-websites
+
+Available from version 44 of Mozilla Firefox.
+
+Guide for Firefox push:  
+http://docs.pushwoosh.com/docs/firefox-web-push
 
