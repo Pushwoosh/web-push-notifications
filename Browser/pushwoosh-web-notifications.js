@@ -173,6 +173,22 @@ function getPushToken(pushSubscription) {
 }
 
 
+function pushwooshGetDeviceName() {
+	if( navigator.userAgent.match(/Android/i)
+		|| navigator.userAgent.match(/webOS/i)
+		|| navigator.userAgent.match(/iPhone/i)
+		|| navigator.userAgent.match(/iPad/i)
+		|| navigator.userAgent.match(/iPod/i)
+		|| navigator.userAgent.match(/BlackBerry/i)
+		|| navigator.userAgent.match(/Windows Phone/i)
+	){
+		return 'Phone';
+	}
+	else {
+		return 'PC';
+	}
+}
+
 function getBrowserVersion() {
 	var ua = navigator.userAgent, tem,
 		M = ua.match(/(opera|chrome|safari|firefox|msie|trident(?=\/))\/?\s*(\d+)/i) || [];
@@ -198,8 +214,6 @@ function getBrowserVersion() {
  * @param {string} encryptionKey
  */
 function pushwooshRegisterDevice(pushToken, hwid, encryptionKey) {
-	var deviceType = pushwooshGetBrowserType();
-
 	doPushwooshApiMethod('registerDevice', {
 			"application": APPLICATION_CODE,
 			"push_token": pushToken,
@@ -207,7 +221,8 @@ function pushwooshRegisterDevice(pushToken, hwid, encryptionKey) {
 			"hwid": hwid,
 			"timezone": (new Date).getTimezoneOffset(), // offset in seconds
 			"device_model": getBrowserVersion(),
-			"device_type": deviceType,
+			"device_name": pushwooshGetDeviceName(),
+			"device_type": pushwooshGetBrowserType(),
 			"public_key": encryptionKey
 		}
 	);
