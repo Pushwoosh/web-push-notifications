@@ -161,9 +161,13 @@ function getPushToken(pushSubscription) {
 		pushToken = pushSubscription.subscriptionId;
 		console.log("Chrome 42, 43, 44: " + pushToken);
 	}
+	else if (pushwooshGetBrowserType() === 12) {
+		pushToken = pushSubscription.endpoint;
+		console.log("Firefox: " + pushToken);
+	}
 	else {
 		pushToken = pushSubscription.endpoint.split('/').pop();
-		console.log("Chrome 45+ or Firefox: " + pushToken);
+		console.log("Chrome 45+: " + pushToken);
 	}
 	return pushToken;
 }
@@ -194,12 +198,7 @@ function getBrowserVersion() {
  * @param {string} encryptionKey
  */
 function pushwooshRegisterDevice(pushToken, hwid, encryptionKey) {
-	var deviceType = 11; // chrome
-
-	var isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
-	if (isFirefox) {
-		deviceType = 12;
-	}
+	var deviceType = pushwooshGetBrowserType();
 
 	doPushwooshApiMethod('registerDevice', {
 			"application": APPLICATION_CODE,
@@ -212,6 +211,20 @@ function pushwooshRegisterDevice(pushToken, hwid, encryptionKey) {
 			"public_key": encryptionKey
 		}
 	);
+}
+
+/**
+ * Determine device type
+ * @returns {number}
+ */
+function pushwooshGetBrowserType() {
+	var deviceType = 11; // chrome
+
+	var isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+	if (isFirefox) {
+		deviceType = 12;
+	}
+	return deviceType;
 }
 
 /**
