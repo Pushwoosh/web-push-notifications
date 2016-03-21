@@ -6,7 +6,6 @@ var pushwooshUrl = "https://cp.pushwoosh.com/json/1.3/";
 var HIDE_NOTIFICATION_AFTER = false; // in seconds, or false then notification will be hide automatically after 30 seconds
 var DEBUG_MODE = false;
 var hwid = "hwid";
-var url = null;
 var deviceType = navigator.userAgent.toLowerCase().indexOf('firefox') > -1 ? 12 : 11;
 
 self.addEventListener('push', function (event) {
@@ -22,12 +21,17 @@ self.addEventListener('push', function (event) {
 		var message = content['body'];
 		var icon = content['i'] || pushDefaultImage;
 		var messageHash = content['p'];
-		url = content['l'];
+		var url = content['l'] || pushDefaultUrl;
+
+		var tag = {
+			"url": url,
+			"messageHash": messageHash
+		};
 
 		return self.registration.showNotification(title, {
 			body: message,
 			icon: icon,
-			tag: messageHash
+			tag: JSON.stringify(tag)
 		}).then(function () {
 			if (HIDE_NOTIFICATION_AFTER) {
 				setTimeout(closeNotifications, HIDE_NOTIFICATION_AFTER * 1000);
@@ -70,12 +74,17 @@ self.addEventListener('push', function (event) {
 					var message = notification.content;
 					var icon = notification.chromeIcon || pushDefaultImage;
 					var messageHash = notification.messageHash;
-					url = notification.url;
+					var url = notification.url || pushDefaultUrl;
+
+					var tag = {
+						"url": url,
+						"messageHash": messageHash
+					};
 
 					return self.registration.showNotification(title, {
 						body: message,
 						icon: icon,
-						tag: messageHash
+						tag: JSON.stringify(tag)
 					}).then(function () {
 						if (HIDE_NOTIFICATION_AFTER) {
 							setTimeout(closeNotifications, HIDE_NOTIFICATION_AFTER * 1000);
@@ -102,16 +111,17 @@ self.addEventListener('push', function (event) {
 
 self.addEventListener('notificationclick', function (event) {
 	setUpHwid();
-	var messageHash = event.notification.tag;
+	var tag = event.notification.tag;
+	tag = JSON.parse(tag);
 	console.log(event);
-	console.log("Push open hwid = " + hwid + " messageHash = " + messageHash);
+	console.log("Push open hwid = " + hwid + ". Tag = " + event.notification.tag);
 	event.waitUntil(
 		fetch(pushwooshUrl + 'pushStat', {
 			method: 'post',
 			headers: {
 				"Content-Type": "text/plain;charset=UTF-8"
 			},
-			body: '{"request": {"application": "' + APPLICATION_CODE + '","hwid": "' + hwid + '", "hash": "' + messageHash + '"}}'
+			body: '{"request": {"application": "' + APPLICATION_CODE + '","hwid": "' + hwid + '", "hash": "' + tag.messageHash + '"}}'
 		}).then(function (response) {
 				console.log(response);
 			}
@@ -121,14 +131,7 @@ self.addEventListener('notificationclick', function (event) {
 	// See: http://crbug.com/463146
 	event.notification.close();
 
-	if (url) {
-		var openUrl = url;
-		url = null;
-		return clients.openWindow(openUrl);
-	}
-	else {
-		return clients.openWindow(pushDefaultUrl);
-	}
+	return clients.openWindow(tag.url);
 });
 
 // refresh caches
