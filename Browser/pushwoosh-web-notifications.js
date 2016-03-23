@@ -139,7 +139,7 @@ function createUUID(pushToken) {
 	var s = [];
 	var hexDigits = "0123456789abcdef";
 	for (var i = 0; i < 32; i++) {
-		s[i] = hexDigits.substr(pushToken.charCodeAt(i) % hexDigits.length, 1);
+		s[i] = hexDigits.substr(pushToken.charCodeAt(pushToken.length-i-1) % hexDigits.length, 1);
 	}
 	return s.join("");
 }
