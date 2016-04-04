@@ -17,7 +17,7 @@ self.addEventListener('push', function (event) {
 	if (event.data) {
 		var content = event.data.text();
 		content = JSON.parse(content);
-		var title = content['header']|| pushDefaultTitle;
+		var title = content['header'] || pushDefaultTitle;
 		var message = content['body'];
 		var icon = content['i'] || pushDefaultImage;
 		var messageHash = content['p'];
@@ -121,7 +121,13 @@ self.addEventListener('notificationclick', function (event) {
 			headers: {
 				"Content-Type": "text/plain;charset=UTF-8"
 			},
-			body: '{"request": {"application": "' + APPLICATION_CODE + '","hwid": "' + hwid + '", "hash": "' + tag.messageHash + '"}}'
+			body: JSON.stringify({
+				"request": {
+					"application": APPLICATION_CODE,
+					"hwid": hwid,
+					"hash": tag.messageHash
+				}
+			})
 		}).then(function (response) {
 				console.log(response);
 			}
@@ -161,7 +167,7 @@ function createUUID(pushToken) {
 	var s = [];
 	var hexDigits = "0123456789abcdef";
 	for (var i = 0; i < 32; i++) {
-		s[i] = hexDigits.substr(pushToken.charCodeAt(pushToken.length-i-1) % hexDigits.length, 1);
+		s[i] = hexDigits.substr(pushToken.charCodeAt(pushToken.length - i - 1) % hexDigits.length, 1);
 	}
 	return s.join("");
 }

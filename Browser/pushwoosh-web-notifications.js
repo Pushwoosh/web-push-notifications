@@ -1,7 +1,6 @@
 var APPLICATION_CODE = "XXXXX-XXXXX"; // Your Application Code from Pushwoosh
 var SERVICE_WORKER_URL = '/service-worker.js';
 var pushwooshUrl = "https://cp.pushwoosh.com/json/1.3/";
-var hwid = "";
 
 // Try to subscribe for a push notification when page is loaded
 window.addEventListener('load', function () {
@@ -46,7 +45,7 @@ function subscribe() {
 							}).then(function (subscription) {
 								// The subscription was successful
 								pushToken = getPushToken(subscription);
-								hwid = generateHwid(pushToken);
+								var hwid = generateHwid(pushToken);
 								var encryptionKey = getEncryptionKey(subscription);
 								pushwooshRegisterDevice(pushToken, hwid, encryptionKey);
 							}).catch(function (e) {
@@ -68,8 +67,9 @@ function subscribe() {
 
 						// Keep your server in sync with the latest hwid/pushToken/encryptionKey
 						var pushToken = getPushToken(subscription);
-						hwid = generateHwid(pushToken);
+						var hwid = generateHwid(pushToken);
 						var encryptionKey = getEncryptionKey(subscription);
+						// pushwooshRegisterDevice(pushToken, hwid, encryptionKey);
 						// Set your UI to show they have subscribed for push messages
 						console.log("Ready to get pushes. Push token is " + pushToken + "; Encryption Key is " + encryptionKey);
 					}).catch(function (err) {
@@ -139,7 +139,7 @@ function createUUID(pushToken) {
 	var s = [];
 	var hexDigits = "0123456789abcdef";
 	for (var i = 0; i < 32; i++) {
-		s[i] = hexDigits.substr(pushToken.charCodeAt(pushToken.length-i-1) % hexDigits.length, 1);
+		s[i] = hexDigits.substr(pushToken.charCodeAt(pushToken.length - i - 1) % hexDigits.length, 1);
 	}
 	return s.join("");
 }
@@ -174,14 +174,14 @@ function getPushToken(pushSubscription) {
 
 
 function pushwooshGetDeviceName() {
-	if( navigator.userAgent.match(/Android/i)
+	if (navigator.userAgent.match(/Android/i)
 		|| navigator.userAgent.match(/webOS/i)
 		|| navigator.userAgent.match(/iPhone/i)
 		|| navigator.userAgent.match(/iPad/i)
 		|| navigator.userAgent.match(/iPod/i)
 		|| navigator.userAgent.match(/BlackBerry/i)
 		|| navigator.userAgent.match(/Windows Phone/i)
-	){
+	) {
 		return 'Phone';
 	}
 	else {
