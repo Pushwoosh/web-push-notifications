@@ -9,7 +9,6 @@ var hwid = "hwid";
 var deviceType = navigator.userAgent.toLowerCase().indexOf('firefox') > -1 ? 12 : 11;
 
 self.addEventListener('push', function (event) {
-	setUpHwid();
 	// Since there is no payload data with the first version
 	// of push messages, we'll grab some data from
 	// an API and use it to populate a notification
@@ -40,7 +39,91 @@ self.addEventListener('push', function (event) {
 	}
 	else {
 		event.waitUntil(
-			fetch(pushwooshUrl + 'getLastMessage', {
+			self.registration.pushManager.getSubscription().then(function (subscription) {
+				if (subscription) {
+					hwid = generateHwid(getPushToken(subscription));
+				}
+				return fetch(pushwooshUrl + 'getLastMessage', {
+					method: 'post',
+					headers: {
+						"Content-Type": "text/plain;charset=UTF-8"
+					},
+					body: JSON.stringify({
+						"request": {
+							"application": APPLICATION_CODE,
+							"hwid": hwid,
+							"device_type": deviceType
+						}
+					})
+				}).then(function (response) {
+					if (response.status !== 200) {
+						// Either show a message to the user explaining the error
+						// or enter a generic message and handle the
+						// onnotificationclick event to direct the user to a web page
+						console.log('Looks like there was a problem. Status Code: ' + response.status);
+						throw new Error();
+					}
+
+					// Examine the text in the response
+					return response.json().then(function (data) {
+						if (!data.response.notification) {
+							console.error('The API returned an error.', data.error);
+							throw new Error();
+						}
+						var notification = data.response.notification;
+						console.log(notification);
+
+						var title = notification.chromeTitle || pushDefaultTitle;
+						var message = notification.content;
+						var icon = notification.chromeIcon || pushDefaultImage;
+						var messageHash = notification.messageHash;
+						var url = notification.url || pushDefaultUrl;
+
+						var tag = {
+							"url": url,
+							"messageHash": messageHash
+						};
+
+						return self.registration.showNotification(title, {
+							body: message,
+							icon: icon,
+							tag: JSON.stringify(tag)
+						}).then(function () {
+							if (HIDE_NOTIFICATION_AFTER) {
+								setTimeout(closeNotifications, HIDE_NOTIFICATION_AFTER * 1000);
+							}
+						});
+					});
+				}).catch(function (err) {
+					console.error('Unable to retrieve data', err);
+
+					if (DEBUG_MODE) {
+						var title = 'An error occurred';
+						var message = 'We were unable to get the information for this push message';
+						var notificationTag = 'notification-error';
+						return self.registration.showNotification(title, {
+							body: message,
+							tag: notificationTag
+						});
+					}
+				})
+			})
+		)
+	}
+});
+
+
+self.addEventListener('notificationclick', function (event) {
+	var tag = event.notification.tag;
+	tag = JSON.parse(tag);
+	console.log(event);
+	console.log("Push open hwid = " + hwid + ". Tag = " + event.notification.tag);
+	event.waitUntil(
+		self.registration.pushManager.getSubscription().then(function (subscription) {
+			if (subscription) {
+				hwid = generateHwid(getPushToken(subscription));
+			}
+			fetch(pushwooshUrl + 'pushStat', {
 				method: 'post',
 				headers: {
 					"Content-Type": "text/plain;charset=UTF-8"
@@ -49,95 +132,21 @@ self.addEventListener('push', function (event) {
 					"request": {
 						"application": APPLICATION_CODE,
 						"hwid": hwid,
-						"device_type": deviceType
+						"hash": tag.messageHash
 					}
 				})
 			}).then(function (response) {
-				if (response.status !== 200) {
-					// Either show a message to the user explaining the error
-					// or enter a generic message and handle the
-					// onnotificationclick event to direct the user to a web page
-					console.log('Looks like there was a problem. Status Code: ' + response.status);
-					throw new Error();
+					console.log(response);
 				}
+			);
 
-				// Examine the text in the response
-				return response.json().then(function (data) {
-					if (!data.response.notification) {
-						console.error('The API returned an error.', data.error);
-						throw new Error();
-					}
-					var notification = data.response.notification;
-					console.log(notification);
+			// Android doesn't close the notification when you click on it
+			// See: http://crbug.com/463146
+			event.notification.close();
 
-					var title = notification.chromeTitle || pushDefaultTitle;
-					var message = notification.content;
-					var icon = notification.chromeIcon || pushDefaultImage;
-					var messageHash = notification.messageHash;
-					var url = notification.url || pushDefaultUrl;
-
-					var tag = {
-						"url": url,
-						"messageHash": messageHash
-					};
-
-					return self.registration.showNotification(title, {
-						body: message,
-						icon: icon,
-						tag: JSON.stringify(tag)
-					}).then(function () {
-						if (HIDE_NOTIFICATION_AFTER) {
-							setTimeout(closeNotifications, HIDE_NOTIFICATION_AFTER * 1000);
-						}
-					});
-				});
-			}).catch(function (err) {
-				console.error('Unable to retrieve data', err);
-
-				if (DEBUG_MODE) {
-					var title = 'An error occurred';
-					var message = 'We were unable to get the information for this push message';
-					var notificationTag = 'notification-error';
-					return self.registration.showNotification(title, {
-						body: message,
-						tag: notificationTag
-					});
-				}
-			})
-		);
-	}
-});
-
-
-self.addEventListener('notificationclick', function (event) {
-	setUpHwid();
-	var tag = event.notification.tag;
-	tag = JSON.parse(tag);
-	console.log(event);
-	console.log("Push open hwid = " + hwid + ". Tag = " + event.notification.tag);
-	event.waitUntil(
-		fetch(pushwooshUrl + 'pushStat', {
-			method: 'post',
-			headers: {
-				"Content-Type": "text/plain;charset=UTF-8"
-			},
-			body: JSON.stringify({
-				"request": {
-					"application": APPLICATION_CODE,
-					"hwid": hwid,
-					"hash": tag.messageHash
-				}
-			})
-		}).then(function (response) {
-				console.log(response);
-			}
-		));
-
-	// Android doesn't close the notification when you click on it
-	// See: http://crbug.com/463146
-	event.notification.close();
-
-	return clients.openWindow(tag.url);
+			return clients.openWindow(tag.url);
+		})
+	);
 });
 
 // refresh caches
@@ -186,12 +195,4 @@ function getPushToken(pushSubscription) {
 		pushToken = pushSubscription.endpoint.split('/').pop();
 	}
 	return pushToken;
-}
-
-function setUpHwid() {
-	self.registration.pushManager.getSubscription().then(function (subscription) {
-		if (subscription) {
-			hwid = generateHwid(getPushToken(subscription));
-		}
-	});
 }
