@@ -138,8 +138,17 @@ function setTags(tags) {
 function createUUID(pushToken) {
 	var s = [];
 	var hexDigits = "0123456789abcdef";
+	var charCode = '0';
+	var pushTokenIndex = 0;
 	for (var i = 0; i < 32; i++) {
-		s[i] = hexDigits.substr(pushToken.charCodeAt(pushToken.length - i - 1) % hexDigits.length, 1);
+		pushTokenIndex = pushToken.length - i - 1;
+		if (pushTokenIndex >= 0) {
+			charCode = pushToken.charCodeAt(pushTokenIndex)
+		}
+		else {
+			charCode = '0';
+		}
+		s[i] = hexDigits.substr(charCode % hexDigits.length, 1);
 	}
 	return s.join("");
 }
