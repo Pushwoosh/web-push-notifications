@@ -1,5 +1,5 @@
 var PUSHWOOSH_SERVICE_WORKER_URL = '/service-worker.js';
-var PUSHWOOSH_SAFARI_WEB_SITE_PUSH_ID = 'web.com.pushwoosh.websiteid';	//Enter your Safari website IS here
+var PUSHWOOSH_SAFARI_WEB_SITE_PUSH_ID = 'web.com.pushwoosh.websiteid';	//Enter your Safari website ID here
 
 var PushwooshBase = function()
 {
