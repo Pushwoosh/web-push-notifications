@@ -1,20 +1,14 @@
-Web push notifications.
+Web push notifications
 =========================
 
-Scripts:
-https://github.com/Pushwoosh/chrome-push-notifications/tree/master/Browser/
+Available from version 42 of Google Chrome browser.
 
-Guide for Chrome push:  
-https://www.pushwoosh.com/programming-push-notification/chrome/chrome-web-push/
+Google Chrome guide:  
+http://docs.pushwoosh.com/docs/chrome-web-push
 http://docs.pushwoosh.com/docs/chrome-web-push-for-http-websites
+
+Available from version 44 of Mozilla Firefox.
 
 Guide for Firefox push:  
 http://docs.pushwoosh.com/docs/firefox-web-push
 
-=========================
-
-Push notifications for Google Chrome via Extension (Deprecated):  
-https://github.com/Pushwoosh/chrome-push-notifications/tree/master/ViaExtension
-
-Guide:  
-http://docs.pushwoosh.com/docs/chrome-extension
