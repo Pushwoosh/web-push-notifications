@@ -579,5 +579,5 @@ function pushwooshSetTags(tags)
 
 // Try to subscribe for a push notification when page is loaded
 //window.addEventListener('load', function () {
-//	subscribe();
+//	pushwooshSubscribe();
 //});
