@@ -2,7 +2,7 @@ var PUSHWOOSH_SERVICE_WORKER_URL = '/service-worker.js';
 var PUSHWOOSH_DEFAULT_IMAGE = 'https://cp.pushwoosh.com/img/logo-medium.png';
 var PUSHWOOSH_DEFAULT_TITLE = 'Title';
 
-//this is a copy of a PushwooshBase in pushwoosh-chrome.js, just using fetch instead of xhr
+//this is a copy of a PushwooshBase in pushwoosh-web-notifications.js, just using fetch instead of xhr
 var PushwooshBase = function()
 {
 	this.APPLICATION_CODE = "XXXXX-XXXXX"; // Your Application Code from Pushwoosh
