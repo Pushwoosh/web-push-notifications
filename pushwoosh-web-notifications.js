@@ -425,6 +425,7 @@ PushwooshSafari.prototype.subscribe = function()
 
 PushwooshSafari.prototype.unsubscribe = function()
 {
+	this.pushwooshUnregisterDevice(this.hwid);
 };
 
 PushwooshSafari.prototype.checkRemotePermission = function(permissionData)
