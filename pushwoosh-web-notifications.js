@@ -63,7 +63,7 @@ PushwooshBase.prototype.pushwooshRegisterDevice = function (pushToken, hwid, enc
 			"push_token": pushToken,
 			"language": window.navigator.language || 'en',  // Language locale of the device, must be a lowercase two-letter code according to the ISO-639-1 standard
 			"hwid": hwid,
-			"timezone": (new Date).getTimezoneOffset(), // offset in seconds
+			"timezone": (new Date).getTimezoneOffset() * 60, // offset in seconds
 			"device_model": this.getBrowserVersion(),
 			"device_name": this.pushwooshGetDeviceName(),
 			"device_type": this.pushwooshGetBrowserType(),
