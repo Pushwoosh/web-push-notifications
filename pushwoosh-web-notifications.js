@@ -462,7 +462,7 @@ PushwooshSafari.prototype.checkRemotePermission = function(permissionData)
     else if (permissionData.permission === 'granted')
     {
         console.log('The web service URL is a valid push provider, and the user said yes.');
-        console.log('You deviceToken is ' + permissionData.deviceToken);
+	    console.log('You pushtoken is ' + permissionData.deviceToken.toLowerCase());
         // set system tags
         try
         {
