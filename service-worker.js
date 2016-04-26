@@ -384,21 +384,6 @@ var PWServiceWorker = function()
 	this.pushDefaultUrl = '/';
 	this.DEBUG_MODE = false;
 	this.deviceType = this.pushwooshGetBrowserType();
-
-	var thisO = this;
-
-	try
-	{
-		self.registration.pushManager.getSubscription().
-		then( function(subscription)
-		{
-			if (subscription)
-			{
-				thisO.hwid = thisO.generateHwid(thisO.getPushToken(subscription));
-			}
-		});
-	}
-	catch(e) {}
 };
 
 PWServiceWorker.prototype = Object.create(PushwooshChrome.prototype);
@@ -577,7 +562,7 @@ PWServiceWorker.prototype.notificationClicked = function (event)
 	var tag = event.notification.tag;
 	tag = JSON.parse(tag);
 	console.log(event);
-	console.log("Push open hwid = " + thisO.hwid + ". Tag = " + event.notification.tag);
+	console.log("Push open with tag = " + event.notification.tag);
 	event.waitUntil(
 		self.registration.pushManager.getSubscription().
 		then(function (subscription)
