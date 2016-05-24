@@ -1,0 +1,25 @@
+{
+  "name": "web-push-notifications",
+  "version": "2.0.0",
+  "description": "Pushwoosh web push notifications",
+  "main": "lib/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Pushwoosh/web-push-notifications.git"
+  },
+  "keywords": [
+    "pushwoosh",
+    "web",
+    "push",
+    "notifications"
+  ],
+  "author": "Pushwoosh",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Pushwoosh/web-push-notifications/issues"
+  },
+  "homepage": "https://github.com/Pushwoosh/web-push-notifications#readme"
+}
