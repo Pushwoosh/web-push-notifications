@@ -1,3 +1,5 @@
 syntax: glob
 
 .idea
+lib/
+node_modules/
