@@ -1,6 +1,6 @@
 {
   "name": "web-push-notifications",
-  "version": "2.0.0-beta",
+  "version": "2.0.0-beta.1",
   "description": "Pushwoosh web push notifications",
   "main": "lib/index.js",
   "scripts": {
