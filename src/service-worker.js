@@ -24,7 +24,7 @@ class WorkerRunner {
 
   initApi() {
     if (this.api) {
-      Promise.resolve();
+      return Promise.resolve();
     }
     return Promise.all([
       self.registration.pushManager.getSubscription(),
