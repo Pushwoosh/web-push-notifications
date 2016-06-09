@@ -1,0 +1,7 @@
+{
+  "name": "Pushwoosh Demo",
+  "short_name": "Pushwoosh Demo",
+  "gcm_sender_id": "GOOGLE_PROJECT_NUMBER",
+  "display": "standalone",
+  "gcm_user_visible_only": true
+}

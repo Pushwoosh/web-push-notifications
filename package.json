@@ -9,7 +9,8 @@
     "build": "npm run build:lib && npm run build:dist && npm run build:dist:min",
     "build:lib": "babel src --out-dir lib",
     "build:dist": "webpack",
-    "build:dist:min": "cross-env NODE_ENV=production webpack"
+    "build:dist:min": "cross-env NODE_ENV=production webpack",
+    "zip": "cp files/manifest.json dist/ && babel-node scripts/zip.js"
   },
   "repository": {
     "type": "git",
