@@ -1,4 +1,4 @@
-import localForage from 'localforage';
+import {codesKeyValue} from './utils/storage';
 import {keyApplicationCode, defaultPushwooshUrl} from './constants';
 import Logger from './classes/Logger';
 import API from './classes/API';
@@ -14,7 +14,7 @@ class WorkerRunner {
   }
 
   getApplicationCode() {
-    return localForage.getItem(keyApplicationCode).then(code => {
+    return codesKeyValue().get(keyApplicationCode).then(code => {
       if (!code) {
         throw new Error('no code');
       }

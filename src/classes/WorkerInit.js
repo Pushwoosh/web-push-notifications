@@ -1,4 +1,4 @@
-import localForage from 'localforage';
+import {codesKeyValue} from '../utils/storage';
 import EventEmitter from 'eventemitter3';
 import createDoApiXHR from '../utils/createDoApiXHR';
 import API from './API';
@@ -96,6 +96,6 @@ export default class PushwooshWorker {
         localStorage.setItem(keyWasRegistered, 'true');
         return this.api.registerDevice();
       }
-    }).then(() => localForage.setItem(keyApplicationCode, this.applicationCode));
+    }).then(() => codesKeyValue().set(keyApplicationCode, this.applicationCode));
   }
 }
