@@ -45,7 +45,8 @@ class KeyValueStore {
       return new Promise((resolve, reject) => {
         const request = database.transaction(this.name).objectStore(this.name).get(key);
         request.onsuccess = () => {
-          resolve(request.result.value);
+          const {result} = request;
+          resolve(result && result.value);
         };
         request.onerror = () => {
           reject(request.errorCode);
