@@ -31,7 +31,10 @@ export default class PushwooshGlobal {
       safariWebsitePushID,
       serviceWorkerUrl = defaultWorkerUrl,
       logLevel,
-      pushwooshUrl = defaultPushwooshUrl
+      pushwooshUrl = defaultPushwooshUrl,
+      defaultNotificationTitle,
+      defaultNotificationImage,
+      defaultNotificationUrl
     } = params;
     this._initParams = params;
     this._logger = new Logger(logLevel);
@@ -58,8 +61,11 @@ export default class PushwooshGlobal {
       if (serviceWorkerUrl) {
         const worker = new PushwooshWorker({
           workerUrl: serviceWorkerUrl,
-          pushwooshUrl: pushwooshUrl,
-          applicationCode: applicationCode,
+          pushwooshUrl,
+          applicationCode,
+          defaultNotificationTitle,
+          defaultNotificationImage,
+          defaultNotificationUrl,
           logger: this._logger
         });
         this._init(worker.init());

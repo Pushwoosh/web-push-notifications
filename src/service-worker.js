@@ -1,5 +1,9 @@
-import {codesKeyValue} from './utils/storage';
-import {keyApplicationCode, defaultPushwooshUrl} from './constants';
+import {keyValue} from './utils/storage';
+import {
+  keyApplicationCode, defaultPushwooshUrl,
+  keyDefaultNotificationTitle, keyDefaultNotificationImage, keyDefaultNotificationUrl,
+  defaultNotificationTitle, defaultNotificationImage, defaultNotificationUrl
+} from './constants';
 import Logger from './classes/Logger';
 import API from './classes/API';
 import {getPushToken, generateHwid, getEncryptionKey, getBrowserType} from './utils/functions';
@@ -14,7 +18,7 @@ class WorkerRunner {
   }
 
   getApplicationCode() {
-    return codesKeyValue().get(keyApplicationCode).then(code => {
+    return keyValue.get(keyApplicationCode).then(code => {
       if (!code) {
         throw new Error('no code');
       }
@@ -49,21 +53,27 @@ class WorkerRunner {
     this.logger.info('showMessage', result);
     const {notification} = result;
 
-    const title = notification.chromeTitle || 'Title';
-    const message = notification.content;
-    const icon = notification.chromeIcon || 'https://cp.pushwoosh.com/img/logo-medium.png';
-    const messageHash = notification.messageHash;
-    const url = notification.url || '/';
+    return Promise.all([
+      keyValue.get(keyDefaultNotificationTitle),
+      keyValue.get(keyDefaultNotificationImage),
+      keyValue.get(keyDefaultNotificationUrl)
+    ]).then(([userTitle, userImage, userUrl]) => {
+      const title = notification.chromeTitle || userTitle || defaultNotificationTitle;
+      const message = notification.content;
+      const icon = notification.chromeIcon || userImage || defaultNotificationImage;
+      const messageHash = notification.messageHash;
+      const url = notification.url || userUrl || defaultNotificationUrl;
 
 
-    const tag = {
-      url: url,
-      messageHash: messageHash
-    };
-    return self.registration.showNotification(title, {
-      body: message,
-      icon: icon,
-      tag: JSON.stringify(tag)
+      const tag = {
+        url: url,
+        messageHash: messageHash
+      };
+      return self.registration.showNotification(title, {
+        body: message,
+        icon: icon,
+        tag: JSON.stringify(tag)
+      });
     });
   }
 

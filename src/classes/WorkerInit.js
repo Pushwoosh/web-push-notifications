@@ -1,4 +1,4 @@
-import {codesKeyValue} from '../utils/storage';
+import {keyValue} from '../utils/storage';
 import EventEmitter from 'eventemitter3';
 import createDoApiXHR from '../utils/createDoApiXHR';
 import API from './API';
@@ -6,13 +6,19 @@ import PushwooshError from './PushwooshError';
 
 import {getPushToken, generateHwid, getEncryptionKey} from '../utils/functions';
 
-import {keyWasRegistered, keyApplicationCode} from '../constants';
+import {
+  keyWasRegistered, keyApplicationCode,
+  keyDefaultNotificationTitle, keyDefaultNotificationImage, keyDefaultNotificationUrl
+} from '../constants';
 
 export default class PushwooshWorker {
   constructor(params) {
     this.workerUrl = params.workerUrl;
     this.pushwooshUrl = params.pushwooshUrl;
     this.applicationCode = params.applicationCode;
+    this.defaultNotificationTitle = params.defaultNotificationTitle;
+    this.defaultNotificationImage = params.defaultNotificationImage;
+    this.defaultNotificationUrl = params.defaultNotificationUrl;
     this.logger = params.logger;
 
     this.ee = new EventEmitter();
@@ -96,6 +102,11 @@ export default class PushwooshWorker {
         localStorage.setItem(keyWasRegistered, 'true');
         return this.api.registerDevice();
       }
-    }).then(() => codesKeyValue().set(keyApplicationCode, this.applicationCode));
+    }).then(() => Promise.all([
+      keyValue.set(keyApplicationCode, this.applicationCode),
+      keyValue.set(keyDefaultNotificationTitle, this.defaultNotificationTitle),
+      keyValue.set(keyDefaultNotificationImage, this.defaultNotificationImage),
+      keyValue.set(keyDefaultNotificationUrl, this.defaultNotificationUrl)
+    ]));
   }
 }

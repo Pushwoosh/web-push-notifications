@@ -7,7 +7,7 @@ function getInstance() {
       resolve(instance);
     }
     else {
-      const request = indexedDB.open('PUSHWOOSH_SDK_STORE', 1);
+      const request = indexedDB.open('PUSHWOOSH_SDK_STORE', 2);
       request.onsuccess = (event) => {
         const database = event.target.result;
         if (instance) {
@@ -24,7 +24,7 @@ function getInstance() {
       };
       request.onupgradeneeded = (event) => {
         const database = event.target.result;
-        database.createObjectStore('codes', {
+        database.createObjectStore('keyValue', {
           keyPath: 'key'
         });
       };
@@ -70,6 +70,4 @@ class KeyValueStore {
   }
 }
 
-export function codesKeyValue() {
-  return new KeyValueStore('codes');
-}
+export const keyValue = new KeyValueStore('keyValue');
