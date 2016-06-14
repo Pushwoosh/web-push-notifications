@@ -97,10 +97,14 @@ class WorkerRunner {
     return clients.openWindow(tag.url); // eslint-disable-line no-undef
   }
 
+  install(event) {
+    event.waitUntil(self.skipWaiting());
+  }
+
   activate(event) {
     return event.waitUntil(caches.keys().then(cacheNames => {
       return Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
-    }));
+    }).then(self.clients.claim()));
   }
 }
 
@@ -109,6 +113,7 @@ const runner = new WorkerRunner();
 
 self.addEventListener('push', (event) => runner.push(event));
 self.addEventListener('notificationclick', (event) => runner.click(event));
+self.addEventListener('install', (event) => runner.install(event));
 self.addEventListener('activate', (event) => runner.activate(event));
 
 self.Pushwoosh = runner;
