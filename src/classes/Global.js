@@ -90,7 +90,12 @@ export default class PushwooshGlobal {
       }
     }
     else if (Array.isArray(func) && func[0] === 'init') {
-      this.init(func[1]);
+      if (document.readyState === 'complete') {
+        this.init(func[1]);
+      }
+      else {
+        window.addEventListener('load', () => this.init(func[1]));
+      }
     }
     else {
       throw new Error('invalid command');

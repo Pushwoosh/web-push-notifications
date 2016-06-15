@@ -26,21 +26,20 @@ var config = {
     filename: 'pushwoosh-[name].' + (production ? 'min.' : '') + 'js'
   },
   plugins: [
-    new webpack.optimize.OccurrenceOrderPlugin()
-  ]
-};
-
-if (production) {
-  config.plugins.push(
-    new webpack.optimize.UglifyJsPlugin({
-      compressor: {
+    new webpack.optimize.OccurrenceOrderPlugin(),
+    production && new webpack.optimize.UglifyJsPlugin({
+      compress: {
         pure_getters: true,
         unsafe: true,
         unsafe_comps: true,
         warnings: false
+      },
+      mangle: true,
+      output: {
+        comments: false
       }
     })
-  );
-}
+  ].filter(function (x) { return x; })
+};
 
 module.exports = config;

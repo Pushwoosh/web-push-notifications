@@ -2,6 +2,10 @@ export function getGlobal() {
   return Function('return this')();  // eslint-disable-line no-new-func
 }
 
+export function getVersion() {
+  return __VERSION__;
+}
+
 export function isSafariBrowser() {
   return window && window.safari && navigator.userAgent.indexOf('Safari') > -1;
 }
