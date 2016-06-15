@@ -5,7 +5,6 @@ var production = process.env.NODE_ENV === 'production';
 
 var config = {
   module: {
-    noParse: /node_modules\/localforage\/dist\/localforage.js/,
     preLoaders: [{
       test: /\.js$/,
       loader: 'eslint',

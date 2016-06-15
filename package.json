@@ -1,9 +1,10 @@
 {
   "name": "web-push-notifications",
-  "version": "2.0.0-beta.6",
+  "version": "2.0.0-beta.7",
   "description": "Pushwoosh web push notifications",
   "main": "lib/index.js",
   "scripts": {
+    "prepublish": "npm run build",
     "test": "echo \"Error: no test specified\" && exit 1",
     "clean": "rimraf lib dist",
     "build": "npm run build:lib && npm run build:dist && npm run build:dist:min",
@@ -16,6 +17,7 @@
     "type": "git",
     "url": "git+https://github.com/Pushwoosh/web-push-notifications.git"
   },
+  "files": ["lib"],
   "keywords": [
     "pushwoosh",
     "web",
