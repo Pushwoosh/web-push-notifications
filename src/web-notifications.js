@@ -12,7 +12,9 @@ if (Pushwoosh) {
 }
 
 Pushwoosh = new PushwooshGlobal();
-predefinedCommands.forEach(c => Pushwoosh.push(c));
+if (Array.isArray(predefinedCommands)) {
+  predefinedCommands.forEach(c => Pushwoosh.push(c));
+}
 
 Pushwoosh.keyValue = keyValue; // for debug
 global.Pushwoosh = Pushwoosh;
