@@ -2,11 +2,12 @@ import {keyValue} from './utils/storage';
 import {
   keyApplicationCode, defaultPushwooshUrl,
   keyDefaultNotificationTitle, keyDefaultNotificationImage, keyDefaultNotificationUrl,
-  defaultNotificationTitle, defaultNotificationImage, defaultNotificationUrl
+  defaultNotificationTitle, defaultNotificationImage, defaultNotificationUrl,
+  keyWorkerSDKVersion
 } from './constants';
 import Logger from './classes/Logger';
 import API from './classes/API';
-import {getPushToken, generateHwid, getEncryptionKey, getBrowserType} from './utils/functions';
+import {getPushToken, generateHwid, getEncryptionKey, getBrowserType, getVersion} from './utils/functions';
 import createDoApiFetch from './utils/createDoApiFetch';
 
 // console.log(self.location);
@@ -98,7 +99,7 @@ class WorkerRunner {
   }
 
   install(event) {
-    event.waitUntil(self.skipWaiting());
+    event.waitUntil(keyValue.set(keyWorkerSDKVersion, getVersion()).then(() => self.skipWaiting()));
   }
 
   activate(event) {

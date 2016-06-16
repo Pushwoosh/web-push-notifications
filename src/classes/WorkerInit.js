@@ -4,16 +4,22 @@ import createDoApiXHR from '../utils/createDoApiXHR';
 import API from './API';
 import PushwooshError from './PushwooshError';
 
-import {getPushToken, generateHwid, getEncryptionKey} from '../utils/functions';
+import {getPushToken, generateHwid, getEncryptionKey, getVersion} from '../utils/functions';
+
+function contains(str, need) {
+  return ~`${str}`.indexOf(need);
+}
 
 import {
   keyWasRegistered, keyApplicationCode,
-  keyDefaultNotificationTitle, keyDefaultNotificationImage, keyDefaultNotificationUrl
+  keyDefaultNotificationTitle, keyDefaultNotificationImage, keyDefaultNotificationUrl,
+  keyWorkerSDKVersion
 } from '../constants';
 
 export default class PushwooshWorker {
   constructor(params) {
     this.workerUrl = params.workerUrl;
+    this.workerUpdaterUrl = params.workerUpdaterUrl;
     this.pushwooshUrl = params.pushwooshUrl;
     this.applicationCode = params.applicationCode;
     this.defaultNotificationTitle = params.defaultNotificationTitle;
@@ -24,14 +30,41 @@ export default class PushwooshWorker {
     this.ee = new EventEmitter();
   }
 
-  getWorkerUrl() {
-    return `${this.workerUrl}?applicationCode=${this.applicationCode}`;
+  getWorkerUrl(updater) {
+    return `${updater ? this.workerUpdaterUrl : this.workerUrl}?applicationCode=${this.applicationCode}`;
   }
 
   trySubscribe() {
-    navigator.serviceWorker.register(this.getWorkerUrl())
-      .then(serviceWorkerRegistration => this.registerServiceWorker(serviceWorkerRegistration))
+    navigator.serviceWorker.getRegistration()
+      .then(serviceWorkerRegistration => {
+        this.logger.debug('sw', serviceWorkerRegistration);
+        if (!serviceWorkerRegistration) {
+          return this.registerSW();
+        }
+        if (serviceWorkerRegistration.active) {
+          return keyValue.get(keyWorkerSDKVersion).then(workerSDKVersion => {
+            const curVersion = getVersion();
+            this.logger.debug('workerSDKVersion===curVersion', workerSDKVersion, curVersion);
+            if (workerSDKVersion !== curVersion) {
+              this.logger.debug('re-register for new version');
+              return this.registerSW(contains(serviceWorkerRegistration.active.scriptURL, this.workerUrl));
+            }
+            return serviceWorkerRegistration;
+          });
+        }
+        else if (serviceWorkerRegistration.installing == null) {
+          return this.registerSW();
+        }
+        return serviceWorkerRegistration;
+      })
+      .then(serviceWorkerRegistration => this.subscribeForPushes(serviceWorkerRegistration))
+      .then(() => this.ee.emit('success'))
       .catch(err => this.ee.emit('failure', err));
+  }
+
+  registerSW(updater) {
+    this.logger.debug('register worker', updater);
+    return navigator.serviceWorker.register(this.getWorkerUrl(updater));
   }
 
   init() {
@@ -44,18 +77,17 @@ export default class PushwooshWorker {
     });
   }
 
-
-  registerServiceWorker(serviceWorkerRegistration) {
+  subscribeForPushes(serviceWorkerRegistration) {
     if (!('showNotification' in ServiceWorkerRegistration.prototype) || !('PushManager' in window)) {
       const err = 'Notifications aren\'t supported.';
       this.logger.error(err);
-      return this.ee.emit('failure', err);
+      throw err;
     }
 
     if (Notification.permission === 'denied') {
       const err = new PushwooshError('The user has blocked notifications.', PushwooshError.codes.userDenied);
       this.logger.error(err);
-      return this.ee.emit('failure', err);
+      throw err;
     }
 
     return serviceWorkerRegistration.pushManager.getSubscription()
@@ -81,9 +113,9 @@ export default class PushwooshWorker {
           pushToken: pushToken,
           encryptionKey: encryptionKey
         });
-        return this.register().then(() => this.ee.emit('success'));
+        return this.register();
       })
-      .catch((e) => {
+      .catch(e => {
         let err;
         if (Notification.permission === 'denied') {
           err = new PushwooshError('Permission for Notifications was denied.', PushwooshError.codes.userDenied);
