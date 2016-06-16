@@ -74,15 +74,15 @@ export function createUUID(pushToken) {
 }
 
 export function getPushToken(pushSubscription) {
-    if (pushSubscription.subscriptionId) {
-        return pushSubscription.subscriptionId;
-    }
+  if (pushSubscription.subscriptionId) {
+    return pushSubscription.subscriptionId;
+  }
 
-    if (getBrowserType() === 12) {
-        return pushSubscription.endpoint;
-    }
+  if (getBrowserType() === 12) {
+    return pushSubscription.endpoint;
+  }
 
-    return pushSubscription.endpoint.split('/').pop();
+  return pushSubscription.endpoint.split('/').pop();
 }
 
 export function generateHwid(applicationCode, pushToken) {
