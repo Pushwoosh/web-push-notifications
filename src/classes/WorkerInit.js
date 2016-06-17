@@ -6,10 +6,6 @@ import PushwooshError from './PushwooshError';
 
 import {getPushToken, generateHwid, getEncryptionKey, getVersion} from '../utils/functions';
 
-function contains(str, need) {
-  return ~`${str}`.indexOf(need);
-}
-
 import {
   keyWasRegistered, keyApplicationCode,
   keyDefaultNotificationTitle, keyDefaultNotificationImage, keyDefaultNotificationUrl,
@@ -19,7 +15,7 @@ import {
 export default class PushwooshWorker {
   constructor(params) {
     this.workerUrl = params.workerUrl;
-    this.workerUpdaterUrl = params.workerUpdaterUrl;
+    this.workerSecondUrl = params.workerSecondUrl;
     this.pushwooshUrl = params.pushwooshUrl;
     this.applicationCode = params.applicationCode;
     this.defaultNotificationTitle = params.defaultNotificationTitle;
@@ -30,8 +26,8 @@ export default class PushwooshWorker {
     this.ee = new EventEmitter();
   }
 
-  getWorkerUrl(updater) {
-    return `${updater ? this.workerUpdaterUrl : this.workerUrl}?applicationCode=${this.applicationCode}`;
+  getWorkerUrl(second) {
+    return `${second ? this.workerSecondUrl : this.workerUrl}?applicationCode=${this.applicationCode}`;
   }
 
   trySubscribe() {
@@ -47,7 +43,7 @@ export default class PushwooshWorker {
             this.logger.debug('workerSDKVersion===curVersion', workerSDKVersion, curVersion);
             if (workerSDKVersion !== curVersion) {
               this.logger.debug('re-register for new version');
-              return this.registerSW(contains(serviceWorkerRegistration.active.scriptURL, this.workerUrl));
+              return this.registerSW(`${serviceWorkerRegistration.active.scriptURL}`.indexOf(this.workerUrl) > -1);
             }
             return serviceWorkerRegistration;
           });
@@ -62,9 +58,9 @@ export default class PushwooshWorker {
       .catch(err => this.ee.emit('failure', err));
   }
 
-  registerSW(updater) {
-    this.logger.debug('register worker', updater);
-    return navigator.serviceWorker.register(this.getWorkerUrl(updater));
+  registerSW(second) {
+    this.logger.debug('register worker', second);
+    return navigator.serviceWorker.register(this.getWorkerUrl(second));
   }
 
   init() {

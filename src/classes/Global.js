@@ -5,7 +5,7 @@ import PushwooshSafari from './SafariInit';
 import PushwooshWorker from './WorkerInit';
 import {ctrateErrorAPI} from './API';
 
-import {defaultPushwooshUrl, defaultWorkerUrl, defaultWorkerUpdaterUrl} from '../constants';
+import {defaultPushwooshUrl, defaultWorkerUrl, defaultWorkerSecondUrl} from '../constants';
 
 const isSafari = isSafariBrowser();
 const canUseSW = canUseServiceWorkers();
@@ -30,7 +30,7 @@ export default class PushwooshGlobal {
       applicationCode,
       safariWebsitePushID,
       serviceWorkerUrl = defaultWorkerUrl,
-      serviceWorkerUpdaterUrl = defaultWorkerUpdaterUrl,
+      serviceWorkerSecondUrl = defaultWorkerSecondUrl,
       logLevel,
       pushwooshUrl = defaultPushwooshUrl,
       defaultNotificationTitle,
@@ -62,7 +62,7 @@ export default class PushwooshGlobal {
       if (serviceWorkerUrl) {
         const worker = new PushwooshWorker({
           workerUrl: serviceWorkerUrl,
-          workerUpdaterUrl: serviceWorkerUpdaterUrl,
+          workerSecondUrl: serviceWorkerSecondUrl,
           pushwooshUrl,
           applicationCode,
           defaultNotificationTitle,
