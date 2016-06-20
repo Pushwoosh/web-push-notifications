@@ -80,9 +80,6 @@ class WorkerRunner {
 
   push(event) {
     this.logger.info('onPush', event);
-    if (event.data) {
-      this.logger.debug(event.data.json());
-    }
     event.waitUntil(this.initApi().then(() => {
       return this.api.callAPI('getLastMessage', {device_type: getBrowserType()}).then(lastMessage => {
         return this.showMessage(lastMessage);
