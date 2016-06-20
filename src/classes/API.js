@@ -16,6 +16,7 @@ export default class PushwooshAPI {
     this.hwid = params.hwid;
     this.pushToken = params.pushToken;
     this.publicKey = params.publicKey;
+    this.authToken = params.authToken;
   }
 
   callAPI(methodName, methodParams) {
@@ -30,6 +31,7 @@ export default class PushwooshAPI {
     return this.callAPI('registerDevice', {
       push_token: this.pushToken,
       public_key: this.publicKey,
+      auth_token: this.authToken,
       language: window.navigator.language || 'en',  // Language locale of the device, must be a lowercase two-letter code according to the ISO-639-1 standard
       timezone: -(new Date).getTimezoneOffset() * 60, // offset in seconds
       device_model: getBrowserVersion(),

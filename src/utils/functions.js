@@ -85,6 +85,16 @@ export function getPushToken(pushSubscription) {
   return pushSubscription.endpoint.split('/').pop();
 }
 
+export function getAuthToken(pushSubscription) {
+  if (pushSubscription.getKey) {
+    const authKey = pushSubscription.getKey('auth');
+    if (authKey) {
+      return btoa(String.fromCharCode(...new Uint8Array(authKey)));
+    }
+  }
+  return '';
+}
+
 export function generateHwid(applicationCode, pushToken) {
   return `${applicationCode}_${createUUID(pushToken)}`;
 }

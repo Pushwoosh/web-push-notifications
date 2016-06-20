@@ -1,13 +1,14 @@
 {
   "name": "web-push-notifications",
-  "version": "2.0.0",
+  "version": "2.1.0-alpha",
   "description": "Pushwoosh web push notifications",
   "main": "lib/index.js",
   "scripts": {
     "prepublish": "npm run build",
     "test": "echo \"Error: no test specified\" && exit 1",
     "clean": "rimraf lib dist",
-    "build": "npm run build:lib && npm run build:dist && npm run build:dist:min",
+    "build:debug": "npm run build && cp -f dist/pushwoosh-service-worker.js dist/pushwoosh-service-worker-light.js && cp -f dist/pushwoosh-service-worker.js dist/pushwoosh-service-worker-dark.js",
+    "build": "npm run build:lib && npm run build:dist",
     "build:lib": "babel src --out-dir lib",
     "build:dist": "webpack",
     "build:dist:min": "cross-env NODE_ENV=production webpack",

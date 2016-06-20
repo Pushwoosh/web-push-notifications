@@ -4,7 +4,7 @@ import createDoApiXHR from '../utils/createDoApiXHR';
 import API from './API';
 import PushwooshError from './PushwooshError';
 
-import {getPushToken, generateHwid, getEncryptionKey, getVersion} from '../utils/functions';
+import {getPushToken, generateHwid, getEncryptionKey, getAuthToken, getVersion} from '../utils/functions';
 
 import {
   keyWasRegistered, keyApplicationCode,
@@ -101,13 +101,15 @@ export default class PushwooshWorker {
         const pushToken = getPushToken(subscription);
         const hwid = generateHwid(this.applicationCode, pushToken);
         const encryptionKey = getEncryptionKey(subscription);
+        const authToken = getAuthToken(subscription);
 
         this.api = new API({
           doPushwooshApiMethod: createDoApiXHR(this.pushwooshUrl, this.logger),
           applicationCode: this.applicationCode,
           hwid: hwid,
           pushToken: pushToken,
-          encryptionKey: encryptionKey
+          encryptionKey: encryptionKey,
+          authToken: authToken
         });
         return this.register();
       })
