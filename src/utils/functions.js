@@ -99,7 +99,7 @@ export function generateHwid(applicationCode, pushToken) {
   return `${applicationCode}_${createUUID(pushToken)}`;
 }
 
-export function getEncryptionKey(pushSubscription) {
+export function getPublicKey(pushSubscription) {
   const rawKey = pushSubscription.getKey ? pushSubscription.getKey('p256dh') : '';
   return rawKey ? btoa(String.fromCharCode(...new Uint8Array(rawKey))) : '';
 }

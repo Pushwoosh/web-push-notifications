@@ -7,7 +7,7 @@ import {
 } from './constants';
 import Logger from './classes/Logger';
 import API from './classes/API';
-import {getPushToken, generateHwid, getEncryptionKey, getBrowserType, getVersion} from './utils/functions';
+import {getPushToken, generateHwid, getPublicKey, getBrowserType, getVersion} from './utils/functions';
 import createDoApiFetch from './utils/createDoApiFetch';
 
 // console.log(self.location);
@@ -38,14 +38,14 @@ class WorkerRunner {
       .then(([subscription, applicationCode]) => {
         const pushToken = getPushToken(subscription);
         const hwid = generateHwid(applicationCode, pushToken);
-        const encryptionKey = getEncryptionKey(subscription);
+        const publicKey = getPublicKey(subscription);
 
         this.api = new API({
           doPushwooshApiMethod: createDoApiFetch(this.pushwooshUrl, this.logger),
           applicationCode: applicationCode,
           hwid: hwid,
           pushToken: pushToken,
-          encryptionKey: encryptionKey
+          publicKey: publicKey
         });
       });
   }
@@ -64,8 +64,6 @@ class WorkerRunner {
       const icon = notification.chromeIcon || userImage || defaultNotificationImage;
       const messageHash = notification.messageHash;
       const url = notification.url || userUrl || defaultNotificationUrl;
-
-
       const tag = {
         url: url,
         messageHash: messageHash
@@ -99,10 +97,12 @@ class WorkerRunner {
   }
 
   install(event) {
+    this.logger.info('onInstall', event);
     event.waitUntil(keyValue.set(keyWorkerSDKVersion, getVersion()).then(() => self.skipWaiting()));
   }
 
   activate(event) {
+    this.logger.info('onActivate', event);
     return event.waitUntil(caches.keys().then(cacheNames => {
       return Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
     }).then(self.clients.claim()));

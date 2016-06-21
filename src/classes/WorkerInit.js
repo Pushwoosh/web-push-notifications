@@ -4,7 +4,7 @@ import createDoApiXHR from '../utils/createDoApiXHR';
 import API from './API';
 import PushwooshError from './PushwooshError';
 
-import {getPushToken, generateHwid, getEncryptionKey, getAuthToken, getVersion} from '../utils/functions';
+import {getPushToken, generateHwid, getPublicKey, getAuthToken, getVersion} from '../utils/functions';
 
 import {
   keyWasRegistered, keyApplicationCode,
@@ -100,7 +100,7 @@ export default class PushwooshWorker {
         // The subscription was successful
         const pushToken = getPushToken(subscription);
         const hwid = generateHwid(this.applicationCode, pushToken);
-        const encryptionKey = getEncryptionKey(subscription);
+        const publicKey = getPublicKey(subscription);
         const authToken = getAuthToken(subscription);
 
         this.api = new API({
@@ -108,7 +108,7 @@ export default class PushwooshWorker {
           applicationCode: this.applicationCode,
           hwid: hwid,
           pushToken: pushToken,
-          encryptionKey: encryptionKey,
+          publicKey: publicKey,
           authToken: authToken
         });
         return this.register();
