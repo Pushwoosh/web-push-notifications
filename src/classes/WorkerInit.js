@@ -1,5 +1,5 @@
 import {keyValue} from '../utils/storage';
-import EventEmitter from 'eventemitter3';
+import BaseInit from './BaseInit';
 import createDoApiXHR from '../utils/createDoApiXHR';
 import API from './API';
 import PushwooshError from './PushwooshError';
@@ -12,19 +12,7 @@ import {
   keyWorkerSDKVersion
 } from '../constants';
 
-export default class PushwooshWorker {
-  constructor(params) {
-    this.workerUrl = params.workerUrl;
-    this.workerSecondUrl = params.workerSecondUrl;
-    this.pushwooshUrl = params.pushwooshUrl;
-    this.applicationCode = params.applicationCode;
-    this.defaultNotificationTitle = params.defaultNotificationTitle;
-    this.defaultNotificationImage = params.defaultNotificationImage;
-    this.defaultNotificationUrl = params.defaultNotificationUrl;
-    this.logger = params.logger;
-
-    this.ee = new EventEmitter();
-  }
+export default class PushwooshWorker extends BaseInit {
 
   getWorkerUrl(second) {
     return `${second ? this.workerSecondUrl : this.workerUrl}?applicationCode=${this.applicationCode}`;

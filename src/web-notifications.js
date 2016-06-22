@@ -1,4 +1,3 @@
-import {keyValue} from './utils/storage';
 import PushwooshGlobal from './classes/Global';
 import {getGlobal} from './utils/functions';
 
@@ -16,5 +15,4 @@ if (Array.isArray(predefinedCommands)) {
   predefinedCommands.forEach(c => Pushwoosh.push(c));
 }
 
-Pushwoosh.keyValue = keyValue; // for debug
 global.Pushwoosh = Pushwoosh;

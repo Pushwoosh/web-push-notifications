@@ -52,6 +52,28 @@ function createKeyValue(name) {
       });
     },
 
+    getAll() {
+      return getInstance().then(database => {
+        return new Promise((resolve, reject) => {
+          const result = {};
+          const cursor = database.transaction(name).objectStore(name).openCursor();
+          cursor.onsuccess = (event) => {
+            const cursorResult = event.target.result;
+            if (cursorResult) {
+              result[cursorResult.key] = cursorResult.value.value;
+              cursorResult.continue();
+            }
+            else {
+              resolve(result);
+            }
+          };
+          cursor.onerror = () => {
+            reject(cursor.errorCode);
+          };
+        });
+      });
+    },
+
     set(key, value) {
       return getInstance().then(database => {
         return new Promise((resolve, reject) => {

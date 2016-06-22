@@ -1,3 +1,4 @@
+import {keyValue} from '../utils/storage';
 import {isSafariBrowser, canUseServiceWorkers, getDeviceName} from '../utils/functions';
 
 import Logger from './Logger';
@@ -13,6 +14,7 @@ const canUseSW = canUseServiceWorkers();
 export default class PushwooshGlobal {
   constructor() {
     this._commands = [];
+    this._keyValue = keyValue;
   }
 
   _init(initPromise) {
@@ -49,18 +51,18 @@ export default class PushwooshGlobal {
 
     if (isSafari) {
       if (safariWebsitePushID) {
-        const safari = new PushwooshSafari({
+        this._initer = new PushwooshSafari({
           webSitePushID: safariWebsitePushID,
           pushwooshUrl: pushwooshUrl,
           applicationCode: applicationCode,
           logger: this._logger
         });
-        this._init(safari.init());
+        this._init(this._initer.init());
       }
     }
     else if (canUseSW) {
       if (serviceWorkerUrl) {
-        const worker = new PushwooshWorker({
+        this._initer = new PushwooshWorker({
           workerUrl: serviceWorkerUrl,
           workerSecondUrl: serviceWorkerSecondUrl,
           pushwooshUrl,
@@ -70,7 +72,7 @@ export default class PushwooshGlobal {
           defaultNotificationUrl,
           logger: this._logger
         });
-        this._init(worker.init());
+        this._init(this._initer.init());
       }
     }
     if (!this._initPromise) {
@@ -104,4 +106,12 @@ export default class PushwooshGlobal {
     }
   }
 
+  _debug() {
+    const debugFn = console.info.bind(console); // eslint-disable-line
+    const initerParams = this._initer._params; // eslint-disable-line
+    debugFn('initer params', initerParams);
+    debugFn(`workerUrl: ${location.origin}${initerParams.workerUrl}`);
+    debugFn(`workerSecondUrl: ${location.origin}${initerParams.workerSecondUrl}`);
+    this._keyValue.getAll().then(res => debugFn('keyValues', res));
+  }
 }

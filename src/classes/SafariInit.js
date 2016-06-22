@@ -1,4 +1,4 @@
-import EventEmitter from 'eventemitter3';
+import BaseInit from './BaseInit';
 import createDoApiXHR from '../utils/createDoApiXHR';
 import API from './API';
 import PushwooshError from './PushwooshError';
@@ -8,15 +8,7 @@ import {getBrowserVersion, getDeviceName} from '../utils/functions';
 import {keyTagsWasSetted} from '../constants';
 // const keySubscribed = 'pushwooshSubscribed';
 
-export default class PushwooshSafari {
-  constructor(params) {
-    this.webSitePushID = params.webSitePushID;
-    this.pushwooshUrl = params.pushwooshUrl;
-    this.applicationCode = params.applicationCode;
-    this.logger = params.logger;
-
-    this.ee = new EventEmitter();
-  }
+export default class PushwooshSafari extends BaseInit {
 
   getPermission() {
     return window.safari.pushNotification.permission(this.webSitePushID);
