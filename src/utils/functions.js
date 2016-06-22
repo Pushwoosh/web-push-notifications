@@ -85,21 +85,19 @@ export function getPushToken(pushSubscription) {
   return pushSubscription.endpoint.split('/').pop();
 }
 
-export function getAuthToken(pushSubscription) {
-  if (pushSubscription.getKey) {
-    const authKey = pushSubscription.getKey('auth');
-    if (authKey) {
-      return btoa(String.fromCharCode(...new Uint8Array(authKey)));
-    }
-  }
-  return '';
-}
-
 export function generateHwid(applicationCode, pushToken) {
   return `${applicationCode}_${createUUID(pushToken)}`;
 }
 
-export function getPublicKey(pushSubscription) {
-  const rawKey = pushSubscription.getKey ? pushSubscription.getKey('p256dh') : '';
+function getSubsKey(pushSubscription, key) {
+  const rawKey = pushSubscription.getKey && pushSubscription.getKey(key);
   return rawKey ? btoa(String.fromCharCode(...new Uint8Array(rawKey))) : '';
+}
+
+export function getAuthToken(pushSubscription) {
+  return getSubsKey(pushSubscription, 'auth');
+}
+
+export function getPublicKey(pushSubscription) {
+  return getSubsKey(pushSubscription, 'p256dh');
 }
