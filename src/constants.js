@@ -14,3 +14,5 @@ export const defaultNotificationImage = 'https://cp.pushwoosh.com/img/logo-mediu
 export const defaultNotificationUrl = '/';
 
 export const keyWorkerSDKVersion = 'pushwooshWorkerSDKVersion';
+
+export const keyLanguage = 'pushwooshLanguage';

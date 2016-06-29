@@ -4,12 +4,12 @@ import createDoApiXHR from '../utils/createDoApiXHR';
 import API from './API';
 import PushwooshError from './PushwooshError';
 
-import {getPushToken, generateHwid, getPublicKey, getAuthToken, getVersion} from '../utils/functions';
+import {getVersion} from '../utils/functions';
 
 import {
   keyWasRegistered, keyApplicationCode,
   keyDefaultNotificationTitle, keyDefaultNotificationImage, keyDefaultNotificationUrl,
-  keyWorkerSDKVersion
+  keyWorkerSDKVersion, keyLanguage
 } from '../constants';
 
 export default class PushwooshWorker extends BaseInit {
@@ -85,20 +85,12 @@ export default class PushwooshWorker extends BaseInit {
         return subscription;
       })
       .then(subscription => {
-        // The subscription was successful
-        const pushToken = getPushToken(subscription);
-        const hwid = generateHwid(this.applicationCode, pushToken);
-        const publicKey = getPublicKey(subscription);
-        const authToken = getAuthToken(subscription);
-
-        this.api = new API({
-          doPushwooshApiMethod: createDoApiXHR(this.pushwooshUrl, this.logger),
-          applicationCode: this.applicationCode,
-          hwid: hwid,
-          pushToken: pushToken,
-          publicKey: publicKey,
-          authToken: authToken
-        });
+        this.api = API.create(
+          subscription,
+          this.applicationCode,
+          createDoApiXHR(this.pushwooshUrl, this.logger),
+          navigator.language
+        );
         return this.register();
       })
       .catch(e => {
@@ -124,7 +116,8 @@ export default class PushwooshWorker extends BaseInit {
       keyValue.set(keyApplicationCode, this.applicationCode),
       keyValue.set(keyDefaultNotificationTitle, this.defaultNotificationTitle),
       keyValue.set(keyDefaultNotificationImage, this.defaultNotificationImage),
-      keyValue.set(keyDefaultNotificationUrl, this.defaultNotificationUrl)
+      keyValue.set(keyDefaultNotificationUrl, this.defaultNotificationUrl),
+      keyValue.set(keyLanguage, navigator.language)
     ]));
   }
 }

@@ -1,4 +1,12 @@
-import {getBrowserVersion, getDeviceName, getBrowserType} from '../utils/functions';
+import {
+  getBrowserVersion,
+  getDeviceName,
+  getBrowserType,
+  getPushToken,
+  generateHwid,
+  getPublicKey,
+  getAuthToken
+} from '../utils/functions';
 
 const methods = ['doPushwooshApiMethod', 'registerDevice', 'unregisterDevice', 'setTags', 'pushStat'];
 
@@ -17,6 +25,7 @@ export default class PushwooshAPI {
     this.pushToken = params.pushToken;
     this.publicKey = params.publicKey;
     this.authToken = params.authToken;
+    this.language = params.language;
   }
 
   callAPI(methodName, methodParams) {
@@ -32,8 +41,8 @@ export default class PushwooshAPI {
       push_token: this.pushToken,
       public_key: this.publicKey,
       auth_token: this.authToken,
-      language: window.navigator.language || 'en',  // Language locale of the device, must be a lowercase two-letter code according to the ISO-639-1 standard
-      timezone: -(new Date).getTimezoneOffset() * 60, // offset in seconds
+      language: this.language || 'en',
+      timezone: -(new Date).getTimezoneOffset() * 60,
       device_model: getBrowserVersion(),
       device_name: getDeviceName(),
       device_type: getBrowserType()
@@ -54,5 +63,19 @@ export default class PushwooshAPI {
 
   pushStat(hash) {
     return this.callAPI('pushStat', {hash});
+  }
+
+  static create(subscription, applicationCode, doPushwooshApiMethod, language) {
+    const pushToken = getPushToken(subscription);
+
+    return new PushwooshAPI({
+      doPushwooshApiMethod: doPushwooshApiMethod,
+      applicationCode: applicationCode,
+      hwid: generateHwid(applicationCode, pushToken),
+      pushToken: pushToken,
+      publicKey: getPublicKey(subscription),
+      authToken: getAuthToken(subscription),
+      language: language
+    });
   }
 }

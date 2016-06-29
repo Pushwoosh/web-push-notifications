@@ -3,14 +3,15 @@ import {
   keyApplicationCode, defaultPushwooshUrl,
   keyDefaultNotificationTitle, keyDefaultNotificationImage, keyDefaultNotificationUrl,
   defaultNotificationTitle, defaultNotificationImage, defaultNotificationUrl,
-  keyWorkerSDKVersion
+  keyWorkerSDKVersion, keyLanguage
 } from './constants';
 import Logger from './classes/Logger';
 import API from './classes/API';
-import {getPushToken, generateHwid, getPublicKey, getBrowserType, getVersion} from './utils/functions';
+import {
+  getBrowserType,
+  getVersion
+} from './utils/functions';
 import createDoApiFetch from './utils/createDoApiFetch';
-
-// console.log(self.location);
 
 class WorkerRunner {
   constructor() {
@@ -27,26 +28,22 @@ class WorkerRunner {
     });
   }
 
-  initApi() {
-    if (this.api) {
+  initApi(reinit) {
+    if (this.api && !reinit) {
       return Promise.resolve();
     }
     return Promise.all([
       self.registration.pushManager.getSubscription(),
-      this.getApplicationCode()
+      this.getApplicationCode(),
+      keyValue.get(keyLanguage)
     ])
-      .then(([subscription, applicationCode]) => {
-        const pushToken = getPushToken(subscription);
-        const hwid = generateHwid(applicationCode, pushToken);
-        const publicKey = getPublicKey(subscription);
-
-        this.api = new API({
-          doPushwooshApiMethod: createDoApiFetch(this.pushwooshUrl, this.logger),
-          applicationCode: applicationCode,
-          hwid: hwid,
-          pushToken: pushToken,
-          publicKey: publicKey
-        });
+      .then(([subscription, applicationCode, lang]) => {
+        this.api = API.create(
+          subscription,
+          applicationCode,
+          createDoApiFetch(this.pushwooshUrl, this.logger),
+          lang
+        );
       });
   }
 
@@ -107,6 +104,17 @@ class WorkerRunner {
       return Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
     }).then(self.clients.claim()));
   }
+
+  subscriptionChange(event) {
+    this.logger.info('onPushSubscriptionChange', event);
+    event.waitUntil(
+      self.registration.pushManager.subscribe({userVisibleOnly: true}).then(() => {
+        return this.initApi(true).then(() => {
+          return this.api.registerDevice().then(() => this.logger.info('Re-register done.'));
+        });
+      })
+    );
+  }
 }
 
 
@@ -116,5 +124,6 @@ self.addEventListener('push', (event) => runner.push(event));
 self.addEventListener('notificationclick', (event) => runner.click(event));
 self.addEventListener('install', (event) => runner.install(event));
 self.addEventListener('activate', (event) => runner.activate(event));
+self.addEventListener('pushsubscriptionchange', (event) => runner.subscriptionChange(event));
 
 self.Pushwoosh = runner;
