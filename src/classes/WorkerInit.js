@@ -14,18 +14,53 @@ import {
 
 export default class PushwooshWorker extends BaseInit {
 
-  getWorkerUrl(second) {
-    return `${second ? this.workerSecondUrl : this.workerUrl}?applicationCode=${this.applicationCode}`;
-  }
-
-  trySubscribe() {
-    navigator.serviceWorker.getRegistration()
+  initSubscribe() {
+    return navigator.serviceWorker.getRegistration()
       .then(serviceWorkerRegistration => {
         this.logger.debug('sw', serviceWorkerRegistration);
-        if (!serviceWorkerRegistration) {
+        if (!serviceWorkerRegistration || serviceWorkerRegistration.installing == null) {
           return this.registerSW();
         }
-        if (serviceWorkerRegistration.active) {
+        return serviceWorkerRegistration;
+      })
+      .then(serviceWorkerRegistration => this.subscribeForPushes(serviceWorkerRegistration))
+      .then(() => this.api);
+  }
+
+  unsubscribe() {
+    return Promise.all([
+      this.initApi(),
+      navigator.serviceWorker.getRegistration().then(reg => reg.pushManager.getSubscription())
+    ]).then(([api, subs]) => {
+      return api.unregisterDevice().then(() => {
+        return subs.unsubscribe();
+      });
+    });
+  }
+
+  initApi() {
+    return Promise.all([
+      keyValue.set(keyApplicationCode, this.applicationCode),
+      keyValue.set(keyDefaultNotificationTitle, this.defaultNotificationTitle),
+      keyValue.set(keyDefaultNotificationImage, this.defaultNotificationImage),
+      keyValue.set(keyDefaultNotificationUrl, this.defaultNotificationUrl),
+      keyValue.set(keyLanguage, navigator.language)
+    ])
+      .then(() => {
+        if (Notification.permission === 'denied') {
+          const err = new PushwooshError('The user has blocked notifications.', PushwooshError.codes.userDenied);
+          this.logger.error(err);
+          throw err;
+        }
+        return navigator.serviceWorker.getRegistration();
+      })
+      .then(serviceWorkerRegistration => {
+        if (!serviceWorkerRegistration) {
+          const err = new PushwooshError('No serviceWorkerRegistration');
+          this.logger.error(err);
+          throw err;
+        }
+        if (this.workerSecondUrl && serviceWorkerRegistration.active) {
           return keyValue.get(keyWorkerSDKVersion).then(workerSDKVersion => {
             const curVersion = getVersion();
             this.logger.debug('workerSDKVersion===curVersion', workerSDKVersion, curVersion);
@@ -36,63 +71,49 @@ export default class PushwooshWorker extends BaseInit {
             return serviceWorkerRegistration;
           });
         }
-        else if (serviceWorkerRegistration.installing == null) {
-          return this.registerSW();
-        }
         return serviceWorkerRegistration;
       })
-      .then(serviceWorkerRegistration => this.subscribeForPushes(serviceWorkerRegistration))
-      .then(() => this.ee.emit('success'))
-      .catch(err => this.ee.emit('failure', err));
-  }
-
-  registerSW(second) {
-    this.logger.debug('register worker', second);
-    return navigator.serviceWorker.register(this.getWorkerUrl(second));
-  }
-
-  init() {
-    setTimeout(() => this.trySubscribe(), 0);
-    return new Promise((resolve, reject) => {
-      this.ee.once('success', () => {
-        resolve(this.api);
-      });
-      this.ee.once('failure', reject);
-    });
-  }
-
-  subscribeForPushes(serviceWorkerRegistration) {
-    if (!('showNotification' in ServiceWorkerRegistration.prototype) || !('PushManager' in window)) {
-      const err = 'Notifications aren\'t supported.';
-      this.logger.error(err);
-      throw err;
-    }
-
-    if (Notification.permission === 'denied') {
-      const err = new PushwooshError('The user has blocked notifications.', PushwooshError.codes.userDenied);
-      this.logger.error(err);
-      throw err;
-    }
-
-    return serviceWorkerRegistration.pushManager.getSubscription()
-      .then(subscription => {
-        if (!subscription) {
-          return serviceWorkerRegistration.pushManager.subscribe({
-            name: 'push',
-            userVisibleOnly: true
-          });
-        }
-        return subscription;
+      .then(serviceWorkerRegistration => {
+        this.logger.debug('sw', serviceWorkerRegistration);
+        return serviceWorkerRegistration.pushManager.getSubscription();
       })
       .then(subscription => {
+        if (!subscription) {
+          const err = new PushwooshError('No subscription');
+          this.logger.error(err);
+          throw err;
+        }
         this.api = API.create(
           subscription,
           this.applicationCode,
           createDoApiXHR(this.pushwooshUrl, this.logger),
           navigator.language
         );
-        return this.register();
+        return this.api;
+      });
+  }
+
+  getWorkerUrl(second) {
+    return `${second ? this.workerSecondUrl : this.workerUrl}?applicationCode=${this.applicationCode}`;
+  }
+
+
+  registerSW(second) {
+    this.logger.debug('register worker', second);
+    return navigator.serviceWorker.register(this.getWorkerUrl(second));
+  }
+
+  subscribeForPushes(serviceWorkerRegistration) {
+    return serviceWorkerRegistration.pushManager.getSubscription()
+      .then(subscription => {
+        if (!subscription) {
+          return serviceWorkerRegistration.pushManager.subscribe({
+            userVisibleOnly: true
+          });
+        }
+        return subscription;
       })
+      .then(() => this.register())
       .catch(e => {
         let err;
         if (Notification.permission === 'denied') {
@@ -102,22 +123,17 @@ export default class PushwooshWorker extends BaseInit {
           err = `Unable to subscribe to push: ${e}`;
         }
         this.logger.error(err);
-        this.ee.emit('failure', err);
+        throw err;
       });
   }
 
   register() {
-    return Promise.resolve().then(() => { // eslint-disable-line consistent-return
-      if (localStorage.getItem(keyWasRegistered) !== 'true') {
-        localStorage.setItem(keyWasRegistered, 'true');
-        return this.api.registerDevice();
+    return this.initApi().then(() => { // eslint-disable-line consistent-return
+      const {api} = this;
+      if (localStorage.getItem(keyWasRegistered) !== api.hwid) {
+        localStorage.setItem(keyWasRegistered, api.hwid);
+        return api.registerDevice();
       }
-    }).then(() => Promise.all([
-      keyValue.set(keyApplicationCode, this.applicationCode),
-      keyValue.set(keyDefaultNotificationTitle, this.defaultNotificationTitle),
-      keyValue.set(keyDefaultNotificationImage, this.defaultNotificationImage),
-      keyValue.set(keyDefaultNotificationUrl, this.defaultNotificationUrl),
-      keyValue.set(keyLanguage, navigator.language)
-    ]));
+    });
   }
 }

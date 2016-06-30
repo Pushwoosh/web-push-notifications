@@ -7,14 +7,17 @@ export function getVersion() {
 }
 
 export function isSafariBrowser() {
-  return window && window.safari && navigator.userAgent.indexOf('Safari') > -1;
+  return typeof safari !== 'undefined' && navigator.userAgent.indexOf('Safari') > -1;
 }
 
 export function canUseServiceWorkers() {
-  return navigator && navigator.serviceWorker;
+  return navigator && navigator.serviceWorker && ('showNotification' in ServiceWorkerRegistration.prototype) && ('PushManager' in window);
 }
 
 export function getBrowserType() {
+  if (isSafariBrowser()) {
+    return 10;
+  }
   return navigator.userAgent.toLowerCase().indexOf('firefox') > -1 ? 12 : 11;
 }
 

@@ -4,7 +4,7 @@ import {isSafariBrowser, canUseServiceWorkers, getDeviceName} from '../utils/fun
 import Logger from './Logger';
 import PushwooshSafari from './SafariInit';
 import PushwooshWorker from './WorkerInit';
-import {ctrateErrorAPI} from './API';
+import {createErrorAPI} from './API';
 
 import {defaultPushwooshUrl, defaultWorkerUrl, defaultWorkerSecondUrl} from '../constants';
 
@@ -17,14 +17,17 @@ export default class PushwooshGlobal {
     this._keyValue = keyValue;
   }
 
-  _init(initPromise) {
+  _init() {
+    const initPromise = this._auto
+      ? this._initer.initSubscribe()
+      : this._initer.initApi();
     this._initPromise = initPromise
       .catch(err => {
         this._logger.debug('Error was caught in browser init', err);
-        return ctrateErrorAPI(err);
+        return createErrorAPI(err);
       })
       .then(api => this.api = api) // eslint-disable-line no-return-assign
-      .then(() => this._commands.forEach(cmd => this._runFn(cmd)));
+      .then(() => this._commands.forEach(cmd => this._runCmd(cmd)));
   }
 
   init(params) {
@@ -37,9 +40,11 @@ export default class PushwooshGlobal {
       pushwooshUrl = defaultPushwooshUrl,
       defaultNotificationTitle,
       defaultNotificationImage,
-      defaultNotificationUrl
+      defaultNotificationUrl,
+      autoSubscribe = true
     } = params;
     this._initParams = params;
+    this._auto = autoSubscribe;
     this._logger = new Logger(logLevel);
     if (!((isSafari && getDeviceName() === 'PC') || canUseSW)) {
       this._logger.info('This browser does not support pushes');
@@ -57,7 +62,6 @@ export default class PushwooshGlobal {
           applicationCode: applicationCode,
           logger: this._logger
         });
-        this._init(this._initer.init());
       }
     }
     else if (canUseSW) {
@@ -72,33 +76,59 @@ export default class PushwooshGlobal {
           defaultNotificationUrl,
           logger: this._logger
         });
-        this._init(this._initer.init());
       }
     }
-    if (!this._initPromise) {
+    if (this._initer) {
+      this._init();
+    }
+    else {
       this._logger.info('Browser has not been configured');
     }
   }
 
-  _runFn(func) {
-    return this._initPromise.then(() => func(this.api));
+  _runCmd(func) {
+    return this._initPromise.then(func);
   }
 
-  push(func) {
-    if (typeof func === 'function') {
-      if (this._initPromise) {
-        this._runFn(func);
-      }
-      else {
-        this._commands.push(func);
-      }
+  _cmdInit(params) {
+    if (document.readyState === 'complete') {
+      this.init(params);
     }
-    else if (Array.isArray(func) && func[0] === 'init') {
-      if (document.readyState === 'complete') {
-        this.init(func[1]);
-      }
-      else {
-        window.addEventListener('load', () => this.init(func[1]));
+    else {
+      window.addEventListener('load', () => this.init(params));
+    }
+  }
+
+  _runOrPush(clb) {
+    if (this._initPromise) {
+      this._runCmd(clb);
+    }
+    else {
+      this._commands.push(clb);
+    }
+  }
+
+  push(cmd) {
+    if (typeof cmd === 'function') {
+      this._runOrPush(() => cmd(this.api));
+    }
+    else if (Array.isArray(cmd)) {
+      switch (cmd[0]) {
+        case 'init':
+          this._cmdInit(cmd[1]);
+          break;
+        case 'subscribe':
+          this._runOrPush(() => {
+            cmd[1](this._initer.initSubscribe());
+          });
+          break;
+        case 'unsubscribe':
+          this._runOrPush(() => {
+            cmd[1](this._initer.unsubscribe());
+          });
+          break;
+        default:
+          throw new Error('unknown command');
       }
     }
     else {

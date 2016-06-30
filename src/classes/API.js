@@ -8,9 +8,9 @@ import {
   getAuthToken
 } from '../utils/functions';
 
-const methods = ['doPushwooshApiMethod', 'registerDevice', 'unregisterDevice', 'setTags', 'pushStat'];
+const methods = ['doPushwooshApiMethod', 'registerDevice', 'unregisterDevice', 'setTags', 'getTags', 'pushStat'];
 
-export function ctrateErrorAPI(error) {
+export function createErrorAPI(error) {
   return methods.reduce((api, methodName) => {
     api[methodName] = () => Promise.reject(error); // eslint-disable-line no-param-reassign
     return api;

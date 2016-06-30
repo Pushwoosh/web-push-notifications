@@ -6,7 +6,6 @@ import PushwooshError from './PushwooshError';
 import {getBrowserVersion, getDeviceName} from '../utils/functions';
 
 import {keyTagsWasSetted} from '../constants';
-// const keySubscribed = 'pushwooshSubscribed';
 
 export default class PushwooshSafari extends BaseInit {
 
@@ -14,12 +13,8 @@ export default class PushwooshSafari extends BaseInit {
     return window.safari.pushNotification.permission(this.webSitePushID);
   }
 
-  trySubscribe() {
-    this.checkRemotePermission(this.getPermission());
-  }
-
-  init() {
-    setTimeout(() => this.trySubscribe(), 0);
+  initSubscribe() {
+    setTimeout(() => this.checkRemotePermission(this.getPermission()), 0);
     return new Promise((resolve, reject) => {
       this.ee.once('success', () => {
         resolve(this.api);
@@ -28,12 +23,35 @@ export default class PushwooshSafari extends BaseInit {
     });
   }
 
+  unsubscribe() {
+    return this.initApi().then(api => api.unregisterDevice());
+  }
+
+  initApi() {
+    return Promise.resolve().then(() => {
+      const permissionData = this.getPermission();
+      if (permissionData.permission === 'denied') {
+        const err = new PushwooshError('The user said no.', PushwooshError.codes.userDenied);
+        this.logger.error(err);
+        throw err;
+      }
+      if (!permissionData.deviceToken) {
+        throw new PushwooshError('permissionData.deviceToken is empty');
+      }
+      const hwid = permissionData.deviceToken.toLowerCase();
+      this.api = new API({
+        doPushwooshApiMethod: createDoApiXHR(this.pushwooshUrl, this.logger),
+        applicationCode: this.applicationCode,
+        hwid: hwid,
+        pushToken: hwid.toUpperCase()
+      });
+      this.sendPushStat();
+      return this.api;
+    });
+  }
+
   checkRemotePermission(permissionData) {
     this.logger.debug('permissionData', permissionData);
-
-    if (permissionData && permissionData.deviceToken) {
-      this.hwid = permissionData.deviceToken.toLowerCase();
-    }
 
     if (permissionData.permission === 'default') {
       this.logger.debug('This is a new web service URL and its validity is unknown.');
@@ -51,15 +69,9 @@ export default class PushwooshSafari extends BaseInit {
     }
     else if (permissionData.permission === 'granted') {
       this.logger.debug('The web service URL is a valid push provider, and the user said yes.');
-      this.logger.debug(`You pushtoken is ${permissionData.deviceToken.toLowerCase()}`);
-      this.api = new API({
-        doPushwooshApiMethod: createDoApiXHR(this.pushwooshUrl, this.logger),
-        applicationCode: this.applicationCode,
-        hwid: this.hwid,
-        pushToken: this.hwid.toUpperCase()
-      });
-      this.setDefaultTags().then(() => this.ee.emit('success'));
-      this.sendPushStat();
+      this.initApi()
+        .then(() => this.setDefaultTags())
+        .then(() => this.ee.emit('success'));
     }
   }
 
@@ -69,7 +81,7 @@ export default class PushwooshSafari extends BaseInit {
         localStorage.setItem(keyTagsWasSetted, 'true');
         return this.api.setTags({
           // eslint-disable-next-line quote-props
-          'Language': window.navigator.language || 'en',
+          'Language': navigator.language || 'en',
           'Device Model': getBrowserVersion(),
           'Device Name': getDeviceName()
         });
