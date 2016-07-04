@@ -1,1 +1,1 @@
-export {Pushwoosh} from './classes/Global';
+export {default as Pushwoosh} from './classes/Global';
