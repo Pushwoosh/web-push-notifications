@@ -47,50 +47,81 @@ class WorkerRunner {
       });
   }
 
-  showMessage(result) {
-    this.logger.info('showMessage', result);
-    const {notification} = result;
+  showMessage(message, pTitle, pImage, pUrl, pHash) {
+    this.logger.info('showMessage', message, pTitle, pImage, pUrl, pHash);
 
     return Promise.all([
       keyValue.get(keyDefaultNotificationTitle),
       keyValue.get(keyDefaultNotificationImage),
       keyValue.get(keyDefaultNotificationUrl)
-    ]).then(([userTitle, userImage, userUrl]) => {
-      const title = notification.chromeTitle || userTitle || defaultNotificationTitle;
-      const message = notification.content;
-      const icon = notification.chromeIcon || userImage || defaultNotificationImage;
-      const messageHash = notification.messageHash;
-      const url = notification.url || userUrl || defaultNotificationUrl;
-      const tag = {
-        url: url,
-        messageHash: messageHash
-      };
+    ]).then(([defaultTitle, defaultImage, defaultUrl]) => {
+      const title = pTitle || defaultTitle || defaultNotificationTitle;
+      const icon = pImage || defaultImage || defaultNotificationImage;
+      const url = pUrl || defaultUrl || defaultNotificationUrl;
+
       return self.registration.showNotification(title, {
         body: message,
         icon: icon,
-        tag: JSON.stringify(tag)
+        tag: JSON.stringify({
+          url: url,
+          messageHash: pHash
+        })
       });
+    });
+  }
+
+  showOldMessage() {
+    this.logger.info('showOldMessage');
+
+    this.initApi().then(() => {
+      return this.api.callAPI('getLastMessage', {device_type: getBrowserType()})
+        .then(({notification}) => {
+          this.logger.info('getLastMessage', notification);
+          return this.showMessage(
+            notification.content,
+            notification.chromeTitle,
+            notification.chromeIcon,
+            notification.url,
+            notification.messageHash
+          );
+        });
+    });
+  }
+
+  showPayloadMessage(data) {
+    return Promise.resolve().then(() => {
+      const payload = data.json();
+      this.logger.info('payload', payload);
+      return this.showMessage(
+        payload.body,
+        payload.header,
+        payload.i,
+        payload.u,
+        payload.p
+      );
     });
   }
 
   push(event) {
     this.logger.info('onPush', event);
-    event.waitUntil(this.initApi().then(() => {
-      return this.api.callAPI('getLastMessage', {device_type: getBrowserType()}).then(lastMessage => {
-        return this.showMessage(lastMessage);
-      });
-    }));
+    event.waitUntil(event.data ? this.showPayloadMessage(event.data) : this.showOldMessage());
+  }
+
+  sendPushStat(hash) {
+    this.logger.debug('sendPushStat', hash);
+    return this.initApi().then(() => {
+      return this.api.pushStat(hash).catch(err => this.logger.error('send push stat error', err));
+    });
   }
 
   click(event) {
     this.logger.info('onClick', event);
     let {tag} = event.notification;
     tag = JSON.parse(tag);
-    event.waitUntil(Promise.resolve().then(() => {
-      return this.api.pushStat(tag.messageHash);
-    }));
-    event.notification.close();
-    return clients.openWindow(tag.url); // eslint-disable-line no-undef
+    event.waitUntil(Promise.all([
+      this.sendPushStat(tag.messageHash),
+      clients.openWindow(tag.url).then(() => event.notification.close()) // eslint-disable-line no-undef
+    ]));
   }
 
   install(event) {
