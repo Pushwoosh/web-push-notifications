@@ -1,18 +1,19 @@
 {
   "name": "web-push-notifications",
-  "version": "2.5.1",
+  "version": "2.6.0",
   "description": "Pushwoosh web push notifications",
   "main": "lib/index.js",
   "scripts": {
-    "prepublish": "npm run build",
+    "prepublish": "npm run build:lib",
     "test": "echo \"Error: no test specified\" && exit 1",
     "clean": "rimraf lib dist",
-    "build:debug": "npm run build && cp -f dist/pushwoosh-service-worker.js dist/pushwoosh-service-worker-light.js && cp -f dist/pushwoosh-service-worker.js dist/pushwoosh-service-worker-dark.js",
-    "build": "npm run build:lib && npm run build:dist",
+    "build:debug": "npm run build && cp -f dist/pushwoosh-service-worker.uncompress.js dist/pushwoosh-service-worker-light.js && cp -f dist/pushwoosh-service-worker.uncompress.js dist/pushwoosh-service-worker-dark.js",
     "build:lib": "babel src --out-dir lib",
-    "build:dist": "webpack",
-    "build:dist:min": "cross-env NODE_ENV=production webpack",
-    "zip": "cp files/manifest.json dist/ && babel-node scripts/zip.js"
+    "build:uncompress": "webpack",
+    "build:min": "cross-env NODE_ENV=production webpack",
+    "build:release": "npm run build:uncompress && npm run build:min",
+    "zip": "cp files/manifest.json dist/ && babel-node scripts/zip.js",
+    "makerelease": "npm run clean && npm run build:release && npm run zip"
   },
   "repository": {
     "type": "git",

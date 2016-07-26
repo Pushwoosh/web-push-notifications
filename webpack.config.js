@@ -20,10 +20,10 @@ var config = {
     'web-notifications': './src/web-notifications.js',
     'service-worker': './src/service-worker.js'
   },
-  // devtool: 'source-map',
+  devtool: 'source-map',
   output: {
     path: path.join(__dirname, 'dist'),
-    filename: 'pushwoosh-[name].' + (production ? 'min.' : '') + 'js'
+    filename: 'pushwoosh-[name].' + (production ? '' : 'uncompress.') + 'js'
   },
   plugins: [
     new webpack.optimize.OccurrenceOrderPlugin(),
