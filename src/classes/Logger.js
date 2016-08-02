@@ -13,7 +13,8 @@ export default class Logger {
       const n = levels[k];
       this[k] = (...args) => {
         if (n <= this.n) {
-          console.trace(k, ...args); // eslint-disable-line no-console
+          console.info(k, ...args); // eslint-disable-line no-console
+          console.trace('trace');
         }
       };
     });
