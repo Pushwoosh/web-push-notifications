@@ -130,8 +130,9 @@ export default class PushwooshWorker extends BaseInit {
   register() {
     return this.initApi().then(() => { // eslint-disable-line consistent-return
       const {api} = this;
-      if (localStorage.getItem(keyWasRegistered) !== api.hwid) {
-        localStorage.setItem(keyWasRegistered, api.hwid);
+      const keyWasRegisteredValue = `${api.hwid}_${getVersion()}`;
+      if (localStorage.getItem(keyWasRegistered) !== keyWasRegisteredValue) {
+        localStorage.setItem(keyWasRegistered, keyWasRegisteredValue);
         return api.registerDevice();
       }
     });
