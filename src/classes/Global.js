@@ -6,7 +6,12 @@ import PushwooshSafari from './SafariInit';
 import PushwooshWorker from './WorkerInit';
 import {createErrorAPI} from './API';
 
-import {defaultPushwooshUrl, defaultWorkerUrl, defaultWorkerSecondUrl} from '../constants';
+import {
+  defaultPushwooshUrl,
+  defaultWorkerUrl,
+  defaultWorkerSecondUrl,
+  keyLastSentAppOpen
+} from '../constants';
 
 const isSafari = isSafariBrowser();
 const canUseSW = canUseServiceWorkers();
@@ -27,6 +32,17 @@ export default class PushwooshGlobal {
         return createErrorAPI(err);
       })
       .then(api => this.api = api) // eslint-disable-line no-return-assign
+      .then(() => { // eslint-disable-line consistent-return
+        const lastSentTime = Number(localStorage.getItem(keyLastSentAppOpen));
+        const curTime = Date.now();
+        if ((curTime - lastSentTime) > 3600000) {
+          localStorage.setItem(keyLastSentAppOpen, curTime);
+          return this.api.applicationOpen().then(
+            () => this._logger.debug('applicationOpen sent successfully'),
+            err => this._logger.debug('applicationOpen sent with error', err)
+          );
+        }
+      })
       .then(() => this._commands.forEach(cmd => this._runCmd(cmd)));
   }
 

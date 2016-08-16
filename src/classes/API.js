@@ -8,7 +8,15 @@ import {
   getAuthToken
 } from '../utils/functions';
 
-const methods = ['doPushwooshApiMethod', 'registerDevice', 'unregisterDevice', 'setTags', 'getTags', 'pushStat'];
+const methods = [
+  'doPushwooshApiMethod',
+  'registerDevice',
+  'unregisterDevice',
+  'applicationOpen',
+  'setTags',
+  'getTags',
+  'pushStat'
+];
 
 export function createErrorAPI(error) {
   return methods.reduce((api, methodName) => {
@@ -51,6 +59,14 @@ export default class PushwooshAPI {
 
   unregisterDevice() {
     return this.callAPI('unregisterDevice');
+  }
+
+  applicationOpen() {
+    return this.callAPI('registerDevice', {
+      push_token: this.pushToken,
+      timezone: -(new Date).getTimezoneOffset() * 60,
+      device_type: getBrowserType()
+    });
   }
 
   setTags(tags) {

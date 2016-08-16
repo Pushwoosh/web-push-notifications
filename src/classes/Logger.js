@@ -14,7 +14,7 @@ export default class Logger {
       this[k] = (...args) => {
         if (n <= this.n) {
           console.info(k, ...args); // eslint-disable-line no-console
-          console.trace('trace');
+          console.trace('trace'); // eslint-disable-line no-console
         }
       };
     });
