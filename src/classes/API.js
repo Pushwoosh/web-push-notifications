@@ -62,7 +62,7 @@ export default class PushwooshAPI {
   }
 
   applicationOpen() {
-    return this.callAPI('registerDevice', {
+    return this.callAPI('applicationOpen', {
       push_token: this.pushToken,
       timezone: -(new Date).getTimezoneOffset() * 60,
       device_type: getBrowserType()
