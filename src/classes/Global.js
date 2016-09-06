@@ -1,5 +1,5 @@
 import {keyValue} from '../utils/storage';
-import {isSafariBrowser, canUseServiceWorkers, getDeviceName} from '../utils/functions';
+import {isSafariBrowser, canUseServiceWorkers, getDeviceName, getPushwooshUrl} from '../utils/functions';
 
 import Logger from './Logger';
 import PushwooshSafari from './SafariInit';
@@ -7,7 +7,6 @@ import PushwooshWorker from './WorkerInit';
 import {createErrorAPI} from './API';
 
 import {
-  defaultPushwooshUrl,
   defaultWorkerUrl,
   defaultWorkerSecondUrl,
   keyLastSentAppOpen
@@ -53,7 +52,7 @@ export default class PushwooshGlobal {
       serviceWorkerUrl = defaultWorkerUrl,
       serviceWorkerSecondUrl = defaultWorkerSecondUrl,
       logLevel,
-      pushwooshUrl = defaultPushwooshUrl,
+      pushwooshUrl = getPushwooshUrl(applicationCode),
       defaultNotificationTitle,
       defaultNotificationImage,
       defaultNotificationUrl,

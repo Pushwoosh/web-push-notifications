@@ -104,3 +104,11 @@ export function getAuthToken(pushSubscription) {
 export function getPublicKey(pushSubscription) {
   return getSubsKey(pushSubscription, 'p256dh');
 }
+
+export function getPushwooshUrl(applicationCode) {
+  let subDomain = 'cp';
+  if (applicationCode && !~applicationCode.indexOf('.')) {
+    subDomain = `${applicationCode}.api`;
+  }
+  return `https://${subDomain}.pushwoosh.com/json/1.3/`;
+}

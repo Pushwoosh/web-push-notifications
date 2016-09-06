@@ -1,6 +1,6 @@
 import {keyValue} from './utils/storage';
 import {
-  keyApplicationCode, defaultPushwooshUrl,
+  keyApplicationCode,
   keyDefaultNotificationTitle, keyDefaultNotificationImage, keyDefaultNotificationUrl,
   defaultNotificationTitle, defaultNotificationImage, defaultNotificationUrl,
   keyWorkerSDKVersion, keyLanguage
@@ -9,13 +9,13 @@ import Logger from './classes/Logger';
 import API from './classes/API';
 import {
   getBrowserType,
-  getVersion
+  getVersion,
+  getPushwooshUrl
 } from './utils/functions';
 import createDoApiFetch from './utils/createDoApiFetch';
 
 class WorkerRunner {
   constructor() {
-    this.pushwooshUrl = defaultPushwooshUrl;
     this.logger = new Logger('debug');
   }
 
@@ -41,7 +41,7 @@ class WorkerRunner {
         this.api = API.create(
           subscription,
           applicationCode,
-          createDoApiFetch(this.pushwooshUrl, this.logger),
+          createDoApiFetch(getPushwooshUrl(applicationCode), this.logger),
           lang
         );
       });
