@@ -1,5 +1,5 @@
 import {keyValue} from '../utils/storage';
-import {isSafariBrowser, canUseServiceWorkers, getDeviceName, getPushwooshUrl} from '../utils/functions';
+import {isSafariBrowser, canUseServiceWorkers, getDeviceName, getPushwooshUrl, getVersion} from '../utils/functions';
 
 import Logger from './Logger';
 import PushwooshSafari from './SafariInit';
@@ -14,6 +14,16 @@ import {
 
 const isSafari = isSafariBrowser();
 const canUseSW = canUseServiceWorkers();
+
+function findHeader(headers, fh) {
+  let val = '';
+  for (const h of headers.entries()) {
+    if (h[0].toLowerCase() === fh) {
+      val = h[1];
+    }
+  }
+  return val;
+}
 
 export default class PushwooshGlobal {
   constructor() {
@@ -154,9 +164,35 @@ export default class PushwooshGlobal {
   _debug() {
     const debugFn = console.info.bind(console); // eslint-disable-line
     const initerParams = this._initer._params; // eslint-disable-line
+    const jsContentType = 'application/javascript';
+    const checkUrlFn = (text, url, type) => {
+      fetch(url)
+        .then(resp => {
+          if (resp.status === 200) {
+            const contentType = findHeader(resp.headers, 'content-type');
+            debugFn(
+              text,
+              contentType.indexOf(type) > -1
+                ? `url ${url} is ok`
+                : `url ${url} has WRONG Content-Type '${contentType}'`
+            );
+          }
+          else {
+            debugFn(text, `error: url ${url} loaded with status ${resp.status}`);
+          }
+        })
+        .catch(e => debugFn(text, e));
+    };
+    debugFn('version', getVersion());
     debugFn('initer params', initerParams);
-    debugFn(`workerUrl: ${location.origin}${initerParams.workerUrl}`);
-    debugFn(`workerSecondUrl: ${location.origin}${initerParams.workerSecondUrl}`);
+    checkUrlFn('workerUrl', `${location.origin}${initerParams.workerUrl}`, jsContentType);
+    checkUrlFn('workerSecondUrl', `${location.origin}${initerParams.workerSecondUrl}`, jsContentType);
+    const links = document.getElementsByTagName('link');
+    for (let i = 0; i < links.length; ++i) {
+      if (links[i].rel === 'manifest') {
+        checkUrlFn('manifest', links[i].href, 'application/json');
+      }
+    }
     this._keyValue.getAll().then(res => debugFn('keyValues', res));
   }
 }
