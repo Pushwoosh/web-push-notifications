@@ -165,6 +165,7 @@ export default class PushwooshGlobal {
     const debugFn = console.info.bind(console); // eslint-disable-line
     const initerParams = this._initer._params; // eslint-disable-line
     const jsContentType = 'application/javascript';
+    const links = document.getElementsByTagName('link');
     const checkUrlFn = (text, url, type) => {
       fetch(url)
         .then(resp => {
@@ -183,15 +184,20 @@ export default class PushwooshGlobal {
         })
         .catch(e => debugFn(text, e));
     };
+    let manifestFounded = false;
+
     debugFn('version', getVersion());
     debugFn('initer params', initerParams);
     checkUrlFn('workerUrl', `${location.origin}${initerParams.workerUrl}`, jsContentType);
     checkUrlFn('workerSecondUrl', `${location.origin}${initerParams.workerSecondUrl}`, jsContentType);
-    const links = document.getElementsByTagName('link');
     for (let i = 0; i < links.length; ++i) {
       if (links[i].rel === 'manifest') {
         checkUrlFn('manifest', links[i].href, 'application/json');
+        manifestFounded = true;
       }
+    }
+    if (!manifestFounded) {
+      debugFn('Error: manifest not found.');
     }
     this._keyValue.getAll().then(res => debugFn('keyValues', res));
   }
