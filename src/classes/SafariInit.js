@@ -3,7 +3,7 @@ import createDoApiXHR from '../utils/createDoApiXHR';
 import API from './API';
 import PushwooshError from './PushwooshError';
 
-import {getBrowserVersion, getDeviceName} from '../utils/functions';
+import {getBrowserVersion, getDeviceName, getVersion} from '../utils/functions';
 
 import {keyTagsWasSetted} from '../constants';
 
@@ -77,8 +77,9 @@ export default class PushwooshSafari extends BaseInit {
 
   setDefaultTags() {
     return Promise.resolve().then(() => { // eslint-disable-line consistent-return
-      if (localStorage.getItem(keyTagsWasSetted) !== 'true') {
-        localStorage.setItem(keyTagsWasSetted, 'true');
+      const keyTagsWasSettedValue = `${getBrowserVersion()}_${this.api.hwid}_${getVersion()}`;
+      if (localStorage.getItem(keyTagsWasSetted) !== keyTagsWasSettedValue) {
+        localStorage.setItem(keyTagsWasSetted, keyTagsWasSettedValue);
         return this.api.setTags({
           // eslint-disable-next-line quote-props
           'Language': navigator.language || 'en',

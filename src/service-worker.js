@@ -133,7 +133,7 @@ class WorkerRunner {
     this.logger.info('onActivate', event);
     return event.waitUntil(caches.keys().then(cacheNames => {
       return Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
-    }).then(self.clients.claim()));
+    }).then(() => self.clients.claim()));
   }
 
   subscriptionChange(event) {

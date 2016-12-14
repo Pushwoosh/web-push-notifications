@@ -103,33 +103,30 @@ export default class PushwooshWorker extends BaseInit {
     return navigator.serviceWorker.register(this.getWorkerUrl(second));
   }
 
-  subscribeForPushes(serviceWorkerRegistration, tries = 0) {
-    if (!serviceWorkerRegistration.active && tries < 10) {
-      this.logger.debug('waiting for active service worker', tries);
-      const waitPromise = new Promise(resolve => setTimeout(resolve, 500));
-      return waitPromise.then(() => this.subscribeForPushes(serviceWorkerRegistration, tries + 1));
-    }
-    return serviceWorkerRegistration.pushManager.getSubscription()
-      .then(subscription => {
-        if (!subscription) {
-          return serviceWorkerRegistration.pushManager.subscribe({
-            userVisibleOnly: true
-          });
-        }
-        return subscription;
-      })
-      .then(() => this.register())
-      .catch(e => {
-        let err;
-        if (Notification.permission === 'denied') {
-          err = new PushwooshError('Permission for Notifications was denied.', PushwooshError.codes.userDenied);
-        }
-        else {
-          err = `Unable to subscribe to push: ${e}`;
-        }
-        this.logger.error(err);
-        throw err;
-      });
+  subscribeForPushes() {
+    return navigator.serviceWorker.ready.then(serviceWorkerRegistration => {
+      return serviceWorkerRegistration.pushManager.getSubscription()
+        .then(subscription => {
+          if (!subscription) {
+            return serviceWorkerRegistration.pushManager.subscribe({
+              userVisibleOnly: true
+            });
+          }
+          return subscription;
+        })
+        .then(() => this.register())
+        .catch(e => {
+          let err;
+          if (Notification.permission === 'denied') {
+            err = new PushwooshError('Permission for Notifications was denied.', PushwooshError.codes.userDenied);
+          }
+          else {
+            err = `Unable to subscribe to push: ${e}`;
+          }
+          this.logger.error(err);
+          throw err;
+        });
+    });
   }
 
   register() {
