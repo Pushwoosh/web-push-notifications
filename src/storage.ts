@@ -2,10 +2,6 @@ interface IEevetTargetWithResult extends EventTarget {
   result: IDBDatabase;
 }
 
-interface IDBObjectStoreEx extends IDBObjectStore {
-  getAll(): IDBRequest;
-}
-
 const objectStoreKeyValueName = 'keyValue';
 const objectStoreLogName = 'logs';
 const objectStoreMessagesName = 'messages';
@@ -77,15 +73,20 @@ function createKeyValue(name: string) {
 
     getAll() {
       return getInstanceWithPromise((database: IDBDatabase, resolve: any, reject: any) => {
-        const request = (database.transaction(name).objectStore(name) as IDBObjectStoreEx).getAll();
-        request.onsuccess = () => {
-          resolve(request.result.reduce((acc: any, obj: any) => {
-            acc[obj.key] = obj.value;
-            return acc;
-          }, {}));
+        const result: {[key: string]: any} = {};
+        const cursor = database.transaction(name).objectStore(name).openCursor();
+        cursor.onsuccess = (event) => {
+          const cursorResult = (event.target as any).result;
+          if (cursorResult) {
+            result[cursorResult.key] = cursorResult.value.value;
+            cursorResult.continue();
+          }
+          else {
+            resolve(result);
+          }
         };
-        request.onerror = () => {
-          reject(request.error);
+        cursor.onerror = () => {
+          reject(cursor.error);
         };
       });
     },
@@ -147,12 +148,20 @@ abstract class LogBase {
 
   getAll() {
     return getInstanceWithPromise((database: IDBDatabase, resolve: any, reject: any) => {
-      const request = (database.transaction(this.name).objectStore(this.name) as IDBObjectStoreEx).getAll();
-      request.onsuccess = () => {
-        resolve(request.result);
+      const result: any[] = [];
+      const cursor = database.transaction(this.name).objectStore(this.name).openCursor();
+      cursor.onsuccess = (ev) => {
+        const cursorResult = (ev.target as any).result;
+        if (cursorResult) {
+          result.push(cursorResult.value);
+          cursorResult.continue();
+        }
+        else {
+          resolve(result);
+        }
       };
-      request.onerror = () => {
-        reject(request.error);
+      cursor.onerror = () => {
+        reject(cursor.error);
       };
     });
   }

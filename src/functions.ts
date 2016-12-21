@@ -4,7 +4,7 @@ export function getGlobal() {
 
 declare const __VERSION__: string;
 export function getVersion() {
-  return __VERSION__ + '6';
+  return __VERSION__ + '7';
 }
 
 export function isSafariBrowser() {

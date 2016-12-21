@@ -19,6 +19,7 @@ import {
 } from './constants';
 import Logger from './logger'
 import WorkerDriver from './drivers/worker';
+import SafariDriver from './drivers/safari';
 import createDoApiXHR from './createDoApiXHR';
 import {keyValue, log as logStorage, message as messageStorage} from './storage';
 
@@ -98,6 +99,16 @@ class Pushwoosh {
         serviceWorkerUrl: worker.serviceWorkerUrl,
         applicationServerPublicKey: worker.applicationServerPublicKey,
       });
+    }
+    else if (isSafariBrowser() && params.safariWebsitePushID) {
+      this.driver = new SafariDriver({
+        applicationCode: applicationCode,
+        pushwooshUrl: params.pushwooshUrl,
+        webSitePushID: params.safariWebsitePushID,
+      });
+    }
+    else {
+      throw new Error('can\'t initialize safari')
     }
 
     this._ee.emit(eventOnLoad);
@@ -216,6 +227,7 @@ class Pushwoosh {
     const permission = await this.driver.getPermission();
     if (permission === 'denied') {
       this._ee.emit(eventOnDenied);
+      keyValue.set(keyApiParams, 'unknown');
     }
     else {
       try {
