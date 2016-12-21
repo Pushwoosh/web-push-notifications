@@ -3,30 +3,40 @@ var webpack = require('webpack');
 
 var production = process.env.NODE_ENV === 'production';
 
-var config = {
-  module: {
-    preLoaders: [{
-      test: /\.js$/,
-      loader: 'eslint',
-      exclude: /node_modules/
-    }],
-    loaders: [{
-      test: /\.js$/,
-      loader: 'babel',
-      exclude: /node_modules/
-    }]
-  },
-  entry: {
-    'web-notifications': './src/web-notifications.js',
-    'service-worker': './src/service-worker.js'
-  },
+var defines = {
+  __VERSION__: JSON.stringify(require("./package.json").version)
+};
+
+module.exports = {
   devtool: 'source-map',
+  entry: {
+    'web-notifications': './src/web-notifications.ts',
+    'service-worker': './src/service-worker.ts',
+  },
   output: {
     path: path.join(__dirname, 'dist'),
     filename: 'pushwoosh-[name].' + (production ? '' : 'uncompress.') + 'js'
   },
+  resolve: {
+    extensions: ['', '.ts'],
+    modulesDirectories: ['src', 'node_modules']
+  },
+  module: {
+    /*
+    preLoaders: [
+      {
+        test: /\.tsx?$/,
+        loader: 'tslint'
+      }
+    ],
+    */
+    loaders: [{
+      test: /\.ts$/, loaders: ['ts-loader']
+    }]
+  },
   plugins: [
     new webpack.optimize.OccurrenceOrderPlugin(),
+    new webpack.DefinePlugin(defines),
     production && new webpack.optimize.UglifyJsPlugin({
       compress: {
         pure_getters: true,
@@ -41,5 +51,3 @@ var config = {
     })
   ].filter(function (x) { return x; })
 };
-
-module.exports = config;

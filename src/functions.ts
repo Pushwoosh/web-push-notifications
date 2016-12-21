@@ -1,30 +1,31 @@
 export function getGlobal() {
-  return Function('return this')();  // eslint-disable-line no-new-func
+  return Function('return this')();
 }
 
+declare const __VERSION__: string;
 export function getVersion() {
-  return __VERSION__;
+  return __VERSION__ + '6';
 }
 
 export function isSafariBrowser() {
-  return typeof safari !== 'undefined' && navigator.userAgent.indexOf('Safari') > -1;
+  return window.safari && navigator.userAgent.indexOf('Safari') > -1;
 }
 
 export function canUseServiceWorkers() {
-  return navigator && navigator.serviceWorker && ('showNotification' in ServiceWorkerRegistration.prototype) && ('PushManager' in window);
+  return navigator.serviceWorker && ('PushManager' in window);
 }
 
-export function getBrowserType() {
+export function getBrowserType(): 10 | 11 | 12 {
   if (isSafariBrowser()) {
     return 10;
   }
-  return navigator.userAgent.toLowerCase().indexOf('firefox') > -1 ? 12 : 11;
+  return ~navigator.userAgent.toLowerCase().indexOf('firefox') ? 12 : 11;
 }
 
 export function getBrowserVersion() {
   const ua = navigator.userAgent;
-  let tem,
-    M = ua.match(/(opera|chrome|safari|firefox|msie|trident(?=\/))\/?\s*(\d+)/i) || [];
+  let M = ua.match(/(opera|chrome|safari|firefox|msie|trident(?=\/))\/?\s*(\d+)/i) || [];
+  let tem;
 
   if (/trident/i.test(M[1])) {
     tem = /\brv[ :]+(\d+)/g.exec(ua) || [];
@@ -47,6 +48,21 @@ export function getBrowserVersion() {
   return M.join(' ');
 }
 
+export function urlB64ToUint8Array(base64String: string) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding)
+    .replace(/-/g, '+')
+    .replace(/_/g, '/');
+
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
 export function getDeviceName() {
   const userAgent = navigator.userAgent;
   if (userAgent.match(/Android/i)
@@ -62,21 +78,26 @@ export function getDeviceName() {
   return 'PC';
 }
 
-export function createUUID(pushToken) {
+export function createUUID(pushToken: string) {
   const hexDigits = '0123456789abcdef';
-  const s = [];
+  let s = '';
   for (let i = 0; i < 32; i++) {
-    let charCode = '0';
-    if (pushToken.length - i - 1 >= 0) {
-      charCode = pushToken.charCodeAt(pushToken.length - i - 1);
+    const l = pushToken.length - i - 1;
+    let charCode = 0;
+    if (l >= 0) {
+      charCode = pushToken.charCodeAt(l);
     }
 
-    s[i] = hexDigits.substr(charCode % hexDigits.length, 1);
+    s += hexDigits.substr(charCode % hexDigits.length, 1);
   }
-  return s.join('');
+  return s;
 }
 
-export function getPushToken(pushSubscription) {
+export function generateHwid(applicationCode: string, pushToken: string) {
+  return `${applicationCode}_${createUUID(pushToken)}`;
+}
+
+export function getPushToken(pushSubscription: PushSubscription) {
   if (pushSubscription.subscriptionId) {
     return pushSubscription.subscriptionId;
   }
@@ -88,24 +109,20 @@ export function getPushToken(pushSubscription) {
   return pushSubscription.endpoint.split('/').pop();
 }
 
-export function generateHwid(applicationCode, pushToken) {
-  return `${applicationCode}_${createUUID(pushToken)}`;
-}
-
-function getSubsKey(pushSubscription, key) {
+function getSubsKey(pushSubscription: any, key: any): string {
   const rawKey = pushSubscription.getKey && pushSubscription.getKey(key);
-  return rawKey ? btoa(String.fromCharCode(...new Uint8Array(rawKey))) : '';
+  return rawKey ? btoa(String.fromCharCode.apply(String, new Uint8Array(rawKey))) : '';
 }
 
-export function getAuthToken(pushSubscription) {
+export function getAuthToken(pushSubscription: PushSubscription) {
   return getSubsKey(pushSubscription, 'auth');
 }
 
-export function getPublicKey(pushSubscription) {
+export function getPublicKey(pushSubscription: PushSubscription) {
   return getSubsKey(pushSubscription, 'p256dh');
 }
 
-export function getPushwooshUrl(applicationCode) {
+export function getPushwooshUrl(applicationCode: string) {
   let subDomain = 'cp';
   if (!isSafariBrowser() && applicationCode && !~applicationCode.indexOf('.')) {
     subDomain = `${applicationCode}.api`;
