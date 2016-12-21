@@ -4,3 +4,4 @@ syntax: glob
 lib/
 dist/
 node_modules/
+debug.html
