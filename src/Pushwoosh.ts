@@ -106,6 +106,14 @@ class Pushwoosh {
         pushwooshUrl: params.pushwooshUrl,
         webSitePushID: params.safariWebsitePushID,
       });
+      this.push(['onReady', () => {
+        const hashReg: any = /#P(.*)/;
+        const hash = decodeURIComponent(document.location.hash);
+
+        if (hashReg.test(hash)) {
+          this.api.pushStat(hashReg.exec(hash)[1]);
+        }
+      }]);
     }
     else {
       throw new Error('can\'t initialize safari')
