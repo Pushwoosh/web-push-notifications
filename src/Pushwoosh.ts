@@ -24,9 +24,10 @@ import createDoApiXHR from './createDoApiXHR';
 import {keyValue, log as logStorage, message as messageStorage} from './storage';
 
 const eventOnLoad = 'onLoad';
-const eventOnReady = 'onReady';
-const eventOnDenied = 'onDenied';
 const eventOnRegister = 'onRegister';
+const eventOnPermissionPropmt = 'onPermissionPrompt';
+const eventOnPermissionDenied = 'onPermissionDenied';
+const eventOnPermissionGranted = 'onPermissionGranted';
 
 type ChainFunction = (param: any) => Promise<any> | any;
 
@@ -57,9 +58,10 @@ class Pushwoosh {
   constructor() {
     this._onPromises = {
       [eventOnLoad]: new Promise(resolve => this._ee.once(eventOnLoad, resolve)),
-      [eventOnReady]: new Promise(resolve => this._ee.once(eventOnReady, resolve)),
-      [eventOnDenied]: new Promise(resolve => this._ee.once(eventOnDenied, resolve)),
       [eventOnRegister]: new Promise(resolve => this._ee.once(eventOnRegister, resolve)),
+      [eventOnPermissionDenied]: new Promise(resolve => this._ee.once(eventOnPermissionDenied, resolve)),
+      [eventOnPermissionPropmt]: new Promise(resolve => this._ee.once(eventOnPermissionPropmt, resolve)),
+      [eventOnPermissionGranted]: new Promise(resolve => this._ee.once(eventOnPermissionGranted, resolve)),
     };
   }
 
@@ -121,16 +123,10 @@ class Pushwoosh {
 
     this._ee.emit(eventOnLoad);
 
-    if (params.autoSubscribe) {
-      this.defaultProcess();
-    }
+    this.defaultProcess();
   }
 
   push(cmd: any) {
-    if (typeof cmd === 'function') {
-      this.push([eventOnLoad, cmd]);
-    }
-    else
     if (Array.isArray(cmd)) {
       const [cmdName, cmdFunc] = cmd;
       switch (cmdName) {
@@ -138,9 +134,10 @@ class Pushwoosh {
           this.init(cmdFunc);
           break;
         case eventOnLoad:
-        case eventOnReady:
-        case eventOnDenied:
         case eventOnRegister:
+        case eventOnPermissionDenied:
+        case eventOnPermissionPropmt:
+        case eventOnPermissionGranted:
           this._onPromises[cmdName].then(params => cmdFunc(params));
           break;
         default:
@@ -172,7 +169,6 @@ class Pushwoosh {
     }
     const func = createDoApiXHR(params.pushwooshUrl);
     this.api = new API(func, apiParams);
-    this._ee.emit(eventOnReady);
     if (this.driver.onApiReady) {
       this.driver.onApiReady(this.api);
     }
@@ -233,17 +229,25 @@ class Pushwoosh {
 
   async defaultProcess() {
     const permission = await this.driver.getPermission();
-    if (permission === 'denied') {
-      this._ee.emit(eventOnDenied);
-      keyValue.set(keyApiParams, 'unknown');
-    }
-    else {
-      try {
-        await this.subscribeAndRegister();
-      }
-      catch (error) {
-        Logger.write('error', error, 'subscribeAndRegister fail');
-      }
+    switch (permission) {
+      case 'denied':
+        this._ee.emit(eventOnPermissionDenied);
+        keyValue.set(keyApiParams, 'unknown');
+        break;
+      case 'prompt':
+        this._ee.emit(eventOnPermissionPropmt);
+        if (this.params.autoSubscribe) {
+          try {
+            await this.subscribeAndRegister();
+            this._ee.emit(eventOnPermissionGranted);
+          }
+          catch (error) {
+            Logger.write('error', error, 'subscribeAndRegister fail');
+          }
+        }
+        break;
+      case 'granted':
+        this._ee.emit(eventOnPermissionGranted);
     }
   }
 }
