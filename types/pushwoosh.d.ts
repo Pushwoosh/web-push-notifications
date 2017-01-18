@@ -82,11 +82,3 @@ interface IWorkerPushwooshGlobal {
 interface Window {
   Pushwoosh: IWorkerPushwooshGlobal;
 }
-interface PushMessageData {
-  json(): any;
-  text(): string;
-}
-
-interface PushEvent extends ExtendableEvent {
-  data: PushMessageData
-}
