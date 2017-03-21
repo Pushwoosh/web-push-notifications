@@ -7,23 +7,24 @@ import {
   getBrowserType,
   getVersion
 } from '../functions'
+import {eventOnPermissionDenied, eventOnPermissionGranted} from "../Pushwoosh";
+import EventEmitter from "../EventEmitter";
 
 declare const Notification: {
   permission: 'granted' | 'denied' | 'default'
 };
 
 type TWorkerDriverParams = {
+  eventEmitter?: EventEmitter,
   applicationCode: string,
   serviceWorkerUrl: string,
   applicationServerPublicKey?: string,
 }
 
 class WorkerDriver implements IPWDriver {
-  constructor(private params: TWorkerDriverParams) {
-    this.initWorker();
-  }
+  constructor(private params: TWorkerDriverParams) {}
 
-  private async initWorker() {
+  async initWorker() {
     let serviceWorkerRegistration = await navigator.serviceWorker.getRegistration();
     if (!serviceWorkerRegistration || serviceWorkerRegistration.installing == null) {
       await navigator.serviceWorker.register(`${this.params.serviceWorkerUrl}?version=${getVersion()}`);
@@ -44,6 +45,7 @@ class WorkerDriver implements IPWDriver {
   }
 
   async askSubscribe() {
+    const eventEmitter = this.params.eventEmitter || {emit: e => e};
     let serviceWorkerRegistration = await navigator.serviceWorker.ready;
     let subscription = await serviceWorkerRegistration.pushManager.getSubscription();
     if (!subscription) {
@@ -51,9 +53,26 @@ class WorkerDriver implements IPWDriver {
       if (getBrowserType() == 11 && this.params.applicationServerPublicKey) {
         options.applicationServerKey = urlB64ToUint8Array(this.params.applicationServerPublicKey);
       }
-      subscription = await serviceWorkerRegistration.pushManager.subscribe(options)
+      try {
+        subscription = await serviceWorkerRegistration.pushManager.subscribe(options);
+        eventEmitter.emit(eventOnPermissionGranted);
+      } catch (e) {
+        eventEmitter.emit(eventOnPermissionDenied);
+      }
+    } else {
+      eventEmitter.emit(eventOnPermissionGranted);
     }
     return subscription;
+  }
+
+  async unsubscribe() {
+    const serviceWorkerRegistration = await navigator.serviceWorker.getRegistration();
+    const subscription = await serviceWorkerRegistration.pushManager.getSubscription();
+    if (subscription && subscription.unsubscribe) {
+      return subscription.unsubscribe();
+    } else {
+      return Promise.resolve(false);
+    }
   }
 
   async getAPIParams() {

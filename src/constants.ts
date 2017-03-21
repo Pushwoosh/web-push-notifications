@@ -1,4 +1,5 @@
 export const defaultServiceWorkerUrl = '/pushwoosh-service-worker.js';
+export const defaultDevServiceWorkerUrl = '/pushwoosh-service-worker.uncompress.js';
 
 export const periodSendAppOpen = 3600000;
 
@@ -11,3 +12,8 @@ export const keyInitParams = 'INIT_PARAMS';
 export const keySDKVerion = 'SDK_VERSION';
 export const keyWorkerVerion = 'WORKER_VERSION';
 export const keyLastSentAppOpen = 'LAST_SENT_APP_OPEN';
+export const keyApiBaseUrl = 'API_BASE_URL';
+
+export const keyFakePushToken = 'fakePushToken';
+export const keyDeviceRegistrationStatus = 'deviceRegistrationStatus';
+export const keySafariPreviousPermission = 'safariPreviousPermission';

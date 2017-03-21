@@ -1,14 +1,18 @@
+import {keyValue} from "./storage";
+import {keyApiBaseUrl, keyFakePushToken} from "./constants";
+
 export function getGlobal() {
   return Function('return this')();
 }
 
 declare const __VERSION__: string;
 export function getVersion() {
-  return __VERSION__ + '7';
+  return __VERSION__;
 }
 
-export function isSafariBrowser() {
-  return window.safari && navigator.userAgent.indexOf('Safari') > -1;
+export function isSafariBrowser(): boolean {
+  const global = getGlobal();
+  return !!global.safari && navigator.userAgent.indexOf('Safari') > -1;
 }
 
 export function canUseServiceWorkers() {
@@ -94,10 +98,35 @@ export function createUUID(pushToken: string) {
 }
 
 export function generateHwid(applicationCode: string, pushToken: string) {
+  pushToken = getFakePushToken() || pushToken || generateFakePushToken();
   return `${applicationCode}_${createUUID(pushToken)}`;
 }
 
+export function getFakePushToken() {
+  return localStorage.getItem(keyFakePushToken);
+}
+
+export function generateFakePushToken() {
+  const token = generateToken();
+  localStorage.setItem(keyFakePushToken, token);
+  return token;
+}
+
+function generateToken(len?: number) {
+  len = len || 32;
+  let text = '';
+  const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  for (let i = 0; i < len; i++) {
+    text += possible.charAt(Math.floor(Math.random() * possible.length));
+  }
+  return text;
+}
+
 export function getPushToken(pushSubscription: PushSubscription) {
+  if (!pushSubscription) {
+    return '';
+  }
+
   if (pushSubscription.subscriptionId) {
     return pushSubscription.subscriptionId;
   }
@@ -110,7 +139,7 @@ export function getPushToken(pushSubscription: PushSubscription) {
 }
 
 function getSubsKey(pushSubscription: any, key: any): string {
-  const rawKey = pushSubscription.getKey && pushSubscription.getKey(key);
+  const rawKey = pushSubscription && pushSubscription.getKey && pushSubscription.getKey(key);
   return rawKey ? btoa(String.fromCharCode.apply(String, new Uint8Array(rawKey))) : '';
 }
 
@@ -122,10 +151,65 @@ export function getPublicKey(pushSubscription: PushSubscription) {
   return getSubsKey(pushSubscription, 'p256dh');
 }
 
-export function getPushwooshUrl(applicationCode: string) {
+declare const __API_URL__: string;
+export function getPushwooshUrl(applicationCode: string, ignoreBaseUrl?: boolean) {
   let subDomain = 'cp';
   if (!isSafariBrowser() && applicationCode && !~applicationCode.indexOf('.')) {
     subDomain = `${applicationCode}.api`;
   }
-  return `https://${subDomain}.pushwoosh.com/json/1.3/`;
+  const url = __API_URL__ ? `https://${__API_URL__}/json/1.3/` : `https://${subDomain}.pushwoosh.com/json/1.3/`;
+
+  return new Promise<any>(resolve => {
+    if (ignoreBaseUrl) {
+      resolve(url);
+    }
+    keyValue.get(keyApiBaseUrl)
+      .then((base_url = null) => {
+        resolve(base_url || url);
+      })
+      .catch(() => {
+        resolve(url);
+      });
+  })
+}
+
+export function patchConsole() {
+  let method;
+  const noop = function() {};
+  const methods = [
+    'assert', 'clear', 'count', 'debug', 'dir', 'dirxml', 'error',
+    'exception', 'group', 'groupCollapsed', 'groupEnd', 'info', 'log',
+    'markTimeline', 'profile', 'profileEnd', 'table', 'time', 'timeEnd',
+    'timeStamp', 'trace', 'warn'
+  ];
+  let len = methods.length;
+  const global = getGlobal();
+  const console = (global.console = global.console || {});
+
+  while (len--) {
+    method = methods[len];
+    if (!console[method]) {
+      console[method] = noop;
+    }
+  }
+}
+
+export function patchPromise() {
+  const global = getGlobal();
+  if (!('Promise' in global)) {
+    global.Promise = () => ({
+      then: () => {},
+      catch: () => {}
+    });
+  }
+}
+
+export function clearLocationHash() {
+  const global = getGlobal();
+  if ('history' in global && history.pushState) {
+    history.pushState(null, '', '#');
+  }
+  else {
+    location.hash = '#';
+  }
 }

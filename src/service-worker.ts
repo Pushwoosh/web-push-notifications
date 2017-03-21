@@ -7,7 +7,8 @@ import {
   keyWorkerVerion,
   defaultNotificationTitle,
   defaultNotificationImage,
-  defaultNotificationUrl
+  defaultNotificationUrl,
+  keyInitParams
 } from './constants';
 import {getVersion} from './functions';
 import Logger from './logger'
@@ -20,19 +21,23 @@ const Pushwoosh = self.Pushwoosh = new WorkerPushwooshGlobal();
 
 async function onPush(event: PushEvent) {
   try {
-    const payload = event.data.json();
+    let initParams = await keyValue.get(keyInitParams);
+    initParams = initParams || {};
+    const payload = await event.data.json();
+    const messageHash = payload && payload.p || '';
     await Logger.write('info', payload, 'onPush');
     const notification = new PushwooshNotification({
-      title: payload.header || defaultNotificationTitle,
+      title: payload.header || initParams.defaultNotificationTitle || defaultNotificationTitle,
       body: payload.body,
-      icon: payload.i || defaultNotificationImage,
+      icon: payload.i || initParams.defaultNotificationImage || defaultNotificationImage,
       openUrl: payload.l || defaultNotificationUrl,
-      messageHash: payload.p
+      messageHash
     });
     const callbacks = Pushwoosh.getListeners('onPush');
     await callbacks.reduce((pr, fun) => pr.then(() => fun(notification)), Promise.resolve());
     await Promise.all([
       notification.show(),
+      messageHash && Pushwoosh.initApi().then(() => Pushwoosh.api.messageDeliveryEvent(messageHash)),
       messagesLog.add({
         ...notification._forLog(),
         payload

@@ -25,10 +25,16 @@ interface PushManager {
   permissionState(options: PushSubscriptionOptions): Promise<TPWPermission>
 }
 
+interface PushSubscription {
+  unsubscribe(): Promise<boolean>;
+}
+
 interface IPWDriver {
+  initWorker?(): Promise<any>;
   getPermission(): Promise<TPWPermission>;
   isSubscribed(): Promise<boolean>;
-  askSubscribe(): Promise<any>;
+  askSubscribe(eventEmitter?: any): Promise<any>;
+  unsubscribe(): Promise<any>;
   getAPIParams(): Promise<IPWDriverAPIParams>;
   onApiReady?(api: any): void;
 }
@@ -81,4 +87,8 @@ interface IWorkerPushwooshGlobal {
 
 interface Window {
   Pushwoosh: IWorkerPushwooshGlobal;
+}
+
+interface SubscribeMethodParams {
+  cancelApiReInit?: boolean;
 }

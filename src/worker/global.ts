@@ -8,8 +8,8 @@ import createDoApiFetch from '../createDoApiFetch';
 
 export default class WorkerPushwooshGlobal {
   _listeners: {[key: string]: TPWCanWaitCallback[]} = {};
+
   push(f: ['onPush', TPWCanWaitCallback]) {
-    console.log('fff', f);
     if (Array.isArray(f) && f[0] === 'onPush' && typeof f[1] === 'function') {
       if (!this._listeners[f[0]]) {
         this._listeners[f[0]] = []
@@ -17,12 +17,13 @@ export default class WorkerPushwooshGlobal {
       this._listeners[f[0]].push(f[1]);
     }
   }
+
   getListeners(eventName: string) {
-    console.log('eeeee', eventName);
     return this._listeners[eventName] || [];
   }
 
   api: API;
+
   async initApi() {
     const values = await keyValue.getAll();
     const initParams: IInitParamsWithDefaults = values[keyInitParams];
@@ -37,7 +38,7 @@ export default class WorkerPushwooshGlobal {
     if (initParams.userId) {
       apiParams.userId = initParams.userId
     }
-    const func = createDoApiFetch(initParams.pushwooshUrl);
+    const func = createDoApiFetch(initParams.applicationCode);
     this.api = new API(func, apiParams);
   }
 }

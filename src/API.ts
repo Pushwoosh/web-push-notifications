@@ -1,18 +1,29 @@
+import {keyDeviceRegistrationStatus} from "./constants";
+import {isSafariBrowser} from "./functions";
 type TDoPushwooshMethod = (type: string, params: any) => Promise<any>
 
 export default class PushwooshAPI {
   private timezone: number = -(new Date).getTimezoneOffset() * 60;
 
-  constructor(private doPushwooshApiMethod: TDoPushwooshMethod, private params: TPWAPIParams) {}
+  constructor(private doPushwooshApiMethod: TDoPushwooshMethod, public params: TPWAPIParams) {}
+
+  get isSafari() {
+    return isSafariBrowser();
+  }
 
   callAPI(methodName: string, methodParams?: any) {
     const {params} = this;
+    if (this.isSafari && !params.hwid) {
+      return Promise.resolve();
+    }
     const mustBeParams: any = {
       application: params.applicationCode,
       hwid: params.hwid
     };
-    if (params.userId) {
-      mustBeParams.userId = params.userId;
+    const customUserId = methodParams && methodParams.userId;
+    const userId = customUserId || params.userId;
+    if (userId) {
+      mustBeParams.userId = userId;
     }
     return this.doPushwooshApiMethod(methodName, {
       ...methodParams,
@@ -22,26 +33,57 @@ export default class PushwooshAPI {
 
   registerDevice() {
     const {params} = this;
-    return this.callAPI('registerDevice', {
-      push_token: params.pushToken,
-      public_key: params.publicKey,
-      auth_token: params.authToken,
-      language: params.language,
-      timezone: this.timezone,
-      device_model: params.deviceModel,
-      device_type: params.deviceType,
+
+    if (!params.pushToken || this.isSafari) {
+      return Promise.resolve();
+    }
+
+    return new Promise((resolve, reject) => {
+      this.callAPI('registerDevice', {
+        push_token: params.pushToken,
+        public_key: params.publicKey,
+        auth_token: params.authToken,
+        language: params.language,
+        timezone: this.timezone,
+        device_model: params.deviceModel,
+        device_type: params.deviceType,
+      })
+        .then(() => {
+          localStorage.setItem(keyDeviceRegistrationStatus, 'registered');
+          resolve();
+        })
+        .catch(reject);
     });
   }
 
   unregisterDevice() {
-    return this.callAPI('unregisterDevice');
+    if (this.isSafari) {
+      return Promise.resolve();
+    }
+
+    return new Promise((resolve, reject) => {
+      this.callAPI('unregisterDevice')
+        .then(() => {
+          localStorage.setItem(keyDeviceRegistrationStatus, '');
+          resolve();
+        })
+        .catch(reject);
+    });
   }
 
-  registerUser() {
-    return this.callAPI('registerUser', {
+  registerUser(userId?: string) {
+    const params: any = {
       timezone: this.timezone,
       device_type: this.params.deviceType,
-    });
+      userId: this.params.userId,
+    };
+    if (userId) {
+      params.userId = userId;
+    }
+    if (!params.userId) {
+      return Promise.resolve();
+    }
+    return this.callAPI('registerUser', params);
   }
 
   applicationOpen() {
@@ -62,5 +104,9 @@ export default class PushwooshAPI {
 
   pushStat(hash: string) {
     return this.callAPI('pushStat', {hash});
+  }
+
+  messageDeliveryEvent(hash: string) {
+    return this.callAPI('messageDeliveryEvent', {hash});
   }
 }

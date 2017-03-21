@@ -1,4 +1,5 @@
 import {log as logStorage} from './storage';
+import {patchConsole} from "./functions";
 
 type TWriteType = 'error' | 'apirequest' | 'info';
 
@@ -8,7 +9,9 @@ const levels: {[key: string]: number} = {
   debug: 3
 };
 
-let numLevel = 2;
+let numLevel = 3;
+
+patchConsole();
 
 interface ILogger {
   setLevel(level: string): void;
@@ -22,7 +25,7 @@ interface ILogger {
 const Logger: ILogger = {
   setLevel(level) {
     if (!levels[level]) {
-      level = 'info';
+      level = 'error';
     }
     numLevel = levels[level];
   },
