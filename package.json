@@ -1,12 +1,11 @@
 {
   "name": "web-push-notifications",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Pushwoosh web push notifications",
   "main": "lib/index.js",
   "scripts": {
-    "prepublish": "npm run build:lib",
+    "prepublish": "rimraf lib && webpack --config webpack.lib.config.js",
     "build": "webpack",
-    "build:lib": "node ./node_modules/typescript/bin/tsc --rootDir src --outDir lib",
     "build:min": "cross-env NODE_ENV=production webpack",
     "build:release": "npm run build && npm run build:min",
     "clean": "rimraf dist",

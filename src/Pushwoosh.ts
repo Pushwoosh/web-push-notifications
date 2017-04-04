@@ -13,7 +13,6 @@ import {
 } from './functions';
 import {
   defaultServiceWorkerUrl,
-  defaultDevServiceWorkerUrl,
   keyApiParams,
   keyInitParams,
   keySDKVerion,
@@ -35,7 +34,6 @@ export const eventOnRegister = 'onRegister';
 export const eventOnPermissionPropmt = 'onPermissionPrompt';
 export const eventOnPermissionDenied = 'onPermissionDenied';
 export const eventOnPermissionGranted = 'onPermissionGranted';
-declare const __DEV_MODE__: boolean;
 
 type ChainFunction = (param: any) => Promise<any> | any;
 
@@ -125,7 +123,6 @@ class Pushwoosh {
     if (!applicationCode) {
       throw new Error('no application code');
     }
-    const serviceWorkerUrl = __DEV_MODE__ ? defaultDevServiceWorkerUrl : defaultServiceWorkerUrl;
     const pushwooshUrl = await getPushwooshUrl(applicationCode);
     const params = this.params = {
       autoSubscribe: true,
@@ -139,7 +136,7 @@ class Pushwoosh {
       },
       driversSettings: {
         worker: {
-          serviceWorkerUrl,
+          serviceWorkerUrl: defaultServiceWorkerUrl,
           ...(initParams.driversSettings && initParams.driversSettings.worker),
         }
       }
@@ -378,7 +375,7 @@ class Pushwoosh {
   }
 
   async getUserId() {
-    const {params} = this;
+    const params: IInitParams = this.params || {};
     return Promise.resolve(params.userId);
   }
 
