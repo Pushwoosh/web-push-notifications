@@ -1,10 +1,4 @@
-type TMessageInfo = {
-  title: string;
-  body: string;
-  icon: string;
-  openUrl: string;
-  messageHash: string;
-}
+import {prepareDuration} from '../functions';
 
 export default class PushwooshNotification {
   private _origMess: TMessageInfo;
@@ -44,16 +38,47 @@ export default class PushwooshNotification {
     this._changedMess.openUrl = openUrl;
   }
 
-  show() {
+  get duration() {
+    return prepareDuration(this._changedMess.duration);
+  }
+  set duration(duration) {
+    this._changedMess.duration = duration;
+  }
+
+  get messageHash() {
+    return this._changedMess.messageHash;
+  }
+  set messageHash(messageHash) {
+    this._changedMess.messageHash = messageHash;
+  }
+
+  async show() {
     if (!this._canceled) {
-      const {_changedMess} = this;
-      return self.registration.showNotification(_changedMess.title, {
-        body: _changedMess.body,
-        icon: _changedMess.icon,
+      const code = `notificationCode-${Date.now()}`;
+      const {buttons, image} = this._changedMess;
+      buttons.forEach((button: NotificationButton, key: number) => {
+        button.action = `action-${key}`
+      });
+      await self.registration.showNotification(this.title, {
+        body: this.body,
+        icon: this.icon,
+        requireInteraction: true,
         tag: JSON.stringify({
-          url: _changedMess.openUrl,
-          messageHash: _changedMess.messageHash
-        })
+          url: this.openUrl,
+          messageHash: this.messageHash
+        }),
+        data: {
+          code,
+          buttons
+        },
+        actions: buttons,
+        image
+      });
+      const notifications = await self.registration.getNotifications();
+      notifications.forEach(notification => {
+        if (notification.data && notification.data.code === code && this.duration) {
+          setTimeout(() => notification.close(), 1000 * this.duration);
+        }
       });
     }
   }

@@ -31,9 +31,12 @@ export const eventOnReady = 'onReady';
 export const eventOnSubscribe = 'onSubscribe';
 export const eventOnUnsubscribe = 'onUnsubscribe';
 export const eventOnRegister = 'onRegister';
-export const eventOnPermissionPropmt = 'onPermissionPrompt';
+export const eventOnPermissionPrompt = 'onPermissionPrompt';
 export const eventOnPermissionDenied = 'onPermissionDenied';
 export const eventOnPermissionGranted = 'onPermissionGranted';
+export const eventOnPushDelivery = 'onPushDelivery';
+export const eventOnNotificationClick = 'onNotificationClick';
+export const eventOnNotificationClose = 'onNotificationClose';
 
 type ChainFunction = (param: any) => Promise<any> | any;
 
@@ -68,7 +71,7 @@ class Pushwoosh {
   constructor() {
     this._onPromises = {
       [eventOnPermissionDenied]: new Promise(resolve => this._ee.once(eventOnPermissionDenied, resolve)),
-      [eventOnPermissionPropmt]: new Promise(resolve => this._ee.once(eventOnPermissionPropmt, resolve)),
+      [eventOnPermissionPrompt]: new Promise(resolve => this._ee.once(eventOnPermissionPrompt, resolve)),
       [eventOnPermissionGranted]: new Promise(resolve => this._ee.once(eventOnPermissionGranted, resolve)),
     };
   }
@@ -82,17 +85,21 @@ class Pushwoosh {
       switch (cmdName) {
         case 'init':
           if (this.shouldInit()) {
-            this.init(cmdFunc);
+            this.init(cmdFunc)
+                .catch(e => Logger.info('Pushwoosh init failed', e));
           }
           break;
         case eventOnReady:
         case eventOnRegister:
         case eventOnSubscribe:
         case eventOnUnsubscribe:
-          this._ee.on(cmdName, () => cmdFunc(this.api));
+        case eventOnPushDelivery:
+        case eventOnNotificationClick:
+        case eventOnNotificationClose:
+          this._ee.on(cmdName, (params) => cmdFunc(this.api, params));
           break;
         case eventOnPermissionDenied:
-        case eventOnPermissionPropmt:
+        case eventOnPermissionPrompt:
         case eventOnPermissionGranted:
           this._onPromises[cmdName].then(() => cmdFunc(this.api));
           break;
@@ -185,10 +192,19 @@ class Pushwoosh {
 
     try {
       await this.defaultProcess();
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.onmessage = this.onServiceWorkerMessage.bind(this);
+      }
     }
     catch (err) {
       Logger.write('error', err, 'defaultProcess fail');
     }
+  }
+
+  onServiceWorkerMessage(e: MessageEvent) {
+    const {data = {}} = e || {};
+    const {type = '', payload = {}} = data || {};
+    this._ee.emit(type, payload);
   }
 
   async initApi() {
@@ -345,7 +361,7 @@ class Pushwoosh {
         if (autoSubscribe) {
           await this.subscribe({registerLess: true});
         } else {
-          this._ee.emit(eventOnPermissionPropmt);
+          this._ee.emit(eventOnPermissionPrompt);
         }
         break;
       case 'granted':

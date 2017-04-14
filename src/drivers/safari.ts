@@ -1,15 +1,8 @@
-import EventEmitter from "../EventEmitter";
 import {eventOnPermissionGranted, eventOnPermissionDenied} from "../Pushwoosh";
 import {getPushwooshUrl} from "../functions";
-type TWorkerDriverParams = {
-  eventEmitter?: EventEmitter,
-  applicationCode: string,
-  webSitePushID: string,
-  pushwooshUrl: string,
-}
 
 class SafariDriver implements IPWDriver {
-  constructor(private params: TWorkerDriverParams) {
+  constructor(private params: TWorkerSafariDriverParams) {
 
   }
 
@@ -29,7 +22,7 @@ class SafariDriver implements IPWDriver {
 
   askSubscribe() {
     const {
-      eventEmitter = {emit: (e:any) => e},
+      eventEmitter = {emit: (e: any) => e},
       applicationCode = '',
       webSitePushID = ''
     } = this.params || {};

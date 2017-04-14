@@ -1,7 +1,3 @@
-interface IEevetTargetWithResult extends EventTarget {
-  result: IDBDatabase;
-}
-
 const objectStoreKeyValueName = 'keyValue';
 const objectStoreLogName = 'logs';
 const objectStoreMessagesName = 'messages';
@@ -106,7 +102,7 @@ function createKeyValue(name: string) {
 }
 
 
-abstract class LogBase {
+export abstract class LogBase {
   protected abstract name: string;
   protected abstract maxItems: number;
   _add(obj: any) {
@@ -167,7 +163,7 @@ abstract class LogBase {
   }
 }
 
-class LogLog extends LogBase {
+export class LogLog extends LogBase {
   protected name = objectStoreLogName;
   protected maxItems = 100;
   protected environment = (typeof self !== 'undefined' && self.registration) ? 'worker' : 'browser';
@@ -188,7 +184,7 @@ class LogLog extends LogBase {
   }
 }
 
-class LogMessage extends LogBase {
+export class LogMessage extends LogBase {
   protected name = objectStoreMessagesName;
   protected maxItems = 25;
   add(log: any) {

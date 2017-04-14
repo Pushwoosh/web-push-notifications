@@ -1,6 +1,5 @@
 import {keyDeviceRegistrationStatus} from "./constants";
 import {isSafariBrowser} from "./functions";
-type TDoPushwooshMethod = (type: string, params: any) => Promise<any>
 
 export default class PushwooshAPI {
   private timezone: number = -(new Date).getTimezoneOffset() * 60;

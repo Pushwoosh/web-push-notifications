@@ -5,7 +5,6 @@ export function getGlobal() {
   return Function('return this')();
 }
 
-declare const __VERSION__: string;
 export function getVersion() {
   return __VERSION__;
 }
@@ -151,7 +150,6 @@ export function getPublicKey(pushSubscription: PushSubscription) {
   return getSubsKey(pushSubscription, 'p256dh');
 }
 
-declare const __API_URL__: string;
 export function getPushwooshUrl(applicationCode: string, ignoreBaseUrl?: boolean) {
   let subDomain = 'cp';
   if (!isSafariBrowser() && applicationCode && !~applicationCode.indexOf('.')) {
@@ -212,4 +210,12 @@ export function clearLocationHash() {
   else {
     location.hash = '#';
   }
+}
+
+export function prepareDuration(duration: any) {
+  if (isNaN(duration)) {
+    return 20;
+  }
+  duration = Math.round(duration);
+  return Math.min(60, duration < 0 ? 20 : duration);
 }

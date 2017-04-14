@@ -8,18 +8,10 @@ import {
   getVersion
 } from '../functions'
 import {eventOnPermissionDenied, eventOnPermissionGranted} from "../Pushwoosh";
-import EventEmitter from "../EventEmitter";
 
 declare const Notification: {
   permission: 'granted' | 'denied' | 'default'
 };
-
-type TWorkerDriverParams = {
-  eventEmitter?: EventEmitter,
-  applicationCode: string,
-  serviceWorkerUrl: string,
-  applicationServerPublicKey?: string,
-}
 
 class WorkerDriver implements IPWDriver {
   constructor(private params: TWorkerDriverParams) {}
@@ -27,7 +19,7 @@ class WorkerDriver implements IPWDriver {
   async initWorker() {
     let serviceWorkerRegistration = await navigator.serviceWorker.getRegistration();
     if (!serviceWorkerRegistration || serviceWorkerRegistration.installing == null) {
-      await navigator.serviceWorker.register(`${this.params.serviceWorkerUrl}?version=${getVersion()}`);
+      await navigator.serviceWorker.register(`${this.params.serviceWorkerUrl}?version=${getVersion()}`, {scope: '/'});
     }
   }
 
@@ -45,7 +37,7 @@ class WorkerDriver implements IPWDriver {
   }
 
   async askSubscribe() {
-    const eventEmitter = this.params.eventEmitter || {emit: e => e};
+    const eventEmitter = this.params.eventEmitter || {emit: (e: any) => e};
     let serviceWorkerRegistration = await navigator.serviceWorker.ready;
     let subscription = await serviceWorkerRegistration.pushManager.getSubscription();
     if (!subscription) {

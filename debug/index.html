@@ -153,6 +153,18 @@
         checkSubscription();
       }]);
 
+      Pushwoosh.push(['onPushDelivery', function(api, params) {
+          console.log('EVENT: onPushDelivery', api, params);
+      }]);
+
+      Pushwoosh.push(['onNotificationClick', function(api, params) {
+          console.log('EVENT: onNotificationClick', api, params);
+      }]);
+
+      Pushwoosh.push(['onNotificationClose', function(api, params) {
+          console.log('EVENT: onNotificationClose', api, params);
+      }]);
+
       function checkSubscription() {
         Pushwoosh.isSubscribed().then(function(res) {
           toggleNodesVisibility('.subscription-status', res ? 'actionUnsubscribe' : 'actionSubscribe');

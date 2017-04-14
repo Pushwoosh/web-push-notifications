@@ -2,7 +2,7 @@ type PushwooshApiResponce = {
   status_code: number,
   status_message: string,
   response?: any
-}
+};
 
 type TPWPermission = 'denied' | 'granted' | 'prompt';
 
@@ -43,7 +43,7 @@ interface ServiceWorkerRegistration {
   showNotification(a: any, b: any): Promise<any>;
 }
 
-interface IInitParams  {
+interface IInitParams {
   applicationCode: string;
   safariWebsitePushID?: string;
   autoSubscribe?: boolean;
@@ -92,3 +92,63 @@ interface Window {
 interface SubscribeMethodParams {
   cancelApiReInit?: boolean;
 }
+
+interface IPWBroadcastClientsParams {
+  type: string;
+  payload: any;
+}
+
+type TMessageInfo = {
+  title: string;
+  body: string;
+  icon: string;
+  openUrl: string;
+  messageHash: string;
+  customData?: any;
+  duration?: any;
+  buttons?: any;
+  image?: string;
+};
+
+interface IEevetTargetWithResult extends EventTarget {
+  result: IDBDatabase;
+}
+
+type TWriteType = 'error' | 'apirequest' | 'info';
+
+interface ILogger {
+  setLevel(level: string): void;
+  error(...args: any[]): void;
+  info(...args: any[]): void;
+  debug(...args: any[]): void;
+  write(type: TWriteType, message: any, additional?: any): Promise<void>;
+  [key: string]: any;
+}
+
+type ListenerFn = (...args: Array<any>) => void | Promise<any>;
+
+type TWorkerDriverParams = {
+  eventEmitter?: any,
+  applicationCode: string,
+  serviceWorkerUrl: string,
+  applicationServerPublicKey?: string,
+};
+
+type TWorkerSafariDriverParams = {
+  eventEmitter?: any,
+  applicationCode: string,
+  webSitePushID: string,
+  pushwooshUrl: string,
+};
+
+type NotificationButton = {
+  title: string,
+  action: string,
+  url: string
+};
+
+type TDoPushwooshMethod = (type: string, params: any) => Promise<any>;
+
+declare const __VERSION__: string;
+declare const __API_URL__: string;
+declare const caches: Cache;

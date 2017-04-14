@@ -1,5 +1,3 @@
-type ListenerFn = (...args: Array<any>) => void | Promise<any>;
-
 class EventEmitter {
   private _events: {
     [key: string]: ListenerFn[]
