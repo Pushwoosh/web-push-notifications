@@ -46,7 +46,7 @@ async function getNotificationData(event: PushEvent) {
   const messageHash = payload.p || '';
   const buttons = payload.buttons || [];
   const image = payload.image || '';
-  const duration = prepareDuration(initParams.duration);
+  const duration = prepareDuration(payload.duration);
   const customData = await parseCustomData(payload.u);
   return {
     messageHash,
@@ -126,9 +126,9 @@ self.addEventListener('install', (event: InstallEvent) => {
 
 self.addEventListener('activate', function(event: ExtendableEvent) {
   console.info('activate', event);
-  event.waitUntil(caches.keys().then(cacheNames => {
-    return Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
-  }).then(() => Logger.write('info', 'activate')).then(() => self.clients.claim()));
+  event.waitUntil(Promise.all([
+    Logger.write('info', 'activate')
+  ]).then(() => self.clients.claim()));
 });
 
 self.addEventListener('push', (event: PushEvent) => {
