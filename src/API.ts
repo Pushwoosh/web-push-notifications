@@ -11,19 +11,16 @@ export default class PushwooshAPI {
   }
 
   callAPI(methodName: string, methodParams?: any) {
-    const {params} = this;
-    if (this.isSafari && !params.hwid) {
+    const {hwid = '', applicationCode = '', userId = ''} = this.params || {};
+    if (this.isSafari && !hwid) {
       return Promise.resolve();
     }
-    const mustBeParams: any = {
-      application: params.applicationCode,
-      hwid: params.hwid
-    };
     const customUserId = methodParams && methodParams.userId;
-    const userId = customUserId || params.userId;
-    if (userId) {
-      mustBeParams.userId = userId;
-    }
+    const mustBeParams: any = {
+      application: applicationCode,
+      hwid,
+      userId: customUserId || userId || hwid
+    };
     return this.doPushwooshApiMethod(methodName, {
       ...methodParams,
       ...mustBeParams
@@ -107,5 +104,21 @@ export default class PushwooshAPI {
 
   messageDeliveryEvent(hash: string) {
     return this.callAPI('messageDeliveryEvent', {hash});
+  }
+
+  postEvent(event: string, attributes: {[k: string]: any}) {
+    const now = new Date();
+    const timestampUTC = Date.UTC(
+        now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(),
+        now.getMinutes(), now.getSeconds(), now.getMilliseconds()
+    );
+    const timestampCurrent = now.getTime();
+    return this.callAPI('postEvent', {
+      device_type: this.params.deviceType,
+      event,
+      attributes,
+      timestampUTC,
+      timestampCurrent
+    });
   }
 }

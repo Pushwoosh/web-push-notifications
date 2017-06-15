@@ -50,6 +50,7 @@ interface IInitParams {
   pushwooshUrl?: string;
   logLevel?: string;
   userId?: string;
+  scope?: string;
   tags?: {[key: string]: any};
   driversSettings?: {
     worker?: {
@@ -129,6 +130,7 @@ type ListenerFn = (...args: Array<any>) => void | Promise<any>;
 
 type TWorkerDriverParams = {
   eventEmitter?: any,
+  scope?: string,
   applicationCode: string,
   serviceWorkerUrl: string,
   applicationServerPublicKey?: string,

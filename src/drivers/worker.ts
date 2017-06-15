@@ -7,7 +7,9 @@ import {
   getBrowserType,
   getVersion
 } from '../functions'
-import {eventOnPermissionDenied, eventOnPermissionGranted} from "../Pushwoosh";
+import {eventOnSWInitError, eventOnPermissionDenied, eventOnPermissionGranted} from "../Pushwoosh";
+import {keyApiParams} from "../constants";
+import {keyValue} from "../storage";
 
 declare const Notification: {
   permission: 'granted' | 'denied' | 'default'
@@ -16,10 +18,25 @@ declare const Notification: {
 class WorkerDriver implements IPWDriver {
   constructor(private params: TWorkerDriverParams) {}
 
+  get scope() {
+    let {scope = '/'} = this.params || {};
+    if (typeof scope !== 'string') {
+      throw new Error('invalid scope value');
+    }
+    if (scope.length > 1) {
+      if (scope.substr(0, 1) !== '/')
+        scope = `/${scope}`;
+      if (scope.substr(scope.length - 1) !== '/')
+        scope = `${scope}/`;
+    }
+    return scope;
+  }
+
   async initWorker() {
+    const scope = this.scope;
     let serviceWorkerRegistration = await navigator.serviceWorker.getRegistration();
     if (!serviceWorkerRegistration || serviceWorkerRegistration.installing == null) {
-      await navigator.serviceWorker.register(`${this.params.serviceWorkerUrl}?version=${getVersion()}`, {scope: '/'});
+      await navigator.serviceWorker.register(`${scope}${this.params.serviceWorkerUrl}?version=${getVersion()}`, {scope});
     }
   }
 
@@ -36,8 +53,12 @@ class WorkerDriver implements IPWDriver {
     return !!subscription;
   }
 
+  emit(event: string) {
+    const {eventEmitter = {emit: (e: any) => e}} = this.params || {};
+    eventEmitter.emit(event);
+  }
+
   async askSubscribe() {
-    const eventEmitter = this.params.eventEmitter || {emit: (e: any) => e};
     let serviceWorkerRegistration = await navigator.serviceWorker.ready;
     let subscription = await serviceWorkerRegistration.pushManager.getSubscription();
     if (!subscription) {
@@ -47,18 +68,21 @@ class WorkerDriver implements IPWDriver {
       }
       try {
         subscription = await serviceWorkerRegistration.pushManager.subscribe(options);
-        eventEmitter.emit(eventOnPermissionGranted);
+        this.emit(eventOnPermissionGranted);
       } catch (e) {
-        eventEmitter.emit(eventOnPermissionDenied);
+        this.emit(eventOnPermissionDenied);
       }
     } else {
-      eventEmitter.emit(eventOnPermissionGranted);
+      this.emit(eventOnPermissionGranted);
     }
     return subscription;
   }
 
   async unsubscribe() {
     const serviceWorkerRegistration = await navigator.serviceWorker.getRegistration();
+    if (!serviceWorkerRegistration) {
+      return Promise.resolve();
+    }
     const subscription = await serviceWorkerRegistration.pushManager.getSubscription();
     if (subscription && subscription.unsubscribe) {
       return subscription.unsubscribe();
@@ -70,7 +94,16 @@ class WorkerDriver implements IPWDriver {
   async getAPIParams() {
     let serviceWorkerRegistration = await navigator.serviceWorker.getRegistration();
     if (!serviceWorkerRegistration) {
-      throw new Error('No service worker registration');
+      const {
+        [keyApiParams]: savedApiParams
+      } = await keyValue.getAll();
+      if (savedApiParams && this.scope !== '/') {
+        return savedApiParams;
+      }
+      else {
+        this.emit(eventOnSWInitError);
+        throw new Error('No service worker registration');
+      }
     }
     serviceWorkerRegistration = await navigator.serviceWorker.ready;
 

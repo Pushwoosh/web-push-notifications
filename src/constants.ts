@@ -1,4 +1,4 @@
-export const defaultServiceWorkerUrl = '/pushwoosh-service-worker.js';
+export const defaultServiceWorkerUrl = 'pushwoosh-service-worker.js';
 
 export const periodSendAppOpen = 3600000;
 

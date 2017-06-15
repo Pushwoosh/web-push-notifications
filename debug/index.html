@@ -41,10 +41,17 @@
       #actionUnsubscribe,
       #granted {color: green;}
       #prompt {color: blue;}
+
+      .page {
+          max-width: 1000px;
+          padding: 0 20px;
+          margin: auto;
+      }
     </style>
 </head>
 <body>
-    <h1>Pushwoosh Web SDK 3.0</h1>
+<div class="page">
+    <h1><a href="/">Pushwoosh Web SDK</a></h1>
 
     <p><em>Status === subscribed, when notifications permission granted and device registered.</em></p>
 
@@ -75,26 +82,41 @@
     </table>
 
     <fieldset>
-        <legend>Register user</legend>
+        <legend>/postEvent</legend>
+        <form id="postEventForm">
+            <div class="success"></div>
+            <div class="error"></div>
+            <p>
+                <input type="text" name="event" placeholder="Specify event name..." required>
+            </p>
+            <p>
+                <textarea name="attributes" placeholder="Specify valid JSON with attributes..." cols="30" rows="10" required></textarea>
+            </p>
+            <button type="submit">Submit</button>
+        </form>
+    </fieldset>
+
+    <fieldset>
+        <legend>/registerUser</legend>
         <form id="registerUserForm">
           <div class="success"></div>
           <div class="error"></div>
           <p>
-            <input type="text" name="userId" placeholder="Enter userId..." required>
+            <input type="text" name="userId" placeholder="Specify userId..." required>
             <button type="submit">Submit</button>
           </p>
         </form>
     </fieldset>
 
     <fieldset>
-        <legend>Set tags</legend>
+        <legend>/setTags</legend>
         <form id="setTagsForm">
           <div class="success"></div>
           <div class="error"></div>
           <p>
             <textarea
               name="tags"
-              placeholder="Enter valid JSON..."
+              placeholder="Specify valid JSON..."
               cols="30"
               rows="10"
               required
@@ -163,6 +185,10 @@
 
       Pushwoosh.push(['onNotificationClose', function(api, params) {
           console.log('EVENT: onNotificationClose', api, params);
+      }]);
+
+      Pushwoosh.push(['onSWInitError', function(api) {
+          console.log('EVENT: onSWInitError', api);
       }]);
 
       function checkSubscription() {
@@ -249,6 +275,50 @@
             button.removeAttribute('disabled');
           });
       });
+
+      document.querySelector('#postEventForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        var form = this;
+        var button = form.querySelector('button');
+        var eventControl = form.querySelector('[name="event"]');
+        var attributesControl = form.querySelector('[name="attributes"]');
+        var successNode = form.querySelector('.success');
+        var errorNode = form.querySelector('.error');
+        var attributes = attributesControl.value;
+        var event = eventControl.value;
+
+        successNode.innerHTML = '';
+        errorNode.innerHTML = '';
+
+        if (!event) {
+          errorNode.innerHTML += 'Event name is required.';
+          return;
+        }
+
+        try {
+          attributes = JSON.parse(attributes);
+        }
+        catch (err) {
+          console.error(err);
+          errorNode.innerHTML = 'JSON.parse error. Expected object: {[k: string]: any}';
+          return;
+        }
+
+        button.setAttribute('disabled', 'disabled');
+        Pushwoosh.api.postEvent(event, attributes)
+          .then(function() {
+            eventControl.value = '';
+            attributesControl.value = '';
+            successNode.innerHTML = 'Data successfully submitted ' + new Date();
+          })
+          .catch(function() {
+            errorNode.innerHTML += 'Got some error on submit. Check console for details.';
+          })
+          .then(function() {
+            button.removeAttribute('disabled');
+          });
+      });
     </script>
+</div>
 </body>
 </html>

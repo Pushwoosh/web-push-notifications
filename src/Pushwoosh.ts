@@ -34,6 +34,7 @@ export const eventOnRegister = 'onRegister';
 export const eventOnPermissionPrompt = 'onPermissionPrompt';
 export const eventOnPermissionDenied = 'onPermissionDenied';
 export const eventOnPermissionGranted = 'onPermissionGranted';
+export const eventOnSWInitError = 'onSWInitError';
 export const eventOnPushDelivery = 'onPushDelivery';
 export const eventOnNotificationClick = 'onNotificationClick';
 export const eventOnNotificationClose = 'onNotificationClose';
@@ -52,6 +53,7 @@ class Pushwoosh {
   public driver: IPWDriver;
   public isSafari: boolean = isSafariBrowser();
   public permissionOnInit: string;
+  public ready: boolean = false;
 
   public debug = {
     async showLog() {
@@ -76,9 +78,18 @@ class Pushwoosh {
     };
   }
 
+  onReadyHandler(cmd: any) {
+    if (this.ready) {
+      cmd(this.api);
+    }
+    else {
+      this._ee.on(eventOnReady, (params) => cmd(this.api, params));
+    }
+  }
+
   push(cmd: any) {
     if (typeof cmd === 'function') {
-      this._ee.on(eventOnReady, () => cmd(this.api));
+      this.onReadyHandler(cmd);
     }
     else if (Array.isArray(cmd)) {
       const [cmdName, cmdFunc] = cmd;
@@ -90,9 +101,12 @@ class Pushwoosh {
           }
           break;
         case eventOnReady:
+          this.onReadyHandler(cmdFunc);
+          break;
         case eventOnRegister:
         case eventOnSubscribe:
         case eventOnUnsubscribe:
+        case eventOnSWInitError:
         case eventOnPushDelivery:
         case eventOnNotificationClick:
         case eventOnNotificationClose:
@@ -124,6 +138,7 @@ class Pushwoosh {
   async init(initParams: IInitParams) {
     this._initParams  = initParams;
     const {
+      scope,
       applicationCode,
       logLevel = 'error'
     } = initParams;
@@ -155,7 +170,8 @@ class Pushwoosh {
       const {worker} = params.driversSettings;
       this.driver = new WorkerDriver({
         eventEmitter: this._ee,
-        applicationCode: applicationCode,
+        scope,
+        applicationCode,
         serviceWorkerUrl: worker.serviceWorkerUrl,
         applicationServerPublicKey: worker.applicationServerPublicKey,
       });
@@ -171,7 +187,7 @@ class Pushwoosh {
     else if (this.isSafari && params.safariWebsitePushID) {
       this.driver = new SafariDriver({
         eventEmitter: this._ee,
-        applicationCode: applicationCode,
+        applicationCode,
         pushwooshUrl: params.pushwooshUrl,
         webSitePushID: params.safariWebsitePushID,
       });
@@ -378,6 +394,7 @@ class Pushwoosh {
     await this.open();
     await this.register();
     this._ee.emit(eventOnReady);
+    this.ready = true;
   }
 
   async getHWID() {
