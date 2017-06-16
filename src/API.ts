@@ -108,11 +108,9 @@ export default class PushwooshAPI {
 
   postEvent(event: string, attributes: {[k: string]: any}) {
     const now = new Date();
-    const timestampUTC = Date.UTC(
-        now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(),
-        now.getMinutes(), now.getSeconds(), now.getMilliseconds()
-    );
-    const timestampCurrent = now.getTime();
+    const time = now.getTime();
+    const timestampUTC = Math.floor(time / 1000);
+    const timestampCurrent = timestampUTC - (now.getTimezoneOffset() / 60 * 3600);
     return this.callAPI('postEvent', {
       device_type: this.params.deviceType,
       event,
