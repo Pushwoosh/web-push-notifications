@@ -136,16 +136,17 @@ class Pushwoosh {
   }
 
   async init(initParams: IInitParams) {
-    this._initParams  = initParams;
+    this._initParams = initParams;
     const {
       scope,
       applicationCode,
-      logLevel = 'error'
+      logLevel = 'error',
+      pushwooshApiUrl
     } = initParams;
     if (!applicationCode) {
       throw new Error('no application code');
     }
-    const pushwooshUrl = await getPushwooshUrl(applicationCode);
+    const pushwooshUrl = await getPushwooshUrl(applicationCode, false, pushwooshApiUrl);
     const params = this.params = {
       autoSubscribe: true,
       pushwooshUrl,
@@ -189,6 +190,7 @@ class Pushwoosh {
         eventEmitter: this._ee,
         applicationCode,
         pushwooshUrl: params.pushwooshUrl,
+        pushwooshApiUrl: params.pushwooshApiUrl,
         webSitePushID: params.safariWebsitePushID,
       });
       this._ee.on(eventOnReady, () => {
@@ -232,11 +234,12 @@ class Pushwoosh {
       deviceModel: params.tags['Device Model'],
       applicationCode: params.applicationCode,
       language: params.tags.Language,
+      pushwooshApiUrl: params.pushwooshApiUrl
     };
     if (params.userId) {
       apiParams.userId = params.userId
     }
-    const func = createDoApiXHR(params.applicationCode);
+    const func = createDoApiXHR(params.applicationCode, params.pushwooshApiUrl);
     this.api = new API(func, apiParams);
   }
 

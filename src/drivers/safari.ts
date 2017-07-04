@@ -24,11 +24,12 @@ class SafariDriver implements IPWDriver {
     const {
       eventEmitter = {emit: (e: any) => e},
       applicationCode = '',
-      webSitePushID = ''
+      webSitePushID = '',
+      pushwooshApiUrl = ''
     } = this.params || {};
     return new Promise((resolve, reject) => {
       // @TODO: remove second parameter when base_url bug will be fixed by backend
-      getPushwooshUrl(applicationCode, true).then(pushwooshUrl => {
+      getPushwooshUrl(applicationCode, true, pushwooshApiUrl).then(pushwooshUrl => {
         safari.pushNotification.requestPermission(
           `${pushwooshUrl}safari`,
           webSitePushID,

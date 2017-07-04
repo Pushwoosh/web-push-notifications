@@ -1,15 +1,15 @@
 const path = require('path');
 const webpack = require('webpack');
 
-const production = process.env.NODE_ENV === 'production';
+const {argv, env: {NODE_ENV}} = process;
+const apiUrlIndex = argv.indexOf('--api');
+const apiUrlValue = ~apiUrlIndex ? argv[apiUrlIndex + 1] : '';
 
-const argv = process.argv;
-const api_url_index = argv.indexOf('--api');
-const api_url_value = ~api_url_index ? argv[api_url_index + 1] : '';
+const isProduction = NODE_ENV === 'production';
 
 const defines = {
-  __VERSION__: JSON.stringify(require("./package.json").version),
-  __API_URL__: JSON.stringify(api_url_value)
+  __VERSION__: JSON.stringify(require('./package.json').version),
+  __API_URL__: JSON.stringify(apiUrlValue)
 };
 
 const uglifyOptions = {
@@ -33,7 +33,7 @@ module.exports = {
   },
   output: {
     path: path.join(__dirname, 'dist'),
-    filename: `pushwoosh-[name].${production ? '' : 'uncompress.'}js`
+    filename: `pushwoosh-[name].${isProduction ? '' : 'uncompress.'}js`
   },
   resolve: {
     extensions: ['', '.ts'],
@@ -47,6 +47,6 @@ module.exports = {
   plugins: [
     new webpack.optimize.OccurrenceOrderPlugin(),
     new webpack.DefinePlugin(defines),
-    production && new webpack.optimize.UglifyJsPlugin(uglifyOptions)
+    isProduction && new webpack.optimize.UglifyJsPlugin(uglifyOptions)
   ].filter(x => x)
 };

@@ -20,7 +20,7 @@ const knownArguments = {
     replaceFromPrefix: 'var INIT_PARAMS = ',
     defaults: JSON.stringify({
       "logLevel": "error", // possible values - error, info, debug
-      "applicationCode": "1730C-121AE",
+      "applicationCode": "XXXXX-XXXXX",
       "safariWebsitePushID": "web.com.example.test",
       "defaultNotificationTitle": "Pushwoosh",
       "defaultNotificationImage": "https://cp.pushwoosh.com/img/logo-medium.png",

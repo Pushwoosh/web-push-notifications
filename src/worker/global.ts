@@ -34,11 +34,12 @@ export default class WorkerPushwooshGlobal {
       deviceModel: initParams.tags['Device Model'],
       applicationCode: initParams.applicationCode,
       language: initParams.tags.Language,
+      pushwooshApiUrl: initParams.pushwooshApiUrl
     };
     if (initParams.userId) {
       apiParams.userId = initParams.userId
     }
-    const func = createDoApiFetch(initParams.applicationCode);
+    const func = createDoApiFetch(initParams.applicationCode, initParams.pushwooshApiUrl);
     this.api = new API(func, apiParams);
   }
 }

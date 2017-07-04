@@ -26,29 +26,29 @@ export function getBrowserType(): 10 | 11 | 12 {
 }
 
 export function getBrowserVersion() {
-  const ua = navigator.userAgent;
-  let M = ua.match(/(opera|chrome|safari|firefox|msie|trident(?=\/))\/?\s*(\d+)/i) || [];
-  let tem;
+  const userAgent = navigator.userAgent;
+  let match = userAgent.match(/(opera|chrome|safari|firefox|msie|trident(?=\/))\/?\s*(\d+)/i) || [];
+  let version = null;
 
-  if (/trident/i.test(M[1])) {
-    tem = /\brv[ :]+(\d+)/g.exec(ua) || [];
-    return `IE ${tem[1] || ''}`;
+  if (/trident/i.test(match[1])) {
+    version = /\brv[ :]+(\d+)/g.exec(userAgent) || [];
+    return `IE ${version[1] || ''}`;
   }
 
-  if (M[1] === 'Chrome') {
-    tem = ua.match(/\bOPR\/(\d+)/);
-    if (tem != null) {
-      return `Opera ${tem[1]}`;
+  if (match[1] === 'Chrome') {
+    version = userAgent.match(/\bOPR\/(\d+)/);
+    if (version !== null) {
+      return `Opera ${version[1]}`;
     }
   }
 
-  M = M[2] ? [M[1], M[2]] : [navigator.appName, navigator.appVersion, '-?'];
-  tem = ua.match(/version\/([.\d]+)/i);
-  if (tem != null) {
-    M.splice(1, 1, tem[1]);
+  match = match[2] ? [match[1], match[2]] : [navigator.appName, navigator.appVersion, '-?'];
+  version = userAgent.match(/version\/([.\d]+)/i);
+  if (version !== null) {
+    match.splice(1, 1, version[1]);
   }
 
-  return M.join(' ');
+  return match.join(' ');
 }
 
 export function urlB64ToUint8Array(base64String: string) {
@@ -150,12 +150,12 @@ export function getPublicKey(pushSubscription: PushSubscription) {
   return getSubsKey(pushSubscription, 'p256dh');
 }
 
-export function getPushwooshUrl(applicationCode: string, ignoreBaseUrl?: boolean) {
+export function getPushwooshUrl(applicationCode: string, ignoreBaseUrl?: boolean, pushwooshApiUrl?: string) {
   let subDomain = 'cp';
   if (!isSafariBrowser() && applicationCode && !~applicationCode.indexOf('.')) {
     subDomain = `${applicationCode}.api`;
   }
-  const url = __API_URL__ ? `https://${__API_URL__}/json/1.3/` : `https://${subDomain}.pushwoosh.com/json/1.3/`;
+  const url = `https://${pushwooshApiUrl || __API_URL__ || subDomain + '.pushwoosh.com'}/json/1.3/`;
 
   return new Promise<any>(resolve => {
     if (ignoreBaseUrl) {
@@ -168,7 +168,7 @@ export function getPushwooshUrl(applicationCode: string, ignoreBaseUrl?: boolean
       .catch(() => {
         resolve(url);
       });
-  })
+  });
 }
 
 export function patchConsole() {

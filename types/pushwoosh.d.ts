@@ -15,6 +15,7 @@ interface IPWDriverAPIParams {
 
 interface TPWAPIParams extends IPWDriverAPIParams {
   applicationCode: string;
+  pushwooshApiUrl?: string;
   deviceType: number;
   deviceModel: string;
   language: string;
@@ -48,6 +49,7 @@ interface IInitParams {
   safariWebsitePushID?: string;
   autoSubscribe?: boolean;
   pushwooshUrl?: string;
+  pushwooshApiUrl?: string;
   logLevel?: string;
   userId?: string;
   scope?: string;
@@ -141,6 +143,7 @@ type TWorkerSafariDriverParams = {
   applicationCode: string,
   webSitePushID: string,
   pushwooshUrl: string,
+  pushwooshApiUrl?: string
 };
 
 type NotificationButton = {

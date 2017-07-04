@@ -1,12 +1,15 @@
 const path = require('path');
 const webpack = require('webpack');
-const argv = process.argv;
-const api_url_index = argv.indexOf('--api');
-const api_url_value = ~api_url_index ? argv[api_url_index + 1] : '';
+
+const {argv} = process;
+const apiUrlIndex = argv.indexOf('--api');
+const apiUrlValue = ~apiUrlIndex ? argv[apiUrlIndex + 1] : '';
+
 const defines = {
   __VERSION__: JSON.stringify(require('./package.json').version),
-  __API_URL__: JSON.stringify(api_url_value)
+  __API_URL__: JSON.stringify(apiUrlValue)
 };
+
 const uglifyOptions = {
   beautify: true,
   mangle: false

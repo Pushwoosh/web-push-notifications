@@ -3,10 +3,10 @@ import {keyValue} from "./storage";
 import {keyApiBaseUrl} from "./constants";
 import {getPushwooshUrl} from "./functions";
 
-export default function createDoApiXHR(applicationCode: string) {
+export default function createDoApiXHR(applicationCode: string, pushwooshApiUrl?: string) {
   return function doApiXHR(methodName: string, request: any) {
     return new Promise((resolve, reject) => {
-      getPushwooshUrl(applicationCode).then(pushwooshUrl => {
+      getPushwooshUrl(applicationCode, false, pushwooshApiUrl).then(pushwooshUrl => {
         try {
           const url = `${pushwooshUrl}${methodName}`;
           const params = {request};
