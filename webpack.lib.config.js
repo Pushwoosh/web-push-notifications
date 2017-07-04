@@ -1,7 +1,7 @@
 const path = require('path');
 const webpack = require('webpack');
 
-const {argv} = process;
+const argv = process.argv;
 const apiUrlIndex = argv.indexOf('--api');
 const apiUrlValue = ~apiUrlIndex ? argv[apiUrlIndex + 1] : '';
 

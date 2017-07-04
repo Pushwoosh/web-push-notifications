@@ -1,11 +1,11 @@
 const path = require('path');
 const webpack = require('webpack');
 
-const {argv, env: {NODE_ENV}} = process;
+const argv = process.argv;
 const apiUrlIndex = argv.indexOf('--api');
 const apiUrlValue = ~apiUrlIndex ? argv[apiUrlIndex + 1] : '';
 
-const isProduction = NODE_ENV === 'production';
+const isProduction = process.env.NODE_ENV === 'production';
 
 const defines = {
   __VERSION__: JSON.stringify(require('./package.json').version),
