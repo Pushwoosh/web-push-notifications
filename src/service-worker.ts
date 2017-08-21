@@ -1,9 +1,8 @@
+import {keyValue, message as messagesLog} from './storage';
 import {
-  keyValue,
-  message as messagesLog
-} from './storage';
-import {
-  keyWorkerVerion,
+  keyWorkerVersion,
+  keyLastOpenMessage,
+  periodGoalEvent,
   defaultNotificationTitle,
   defaultNotificationImage,
   defaultNotificationUrl,
@@ -113,18 +112,23 @@ async function onClick(event: NotificationEvent) {
   }
   await Promise.all([
     Pushwoosh.initApi().then(() => Pushwoosh.api.pushStat(tag.messageHash)),
+    keyValue.set(keyLastOpenMessage, {
+      url,
+      messageHash: tag.messageHash,
+      expiry: Date.now() + periodGoalEvent
+    }),
     broadcastClients({type: eventOnNotificationClick, payload: {...tag, url}})
   ]);
 }
 
 self.addEventListener('install', (event: InstallEvent) => {
   event.waitUntil(Promise.all([
-    keyValue.set(keyWorkerVerion, getVersion()),
+    keyValue.set(keyWorkerVersion, getVersion()),
     Logger.write('info', 'install')
   ]).then(() => self.skipWaiting()));
 });
 
-self.addEventListener('activate', function(event: ExtendableEvent) {
+self.addEventListener('activate', function (event: ExtendableEvent) {
   console.info('activate', event);
   event.waitUntil(Promise.all([
     Logger.write('info', 'activate')

@@ -15,7 +15,8 @@ import {
   defaultServiceWorkerUrl,
   keyApiParams,
   keyInitParams,
-  keySDKVerion,
+  keySDKVersion,
+  keyLastOpenMessage,
   keyLastSentAppOpen,
   periodSendAppOpen,
   keyDeviceRegistrationStatus,
@@ -227,8 +228,9 @@ class Pushwoosh {
 
   async initApi() {
     const driverApiParams = await this.driver.getAPIParams();
+    const lastOpenMessage = await keyValue.get(keyLastOpenMessage) || {};
     const {params} = this;
-    let apiParams: TPWAPIParams = {
+    const apiParams: TPWAPIParams = {
       ...driverApiParams,
       deviceType: params.deviceType,
       deviceModel: params.tags['Device Model'],
@@ -240,7 +242,7 @@ class Pushwoosh {
       apiParams.userId = params.userId
     }
     const func = createDoApiXHR(params.applicationCode, params.pushwooshApiUrl);
-    this.api = new API(func, apiParams);
+    this.api = new API(func, apiParams, lastOpenMessage);
   }
 
   async subscribe(params?: {registerLess?: boolean}) {
@@ -304,7 +306,7 @@ class Pushwoosh {
     }
 
     const {
-      [keySDKVerion]: savedSDKVersion,
+      [keySDKVersion]: savedSDKVersion,
       [keyApiParams]: savedApiParams,
       [keyInitParams]: savedInitParams
     } = await keyValue.getAll();
@@ -322,7 +324,7 @@ class Pushwoosh {
       await Promise.all([
         keyValue.set(keyApiParams, apiParams),
         keyValue.set(keyInitParams, params),
-        keyValue.set(keySDKVerion, getVersion()),
+        keyValue.set(keySDKVersion, getVersion()),
         this.api.registerDevice(),
         this.api.setTags({...params.tags}),
         this.api.registerUser()

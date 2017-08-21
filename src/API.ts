@@ -4,7 +4,7 @@ import {isSafariBrowser} from "./functions";
 export default class PushwooshAPI {
   private timezone: number = -(new Date).getTimezoneOffset() * 60;
 
-  constructor(private doPushwooshApiMethod: TDoPushwooshMethod, public params: TPWAPIParams) {}
+  constructor(private doPushwooshApiMethod: TDoPushwooshMethod, public params: TPWAPIParams, public lastOpenMessage: TPWLastOpenMessage) {}
 
   get isSafari() {
     return isSafariBrowser();
@@ -107,10 +107,23 @@ export default class PushwooshAPI {
   }
 
   postEvent(event: string, attributes: {[k: string]: any}) {
-    const now = new Date();
-    const time = now.getTime();
+    const {lastOpenMessage} = this;
+    const date = new Date();
+    const time = date.getTime();
     const timestampUTC = Math.floor(time / 1000);
-    const timestampCurrent = timestampUTC - (now.getTimezoneOffset() / 60 * 3600);
+    const timestampCurrent = timestampUTC - (date.getTimezoneOffset() / 60 * 3600);
+
+    if (lastOpenMessage.expiry > Date.now()) {
+      if (attributes['msgHash']) {
+        return Promise.reject('attribute msgHash already defined');
+      }
+
+      attributes = {
+        ...attributes,
+        msgHash: lastOpenMessage.messageHash
+      };
+    }
+
     return this.callAPI('postEvent', {
       device_type: this.params.deviceType,
       event,

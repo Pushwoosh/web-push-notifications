@@ -22,6 +22,12 @@ interface TPWAPIParams extends IPWDriverAPIParams {
   userId?: string;
 }
 
+interface TPWLastOpenMessage {
+  messageHash?: string,
+  expiry?: number,
+  url?: string
+}
+
 interface PushManager {
   permissionState(options: PushSubscriptionOptions): Promise<TPWPermission>
 }

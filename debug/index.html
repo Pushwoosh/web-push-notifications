@@ -305,14 +305,16 @@
         }
 
         button.setAttribute('disabled', 'disabled');
+
         Pushwoosh.api.postEvent(event, attributes)
           .then(function() {
             eventControl.value = '';
             attributesControl.value = '';
             successNode.innerHTML = 'Data successfully submitted ' + new Date();
           })
-          .catch(function() {
+          .catch(function(err) {
             errorNode.innerHTML += 'Got some error on submit. Check console for details.';
+            console.error(err);
           })
           .then(function() {
             button.removeAttribute('disabled');
