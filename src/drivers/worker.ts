@@ -58,21 +58,33 @@ class WorkerDriver implements IPWDriver {
     eventEmitter.emit(event);
   }
 
-  async askSubscribe() {
-    let serviceWorkerRegistration = await navigator.serviceWorker.ready;
+  async askSubscribe(registerLess?:boolean) {
+    const serviceWorkerRegistration = await navigator.serviceWorker.ready;
     let subscription = await serviceWorkerRegistration.pushManager.getSubscription();
+
+    const options: any = {userVisibleOnly: true};
+    if (getBrowserType() == 11 && this.params.applicationServerPublicKey) {
+      options.applicationServerKey = urlB64ToUint8Array(this.params.applicationServerPublicKey);
+    }
+
     if (!subscription) {
-      const options: any = {userVisibleOnly: true};
-      if (getBrowserType() == 11 && this.params.applicationServerPublicKey) {
-        options.applicationServerKey = urlB64ToUint8Array(this.params.applicationServerPublicKey);
-      }
       try {
         subscription = await serviceWorkerRegistration.pushManager.subscribe(options);
         this.emit(eventOnPermissionGranted);
       } catch (e) {
         this.emit(eventOnPermissionDenied);
       }
-    } else {
+    }
+    else if (registerLess && subscription.unsubscribe) {
+      await subscription.unsubscribe();
+      try {
+        subscription = await serviceWorkerRegistration.pushManager.subscribe(options);
+        this.emit(eventOnPermissionGranted);
+      } catch (e) {
+        this.emit(eventOnPermissionDenied);
+      }
+    }
+    else {
       this.emit(eventOnPermissionGranted);
     }
     return subscription;

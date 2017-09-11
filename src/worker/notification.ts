@@ -62,7 +62,7 @@ export default class PushwooshNotification {
       await self.registration.showNotification(this.title, {
         body: this.body,
         icon: this.icon,
-        requireInteraction: true,
+        requireInteraction: this.duration === 0 || this.duration > 20,
         tag: JSON.stringify({
           url: this.openUrl,
           messageHash: this.messageHash

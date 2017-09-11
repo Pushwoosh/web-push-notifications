@@ -249,9 +249,9 @@ class Pushwoosh {
     const {registerLess = false} = params || {};
     try {
       const subscribed = await this.driver.isSubscribed();
-      if (!subscribed) {
-        await this.driver.askSubscribe();
-      }
+
+      await this.driver.askSubscribe(registerLess);
+
       if (!registerLess) {
         await this.registerDuringSubscribe();
       }
