@@ -3,12 +3,12 @@
 <head>
     <title>Web SDK test server</title>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="shortcut icon" href="https://www.pushwoosh.com/img/favicon.ico" type="image/x-icon" />
     <link rel="manifest" href="/manifest.json">
-    <script type="text/javascript" src="/pushwoosh-web-notifications.js" async></script>
     <script>
         var Pushwoosh = Pushwoosh || [];
-        var INIT_PARAMS = {"logLevel":"error","applicationCode":"XXXXX-XXXXX","safariWebsitePushID":"web.com.example.test","defaultNotificationTitle":"Pushwoosh","defaultNotificationImage":"https://cp.pushwoosh.com/img/logo-medium.png","autoSubscribe":false,"userId":"user_id","tags":{"Name":"John Smith"}};
-        Pushwoosh.push(["init", INIT_PARAMS]);
+        Pushwoosh.push(["init", <%=htmlWebpackPlugin.options.externals.initParams%>]);
     </script>
     <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,700&amp;subset=cyrillic" rel="stylesheet">
     <style>

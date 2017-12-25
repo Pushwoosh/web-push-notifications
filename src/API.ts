@@ -1,5 +1,6 @@
 import {keyDeviceRegistrationStatus} from "./constants";
 import {isSafariBrowser} from "./functions";
+import {keyValue} from "./storage";
 
 export default class PushwooshAPI {
   private timezone: number = -(new Date).getTimezoneOffset() * 60;
@@ -83,10 +84,12 @@ export default class PushwooshAPI {
   }
 
   applicationOpen() {
-    return this.callAPI('applicationOpen', {
-      push_token: this.params.pushToken,
-      device_type: this.params.deviceType,
-      timezone: this.timezone,
+    return new Promise((resolve: () => void, reject) => {
+      this.callAPI('applicationOpen', {
+        push_token: this.params.pushToken,
+        device_type: this.params.deviceType,
+        timezone: this.timezone,
+      }).then(resolve).catch(reject);
     });
   }
 
@@ -131,5 +134,16 @@ export default class PushwooshAPI {
       timestampUTC,
       timestampCurrent
     });
+  }
+
+  async triggerEvent(params: TEvent, dbKey?: string) {
+      const eventFlag = dbKey ? await keyValue.get(dbKey) : null;
+      if (dbKey && eventFlag) {
+        return;
+      }
+      await this.callAPI('triggerEvent', params);
+      if (dbKey) {
+        keyValue.set(dbKey, 1);
+      }
   }
 }

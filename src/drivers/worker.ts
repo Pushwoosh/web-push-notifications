@@ -7,23 +7,32 @@ import {
   getBrowserType,
   getVersion
 } from '../functions'
+import {
+  PERMISSION_PROMPT,
+  PERMISSION_DENIED,
+  PERMISSION_GRANTED
+} from '../constants';
 import {eventOnSWInitError, eventOnPermissionDenied, eventOnPermissionGranted} from "../Pushwoosh";
 import {keyApiParams} from "../constants";
 import {keyValue} from "../storage";
 
+
 declare const Notification: {
-  permission: 'granted' | 'denied' | 'default'
+  permission: typeof PERMISSION_GRANTED | typeof PERMISSION_DENIED | typeof PERMISSION_PROMPT
 };
+
+type WindowExtended = Window & {Notification: any}
+
 
 class WorkerDriver implements IPWDriver {
   constructor(private params: TWorkerDriverParams) {}
 
   get scope() {
-    let {scope = '/'} = this.params || {};
+    let {scope = '/', serviceWorkerUrl = null} = this.params || {};
     if (typeof scope !== 'string') {
       throw new Error('invalid scope value');
     }
-    if (scope.length > 1) {
+    if (scope.length > 1 && serviceWorkerUrl === null) {
       if (scope.substr(0, 1) !== '/')
         scope = `/${scope}`;
       if (scope.substr(scope.length - 1) !== '/')
@@ -34,14 +43,15 @@ class WorkerDriver implements IPWDriver {
 
   async initWorker() {
     const scope = this.scope;
-    let serviceWorkerRegistration = await navigator.serviceWorker.getRegistration();
-    if (!serviceWorkerRegistration || serviceWorkerRegistration.installing == null) {
-      await navigator.serviceWorker.register(`${scope}${this.params.serviceWorkerUrl}?version=${getVersion()}`, {scope});
-    }
+    const {serviceWorkerUrl, serviceWorkerUrlDeprecated} = this.params;
+    const scriptUrl = serviceWorkerUrl === null
+        ? `${scope}${serviceWorkerUrlDeprecated}?version=${getVersion()}`
+        : `${serviceWorkerUrl}?version=${getVersion()}`;
+    await navigator.serviceWorker.register(scriptUrl, {scope});
   }
 
   async getPermission() {
-    return Notification.permission === 'default' ? 'prompt' : Notification.permission;
+    return Notification.permission;
   }
 
   async isSubscribed() {
@@ -62,31 +72,27 @@ class WorkerDriver implements IPWDriver {
     const serviceWorkerRegistration = await navigator.serviceWorker.ready;
     let subscription = await serviceWorkerRegistration.pushManager.getSubscription();
 
+    if (subscription && subscription.unsubscribe && registerLess) {
+      await subscription.unsubscribe();
+    }
+
+    const permission = await (window as WindowExtended).Notification.requestPermission();
+    if (permission === PERMISSION_GRANTED) {
+      return await this.subscribe(serviceWorkerRegistration);
+    }
+    else if (permission === PERMISSION_DENIED) {
+      this.emit(eventOnPermissionDenied);
+    }
+    return subscription;
+  }
+
+  private async subscribe(registration: ServiceWorkerRegistration) {
     const options: any = {userVisibleOnly: true};
     if (getBrowserType() == 11 && this.params.applicationServerPublicKey) {
       options.applicationServerKey = urlB64ToUint8Array(this.params.applicationServerPublicKey);
     }
-
-    if (!subscription) {
-      try {
-        subscription = await serviceWorkerRegistration.pushManager.subscribe(options);
-        this.emit(eventOnPermissionGranted);
-      } catch (e) {
-        this.emit(eventOnPermissionDenied);
-      }
-    }
-    else if (registerLess && subscription.unsubscribe) {
-      await subscription.unsubscribe();
-      try {
-        subscription = await serviceWorkerRegistration.pushManager.subscribe(options);
-        this.emit(eventOnPermissionGranted);
-      } catch (e) {
-        this.emit(eventOnPermissionDenied);
-      }
-    }
-    else {
-      this.emit(eventOnPermissionGranted);
-    }
+    const subscription = await registration.pushManager.subscribe(options);
+    this.emit(eventOnPermissionGranted);
     return subscription;
   }
 

@@ -1,5 +1,7 @@
 import {eventOnPermissionGranted, eventOnPermissionDenied} from "../Pushwoosh";
 import {getPushwooshUrl} from "../functions";
+import {PERMISSION_GRANTED} from '../constants';
+
 
 class SafariDriver implements IPWDriver {
   constructor(private params: TWorkerSafariDriverParams) {
@@ -12,12 +14,12 @@ class SafariDriver implements IPWDriver {
 
   async getPermission() {
     const {permission} = this.getPermissionObject();
-    return permission === 'default' ? 'prompt' : permission;
+    return permission;
   }
 
   async isSubscribed() {
     const perm = await this.getPermission();
-    return perm === 'granted';
+    return perm === PERMISSION_GRANTED;
   }
 
   askSubscribe() {
@@ -35,13 +37,13 @@ class SafariDriver implements IPWDriver {
           webSitePushID,
           {application: applicationCode},
           (permission) => {
-            if (permission.permission === 'granted') {
+            if (permission.permission === PERMISSION_GRANTED) {
               eventEmitter.emit(eventOnPermissionGranted);
               resolve(true);
             }
             else {
               eventEmitter.emit(eventOnPermissionDenied);
-              reject(false);
+              reject('Safari permission denied');
             }
           }
         );

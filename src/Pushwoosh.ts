@@ -20,13 +20,18 @@ import {
   keyLastSentAppOpen,
   periodSendAppOpen,
   keyDeviceRegistrationStatus,
-  keySafariPreviousPermission
+  keySafariPreviousPermission,
+  manualSetLoggerLevel,
+  PERMISSION_DENIED,
+  PERMISSION_GRANTED,
+  PERMISSION_PROMPT,
 } from './constants';
 import Logger from './logger'
 import WorkerDriver from './drivers/worker';
 import SafariDriver from './drivers/safari';
 import createDoApiXHR from './createDoApiXHR';
 import {keyValue, log as logStorage, message as messageStorage} from './storage';
+
 
 export const eventOnReady = 'onReady';
 export const eventOnSubscribe = 'onSubscribe';
@@ -55,6 +60,7 @@ class Pushwoosh {
   public isSafari: boolean = isSafariBrowser();
   public permissionOnInit: string;
   public ready: boolean = false;
+  public subscribeWidgetConfig: ISubscribeWidget;
 
   public debug = {
     async showLog() {
@@ -77,6 +83,10 @@ class Pushwoosh {
       [eventOnPermissionPrompt]: new Promise(resolve => this._ee.once(eventOnPermissionPrompt, resolve)),
       [eventOnPermissionGranted]: new Promise(resolve => this._ee.once(eventOnPermissionGranted, resolve)),
     };
+
+    // Bindings
+    this.onLoadManifest = this.onLoadManifest.bind(this);
+    this.onServiceWorkerMessage = this.onServiceWorkerMessage.bind(this);
   }
 
   onReadyHandler(cmd: any) {
@@ -150,6 +160,7 @@ class Pushwoosh {
     const pushwooshUrl = await getPushwooshUrl(applicationCode, false, pushwooshApiUrl);
     const params = this.params = {
       autoSubscribe: true,
+      serviceWorkerUrl: null,
       pushwooshUrl,
       ...initParams,
       deviceType: getBrowserType(),
@@ -163,10 +174,16 @@ class Pushwoosh {
           serviceWorkerUrl: defaultServiceWorkerUrl,
           ...(initParams.driversSettings && initParams.driversSettings.worker),
         }
+      },
+      subscribeWidget: {
+        enable: false,
+        ...initParams.subscribeWidget,
       }
     };
+    this.subscribeWidgetConfig = this.params.subscribeWidget;
 
-    Logger.setLevel(logLevel);
+    const manualDebug = localStorage.getItem(manualSetLoggerLevel);
+    Logger.setLevel(manualDebug || logLevel);
 
     if (canUseServiceWorkers()) {
       const {worker} = params.driversSettings;
@@ -174,7 +191,8 @@ class Pushwoosh {
         eventEmitter: this._ee,
         scope,
         applicationCode,
-        serviceWorkerUrl: worker.serviceWorkerUrl,
+        serviceWorkerUrlDeprecated: worker.serviceWorkerUrl,
+        serviceWorkerUrl: params.serviceWorkerUrl,
         applicationServerPublicKey: worker.applicationServerPublicKey,
       });
       try {
@@ -212,11 +230,58 @@ class Pushwoosh {
     try {
       await this.defaultProcess();
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.onmessage = this.onServiceWorkerMessage.bind(this);
+        navigator.serviceWorker.onmessage = this.onServiceWorkerMessage;
       }
     }
     catch (err) {
       Logger.write('error', err, 'defaultProcess fail');
+    }
+
+    const event = new CustomEvent('pushwoosh.initialized', {detail: {pw: this}});
+    document.dispatchEvent(event);
+  }
+
+  /**
+   * Check sender id in manifest
+   * @returns {Promise<void>}
+   */
+  async checkSenderId() {
+    const manifest = document.querySelector('link[rel="manifest"]');
+    if (manifest === null) {
+      throw new Error('Link to manifest can not find');
+    }
+    const manifestUrl = manifest.getAttribute('href') || '';
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', manifestUrl, true);
+    xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+    xhr.onload = this.onLoadManifest;
+    xhr.send();
+  }
+
+  /**
+   * On load manifest callback
+   * @param {MessageEvent} ev
+   * @returns {Promise<void>}
+   */
+  async onLoadManifest(ev: MessageEvent) {
+    const xhr = ev.target as XMLHttpRequest;
+    if (xhr.status == 200) {
+      try {
+        const response = JSON.parse(xhr.responseText);
+        const senderId = await keyValue.get('gcm_sender_id');
+        if (senderId !== response['gcm_sender_id']) {
+          keyValue.set('gcm_sender_id', response['gcm_sender_id']);
+          await this.unsubscribe();
+          this.subscribe();
+        }
+      }
+      catch (e) {
+        Logger.info('Manifest not parsed', e)
+      }
+    }
+    else {
+      throw new Error('Manifest not loaded')
     }
   }
 
@@ -356,7 +421,7 @@ class Pushwoosh {
     }
     const previousPermission = await keyValue.get(keySafariPreviousPermission);
     const currentPermission = await this.driver.getPermission();
-    const compare = (prev:any, curr:any) => prev !== 'granted' && curr === 'granted';
+    const compare = (prev:any, curr:any) => prev !== PERMISSION_GRANTED && curr === PERMISSION_GRANTED;
     await keyValue.set(keySafariPreviousPermission, currentPermission);
     const result = compare(this.permissionOnInit, currentPermission) || compare(previousPermission, currentPermission);
     return Promise.resolve(result);
@@ -367,15 +432,15 @@ class Pushwoosh {
     this.permissionOnInit = await this.driver.getPermission();
     await this.initApi();
     switch (this.permissionOnInit) {
-      case 'denied':
+      case PERMISSION_DENIED:
         this._ee.emit(eventOnPermissionDenied);
-        // if permission === 'denied' and device is registered do unsubscribe (unregister device)
+        // if permission === PERMISSION_DENIED and device is registered do unsubscribe (unregister device)
         if (!this.isSafari && this.isDeviceRegistered()) {
           await this.unsubscribe();
         }
         break;
-      case 'prompt':
-        // if permission === 'prompt' and device is registered do unsubscribe (unregister device)
+      case PERMISSION_PROMPT:
+        // if permission === PERMISSION_PROMPT and device is registered do unsubscribe (unregister device)
         if (!this.isSafari && this.isDeviceRegistered()) {
           await this.unsubscribe();
         }
@@ -385,9 +450,9 @@ class Pushwoosh {
           this._ee.emit(eventOnPermissionPrompt);
         }
         break;
-      case 'granted':
+      case PERMISSION_GRANTED:
         this._ee.emit(eventOnPermissionGranted);
-        // if permission === 'granted' and device is not registered do subscribe
+        // if permission === PERMISSION_GRANTED and device is not registered do subscribe
         if (!this.isSafari && !this.isDeviceRegistered()) {
           await this.subscribe({registerLess: true});
         }

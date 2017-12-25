@@ -1,5 +1,11 @@
 import {keyValue} from "./storage";
-import {keyApiBaseUrl, keyFakePushToken} from "./constants";
+import {
+  BROWSER_TYPE_CHROME,
+  BROWSER_TYPE_FF,
+  BROWSER_TYPE_SAFARI,
+
+  keyApiBaseUrl,
+  keyFakePushToken} from "./constants";
 
 export function getGlobal() {
   return Function('return this')();
@@ -14,15 +20,22 @@ export function isSafariBrowser(): boolean {
   return !!global.safari && navigator.userAgent.indexOf('Safari') > -1;
 }
 
-export function canUseServiceWorkers() {
-  return navigator.serviceWorker && ('PushManager' in window);
+export function isOperaBrowser(): boolean {
+  return navigator.userAgent.indexOf('Opera') !== -1 || navigator.userAgent.indexOf('OPR') !== -1;
 }
 
-export function getBrowserType(): 10 | 11 | 12 {
+export function canUseServiceWorkers() {
+  return navigator.serviceWorker && 'PushManager' in window && 'Notification' in window;
+}
+
+type TBrowserType = typeof BROWSER_TYPE_SAFARI | typeof BROWSER_TYPE_CHROME | typeof BROWSER_TYPE_FF;
+export function getBrowserType(): TBrowserType {
   if (isSafariBrowser()) {
-    return 10;
+    return BROWSER_TYPE_SAFARI;
   }
-  return ~navigator.userAgent.toLowerCase().indexOf('firefox') ? 12 : 11;
+  return ~navigator.userAgent.toLowerCase().indexOf('firefox')
+    ? BROWSER_TYPE_FF
+    : BROWSER_TYPE_CHROME;
 }
 
 export function getBrowserVersion() {

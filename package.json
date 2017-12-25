@@ -1,21 +1,15 @@
 {
   "name": "web-push-notifications",
-  "version": "3.0.8",
+  "version": "3.1.0",
   "description": "Pushwoosh web push notifications",
   "main": "lib/index.js",
   "scripts": {
-    "prepublish": "rimraf lib && webpack --config webpack.lib.config.js",
+    "prepare": "cross-env NODE_ENV=production webpack --config webpack.lib.config.js",
     "build": "webpack",
-    "build:min": "cross-env NODE_ENV=production webpack",
-    "build:release": "npm run build && npm run build:min",
-    "clean": "rimraf dist",
-    "watch": "webpack --watch",
-    "server": "node ./node_modules/http-server/bin/http-server ./debug -a 0.0.0.0 -c-1",
-    "copy:static": "node node_modules/babel-cli/bin/babel-node scripts/copyDebugStaticFiles.js",
-    "zip": "cp files/manifest.json dist/ && node node_modules/babel-cli/bin/babel-node scripts/zip.js",
-    "makerelease": "npm run clean && npm run build:release && npm run zip",
-    "ci": "npm run zip && npm run copy:static && node node_modules/babel-cli/bin/babel-node scripts/replaceStaticContent.js",
-    "debug": "npm run ci && npm run server"
+    "build:prod": "cross-env NODE_ENV=production webpack",
+    "zip": "node scripts/zip.js",
+    "release": "npm run build:prod && npm run zip",
+    "start": "cross-env NODE_ENV=development webpack-dev-server"
   },
   "repository": {
     "type": "git",
@@ -37,17 +31,29 @@
   },
   "homepage": "https://github.com/Pushwoosh/web-push-notifications#readme",
   "devDependencies": {
+    "@types/node": "^8.0.53",
     "@types/service_worker_api": "0.0.9",
+    "@types/whatwg-fetch": "0.0.33",
+    "@types/whatwg-streams": "0.0.3",
+    "archiver": "^2.1.0",
+    "autoprefixer": "^7.1.6",
     "babel-cli": "6.23.0",
     "babel-preset-es2015": "6.22.0",
     "babel-preset-stage-2": "6.22.0",
-    "cross-env": "3.1.4",
+    "clean-webpack-plugin": "^0.1.17",
+    "cross-env": "^5.1.1",
+    "css-loader": "^0.28.7",
+    "generate-json-webpack-plugin": "^0.2.2",
+    "html-webpack-plugin": "^2.30.1",
     "http-server": "0.9.0",
-    "rimraf": "2.5.4",
+    "postcss-loader": "^2.0.8",
+    "script-ext-html-webpack-plugin": "^1.8.8",
+    "to-string-loader": "^1.1.5",
     "ts-loader": "1.3.3",
     "tslint": "4.3.1",
     "tslint-loader": "3.3.0",
     "typescript": "2.1.5",
-    "webpack": "1.14.0"
+    "webpack": "3.8.4",
+    "webpack-dev-server": "^2.9.4"
   }
 }

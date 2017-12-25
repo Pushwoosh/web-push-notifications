@@ -1,13 +1,13 @@
-import {log as logStorage} from './storage';
+import {log as logStorage} from "./storage";
 import {patchConsole} from "./functions";
 
-const levels: {[key: string]: number} = {
+const levels: { [key: string]: number } = {
   error: 1,
   info: 2,
   debug: 3
 };
 
-let numLevel = 3;
+let limitLevel = 3;
 
 patchConsole();
 
@@ -16,7 +16,7 @@ const Logger: ILogger = {
     if (!levels[level]) {
       level = 'error';
     }
-    numLevel = levels[level];
+    limitLevel = levels[level];
   },
   write(type: TWriteType, message: any, additional?: any) {
     if (type === 'error') {
@@ -29,12 +29,14 @@ const Logger: ILogger = {
   }
 } as ILogger;
 
-Object.keys(levels).forEach((k: string) => {
-  const n = levels[k];
-  Logger[k] = (...args: any[]) => {
-    if (n <= numLevel) {
-      console.info(k, ...args);
+Object.keys(levels).forEach((levelName: string) => {
+  const levelNumber = levels[levelName];
+  Logger[levelName] = (...args: any[]) => {
+    if (levelNumber <= limitLevel) {
+      console.groupCollapsed(levelName);
+      console.info('', ...args);
       console.trace('trace');
+      console.groupEnd();
     }
   };
 });

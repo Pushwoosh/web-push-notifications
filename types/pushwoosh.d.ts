@@ -4,7 +4,7 @@ type PushwooshApiResponce = {
   response?: any
 };
 
-type TPWPermission = 'denied' | 'granted' | 'prompt';
+type TPWPermission = 'denied' | 'granted' | 'default';
 
 interface IPWDriverAPIParams {
   hwid: string;
@@ -50,8 +50,28 @@ interface ServiceWorkerRegistration {
   showNotification(a: any, b: any): Promise<any>;
 }
 
+interface ITooltipText {
+  successSubscribe?: string;
+  needSubscribe?: string;
+  blockSubscribe?: string;
+  alreadySubscribed?: string;
+}
+
+interface ISubscribeWidget {
+  enable: boolean;
+  position?: string,
+  bgColor?: string,
+  bellColor?: string,
+  shadow?: string,
+  size?: string,
+  indent?: string,
+  zIndex?: string,
+  tooltipText?: ITooltipText
+}
+
 interface IInitParams {
   applicationCode: string;
+  serviceWorkerUrl?: string | null;
   safariWebsitePushID?: string;
   autoSubscribe?: boolean;
   pushwooshUrl?: string;
@@ -66,12 +86,14 @@ interface IInitParams {
       applicationServerPublicKey?: string;
     }
   };
+  subscribeWidget?: ISubscribeWidget;
 }
 
 interface IInitParamsWithDefaults extends IInitParams {
   autoSubscribe: boolean;
   pushwooshUrl: string;
   deviceType: number;
+  serviceWorkerUrl: string | null;
   tags: {
     Language: string,
     'Device Model': string,
@@ -83,6 +105,7 @@ interface IInitParamsWithDefaults extends IInitParams {
       applicationServerPublicKey?: string;
     }
   };
+  subscribeWidget: ISubscribeWidget;
 }
 
 type TPWCanWaitCallback = (f: any) => Promise<any> | any;
@@ -131,6 +154,7 @@ interface ILogger {
   info(...args: any[]): void;
   debug(...args: any[]): void;
   write(type: TWriteType, message: any, additional?: any): Promise<void>;
+  isManualLevel(): boolean;
   [key: string]: any;
 }
 
@@ -140,7 +164,8 @@ type TWorkerDriverParams = {
   eventEmitter?: any,
   scope?: string,
   applicationCode: string,
-  serviceWorkerUrl: string,
+  serviceWorkerUrl: string | null,
+  serviceWorkerUrlDeprecated?: string,
   applicationServerPublicKey?: string,
 };
 
