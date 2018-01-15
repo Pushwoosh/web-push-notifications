@@ -6,7 +6,8 @@ import {
   defaultNotificationTitle,
   defaultNotificationImage,
   defaultNotificationUrl,
-  keyInitParams
+  keyInitParams,
+  KEY_DELAYED_EVENT
 } from './constants';
 import {getVersion, prepareDuration} from './functions';
 import Logger from './logger';
@@ -41,7 +42,7 @@ async function getNotificationData(event: PushEvent) {
   const initParams = await keyValue.get(keyInitParams);
   Logger.setLevel(initParams.logLevel);
   const payload = await event.data.json();
-  await Logger.write('info', payload, 'onPush');
+  await Logger.write('info', JSON.stringify(payload), 'onPush');
   const messageHash = payload.p || '';
   const buttons = payload.buttons || [];
   const image = payload.image || '';
@@ -107,8 +108,23 @@ async function onClick(event: NotificationEvent) {
   } else {
     url = tag.url;
   }
+  const message = {type: eventOnNotificationClick, payload: {...tag, url}};
   if (url) {
-    await self.clients.openWindow(url);
+    await event.waitUntil(self.clients.matchAll({
+      type: "window"
+    }).then(async (clientList: Array<TServiceWorkerClientExtended>) => {
+      for (let i = clientList.length - 1; i > -1; --i) {
+        const client = clientList[i];
+        if ((url === client.url || url === '/') && 'focus' in client) {
+          client.focus();
+          return;
+        }
+      }
+      if (self.clients.openWindow) {
+        await keyValue.set(KEY_DELAYED_EVENT, message);
+        return self.clients.openWindow(url);
+      }
+    }));
   }
   await Promise.all([
     Pushwoosh.initApi().then(() => Pushwoosh.api.pushStat(tag.messageHash)),
@@ -117,7 +133,7 @@ async function onClick(event: NotificationEvent) {
       messageHash: tag.messageHash,
       expiry: Date.now() + periodGoalEvent
     }),
-    broadcastClients({type: eventOnNotificationClick, payload: {...tag, url}})
+    broadcastClients(message)
   ]);
 }
 

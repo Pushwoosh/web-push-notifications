@@ -52,6 +52,13 @@ export default class PushwooshNotification {
     this._changedMess.messageHash = messageHash;
   }
 
+  get customData() {
+    return this._changedMess.customData;
+  }
+  set customData(customData) {
+    this._changedMess.customData = customData;
+  }
+
   async show() {
     if (!this._canceled) {
       const code = `notificationCode-${Date.now()}`;
@@ -65,7 +72,8 @@ export default class PushwooshNotification {
         requireInteraction: this.duration === 0 || this.duration > 20,
         tag: JSON.stringify({
           url: this.openUrl,
-          messageHash: this.messageHash
+          messageHash: this.messageHash,
+          customData: this.customData
         }),
         data: {
           code,

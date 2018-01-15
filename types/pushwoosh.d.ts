@@ -183,6 +183,10 @@ type NotificationButton = {
   url: string
 };
 
+type TServiceWorkerClientExtended = ServiceWorkerClient & {
+  focus: () => void
+}
+
 type TDoPushwooshMethod = (type: string, params: any) => Promise<any>;
 
 declare const __VERSION__: string;

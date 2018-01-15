@@ -1,5 +1,5 @@
-import {keyDeviceRegistrationStatus} from "./constants";
-import {isSafariBrowser} from "./functions";
+import {keyDeviceRegistrationStatus, keyInitParams} from "./constants";
+import {isSafariBrowser, validateParams} from "./functions";
 import {keyValue} from "./storage";
 
 export default class PushwooshAPI {
@@ -68,7 +68,7 @@ export default class PushwooshAPI {
     });
   }
 
-  registerUser(userId?: string) {
+  async registerUser(userId?: string) {
     const params: any = {
       timezone: this.timezone,
       device_type: this.params.deviceType,
@@ -76,6 +76,7 @@ export default class PushwooshAPI {
     };
     if (userId) {
       params.userId = userId;
+      await keyValue.extend(keyInitParams, validateParams(params));
     }
     if (!params.userId) {
       return Promise.resolve();

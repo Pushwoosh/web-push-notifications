@@ -9,7 +9,8 @@ import {
   getPushwooshUrl,
   getVersion,
   patchPromise,
-  clearLocationHash
+  clearLocationHash,
+  validateParams
 } from './functions';
 import {
   defaultServiceWorkerUrl,
@@ -25,6 +26,7 @@ import {
   PERMISSION_DENIED,
   PERMISSION_GRANTED,
   PERMISSION_PROMPT,
+  KEY_DELAYED_EVENT
 } from './constants';
 import Logger from './logger'
 import WorkerDriver from './drivers/worker';
@@ -388,7 +390,7 @@ class Pushwoosh {
     if (shouldRegister || forceRequests) {
       await Promise.all([
         keyValue.set(keyApiParams, apiParams),
-        keyValue.set(keyInitParams, params),
+        keyValue.extend(keyInitParams, validateParams(params)),
         keyValue.set(keySDKVersion, getVersion()),
         this.api.registerDevice(),
         this.api.setTags({...params.tags}),
@@ -465,6 +467,13 @@ class Pushwoosh {
     await this.register();
     this._ee.emit(eventOnReady);
     this.ready = true;
+
+    const delayedEvent = await keyValue.get(KEY_DELAYED_EVENT);
+    if (delayedEvent) {
+      const {type, payload} = delayedEvent;
+      await this._ee.emit(type, payload);
+      await keyValue.set(KEY_DELAYED_EVENT, null);
+    }
   }
 
   async getHWID() {
@@ -478,8 +487,8 @@ class Pushwoosh {
   }
 
   async getUserId() {
-    const params: IInitParams = this.params || {};
-    return Promise.resolve(params.userId);
+    const initParams = await keyValue.get(keyInitParams);
+    return initParams.userId || this.params.userId || null;
   }
 
   async getParams() {

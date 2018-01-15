@@ -232,3 +232,11 @@ export function prepareDuration(duration: any) {
   duration = Math.round(duration);
   return Math.min(60, duration < 0 ? 20 : duration);
 }
+
+export function validateParams(params: any) {
+  const {...result} = params;
+  if (result.userId && (result.userId === 'user_id' || !!result.userId === false)) {
+    delete result.userId;
+  }
+  return result;
+}

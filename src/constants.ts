@@ -23,6 +23,8 @@ export const keySafariPreviousPermission = 'safariPreviousPermission';
 
 export const manualSetLoggerLevel = 'PW_SET_LOGGER_LEVEL';
 
+export const KEY_DELAYED_EVENT = 'DELAYED_EVENT';
+
 // Events
 export const EVENT_SHOW_SUBSCRIBE_BUTTON = 'showSubscribeButton';
 export const EVENT_CLICK_SUBSCRIBE_BUTTON = 'clickSubscribeButton';

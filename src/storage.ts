@@ -87,6 +87,12 @@ function createKeyValue(name: string) {
       });
     },
 
+    async extend(key: string, value: any) {
+      const oldValues = await this.get(key);
+      const {...newValues} = value;
+      await this.set(key, {...oldValues, ...newValues});
+    },
+
     set(key: string, value: any) {
       return getInstanceWithPromise((database: IDBDatabase, resolve: any, reject: any) => {
         const request = database.transaction([name], 'readwrite').objectStore(name).put({key, value});
