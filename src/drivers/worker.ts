@@ -10,7 +10,9 @@ import {
 import {
   PERMISSION_PROMPT,
   PERMISSION_DENIED,
-  PERMISSION_GRANTED
+  PERMISSION_GRANTED,
+  keyDBSenderID,
+  keyManifestSenderID
 } from '../constants';
 import {eventOnSWInitError, eventOnPermissionDenied, eventOnPermissionGranted} from "../Pushwoosh";
 import {keyApiParams} from "../constants";
@@ -134,6 +136,55 @@ class WorkerDriver implements IPWDriver {
       publicKey: getPublicKey(subscription),
       authToken: getAuthToken(subscription),
     };
+  }
+
+  /**
+   * Check is need to re-register device
+   * @returns {Promise<boolean>}
+   */
+  async isNeedUnsubscribe() {
+    const isValidSenderID = await this.checkSenderId();
+    return !isValidSenderID;
+  }
+
+  /**
+   * Check sender id in manifest
+   * @returns {Promise<boolean>}
+   */
+  async checkSenderId() {
+    const manifest = document.querySelector('link[rel="manifest"]');
+
+    if (manifest === null) {
+      throw new Error('Link to manifest can not find');
+    }
+    const manifestUrl = manifest.getAttribute('href') || '';
+
+    return await fetch(manifestUrl, {
+      method: 'get',
+      headers: {'Content-Type': 'application/json;charset=UTF-8'}
+    }).then((response: Response) => this.isSameManifest(response));
+  }
+
+  /**
+   * On load manifest callback
+   * @param response: any
+   * @returns {Promise<boolean>}
+   */
+  async isSameManifest(response: Response) {
+    if (response.status === 200) {
+      const manifest = await response.json();
+      const senderId = await keyValue.get(keyDBSenderID);
+
+      if (senderId !== manifest[keyManifestSenderID]) {
+        await keyValue.set(keyDBSenderID, manifest[keyManifestSenderID]);
+        return false;
+      }
+
+      return true;
+    }
+    else {
+      throw new Error('Cant load manifest.json')
+    }
   }
 }
 

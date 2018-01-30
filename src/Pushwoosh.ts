@@ -347,11 +347,13 @@ class Pushwoosh {
     }
   }
 
-  async unsubscribe() {
+  async unsubscribe(notify: boolean = true) {
     try {
       await this.driver.unsubscribe();
       await this.api.unregisterDevice();
-      this._ee.emit(eventOnUnsubscribe);
+      if (notify) {
+        this._ee.emit(eventOnUnsubscribe);
+      }
     }
     catch(e) {
       Logger.write('error', e, 'Error occurred during the unsubscribe');
@@ -433,6 +435,9 @@ class Pushwoosh {
     const {autoSubscribe = true} = this.params || {};
     this.permissionOnInit = await this.driver.getPermission();
     await this.initApi();
+    if (this.driver.isNeedUnsubscribe) {
+      await this.driver.isNeedUnsubscribe() && this.isDeviceRegistered() && await this.unsubscribe(false);
+    }
     switch (this.permissionOnInit) {
       case PERMISSION_DENIED:
         this._ee.emit(eventOnPermissionDenied);

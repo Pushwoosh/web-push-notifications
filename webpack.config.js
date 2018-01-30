@@ -13,6 +13,9 @@ let config = {};
 if (fs.existsSync('./develop/config.js')) {
   config = require('./develop/config');
 }
+else {
+    console.log('\x1b[31m%s\x1b[0m\n', 'develop/config.js is undefined');
+}
 
 if (process.env.MANIFEST_DATA) {
   config.manifest = JSON.parse(process.env.MANIFEST_DATA);

@@ -44,6 +44,7 @@ interface IPWDriver {
   unsubscribe(): Promise<any>;
   getAPIParams(): Promise<IPWDriverAPIParams>;
   onApiReady?(api: any): void;
+  isNeedUnsubscribe?(): Promise<boolean>;
 }
 
 interface ServiceWorkerRegistration {
