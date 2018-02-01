@@ -11,8 +11,7 @@ import {
   PERMISSION_PROMPT,
   PERMISSION_DENIED,
   PERMISSION_GRANTED,
-  keyDBSenderID,
-  keyManifestSenderID
+  keyDBSenderID
 } from '../constants';
 import {eventOnSWInitError, eventOnPermissionDenied, eventOnPermissionGranted} from "../Pushwoosh";
 import {keyApiParams} from "../constants";
@@ -172,11 +171,20 @@ class WorkerDriver implements IPWDriver {
    */
   async isSameManifest(response: Response) {
     if (response.status === 200) {
-      const manifest = await response.json();
+      const manifest = await response.text();
+
+      const regexpSenderId = /("|')?gcm_sender_id("|')?:\s*("|')?(\d+)("|')?/;
+      const match = manifest.match(regexpSenderId);
+      let manifestSenderID = '';
+
+      if (match) {
+        manifestSenderID = match[4];
+      }
+
       const senderId = await keyValue.get(keyDBSenderID);
 
-      if (senderId !== manifest[keyManifestSenderID]) {
-        await keyValue.set(keyDBSenderID, manifest[keyManifestSenderID]);
+      if (manifestSenderID && senderId !== manifestSenderID) {
+        await keyValue.set(keyDBSenderID, manifestSenderID);
         return false;
       }
 

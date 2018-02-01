@@ -22,7 +22,6 @@ export const keyDeviceRegistrationStatus = 'deviceRegistrationStatus';
 export const keySafariPreviousPermission = 'safariPreviousPermission';
 
 // GCM Sender ID
-export const keyManifestSenderID = 'gcm_sender_id';
 export const keyDBSenderID = 'GCM_SENDER_ID';
 
 export const manualSetLoggerLevel = 'PW_SET_LOGGER_LEVEL';
