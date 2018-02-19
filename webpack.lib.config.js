@@ -11,8 +11,8 @@ const defines = {
 };
 
 const uglifyOptions = {
-  beautify: false,
-  mangle: true
+  beautify: true,
+  mangle: false
 };
 
 module.exports = {
