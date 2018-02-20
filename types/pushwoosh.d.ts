@@ -11,6 +11,8 @@ interface IPWDriverAPIParams {
   pushToken: string;
   publicKey?: string;
   authToken?: string;
+  fcmToken?: string;
+  fcmPushSet?: string;
 }
 
 interface TPWAPIParams extends IPWDriverAPIParams {

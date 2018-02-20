@@ -40,6 +40,8 @@ export default class PushwooshAPI {
         push_token: params.pushToken,
         public_key: params.publicKey,
         auth_token: params.authToken,
+        fcm_token: params.fcmToken,
+        fcm_push_set: params.fcmPushSet,
         language: params.language,
         timezone: this.timezone,
         device_model: params.deviceModel,

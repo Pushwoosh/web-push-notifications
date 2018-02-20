@@ -1,11 +1,12 @@
 import {keyValue} from "./storage";
 import {
+  keyApiBaseUrl,
+  keyFakePushToken,
+  keyFcmSubscription,
   BROWSER_TYPE_CHROME,
   BROWSER_TYPE_FF,
-  BROWSER_TYPE_SAFARI,
-
-  keyApiBaseUrl,
-  keyFakePushToken} from "./constants";
+  BROWSER_TYPE_SAFARI
+} from "./constants";
 
 export function getGlobal() {
   return Function('return this')();
@@ -148,6 +149,22 @@ export function getPushToken(pushSubscription: PushSubscription) {
   }
 
   return pushSubscription.endpoint.split('/').pop();
+}
+
+export function getFcmKey(pushSubscription: PushSubscription, key: string): Promise<string> {
+  if (!pushSubscription) {
+    return Promise.resolve('');
+  }
+
+  return new Promise((resolve => {
+    keyValue.get(keyFcmSubscription)
+      .then((fcmSubscription: any) => {
+        resolve(fcmSubscription && fcmSubscription[key] || '')
+      })
+      .catch(() => {
+        resolve('');
+      });
+  }))
 }
 
 function getSubsKey(pushSubscription: any, key: any): string {

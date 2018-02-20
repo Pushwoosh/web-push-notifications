@@ -42,20 +42,21 @@ async function getNotificationData(event: PushEvent) {
   const initParams = await keyValue.get(keyInitParams);
   Logger.setLevel(initParams.logLevel);
   const payload = await event.data.json();
-  await Logger.write('info', JSON.stringify(payload), 'onPush');
-  const messageHash = payload.p || '';
-  const buttons = payload.buttons || [];
-  const image = payload.image || '';
-  const duration = prepareDuration(payload.duration);
-  const customData = await parseCustomData(payload.u);
+  const notificationData = payload.data || payload;
+  await Logger.write('info', JSON.stringify(notificationData), 'onPush');
+  const messageHash = notificationData.p || '';
+  const buttons = notificationData.buttons || [];
+  const image = notificationData.image || '';
+  const duration = prepareDuration(notificationData.duration);
+  const customData = await parseCustomData(notificationData.u);
   return {
     messageHash,
     payload,
     notificationPayload: {
-      title: payload.header || initParams.defaultNotificationTitle || defaultNotificationTitle,
-      body: payload.body,
-      icon: payload.i || initParams.defaultNotificationImage || defaultNotificationImage,
-      openUrl: payload.l || defaultNotificationUrl,
+      title: notificationData.header || initParams.defaultnotificationTitle || defaultNotificationTitle,
+      body: notificationData.body,
+      icon: notificationData.i || initParams.defaultNotificationImage || defaultNotificationImage,
+      openUrl: notificationData.l || defaultNotificationUrl,
       messageHash,
       customData,
       duration,

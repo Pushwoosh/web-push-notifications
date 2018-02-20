@@ -23,6 +23,7 @@ export const keySafariPreviousPermission = 'safariPreviousPermission';
 
 // GCM Sender ID
 export const keyDBSenderID = 'GCM_SENDER_ID';
+export const keyFcmSubscription = 'FCM_SUBSCRIPTION';
 
 export const manualSetLoggerLevel = 'PW_SET_LOGGER_LEVEL';
 

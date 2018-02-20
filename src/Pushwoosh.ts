@@ -287,8 +287,8 @@ class Pushwoosh {
     }
   }
 
-  onServiceWorkerMessage(e: MessageEvent) {
-    const {data = {}} = e || {};
+  onServiceWorkerMessage(event: MessageEvent) {
+    const {data = {}} = event || {};
     const {type = '', payload = {}} = data || {};
     this._ee.emit(type, payload);
   }

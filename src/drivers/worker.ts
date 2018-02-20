@@ -1,5 +1,6 @@
 import {
   getPushToken,
+  getFcmKey,
   generateHwid,
   getPublicKey,
   getAuthToken,
@@ -11,10 +12,11 @@ import {
   PERMISSION_PROMPT,
   PERMISSION_DENIED,
   PERMISSION_GRANTED,
-  keyDBSenderID
+  keyDBSenderID,
+  keyApiParams,
+  keyFcmSubscription
 } from '../constants';
 import {eventOnSWInitError, eventOnPermissionDenied, eventOnPermissionGranted} from "../Pushwoosh";
-import {keyApiParams} from "../constants";
 import {keyValue} from "../storage";
 
 
@@ -94,6 +96,7 @@ class WorkerDriver implements IPWDriver {
     }
     const subscription = await registration.pushManager.subscribe(options);
     this.emit(eventOnPermissionGranted);
+    await this.getFCMToken();
     return subscription;
   }
 
@@ -129,12 +132,66 @@ class WorkerDriver implements IPWDriver {
     const subscription = await serviceWorkerRegistration.pushManager.getSubscription();
 
     const pushToken = getPushToken(subscription);
+
     return {
       hwid: generateHwid(this.params.applicationCode, pushToken),
       pushToken: pushToken,
       publicKey: getPublicKey(subscription),
       authToken: getAuthToken(subscription),
+      fcmPushSet: await getFcmKey(subscription, 'pushSet'),
+      fcmToken: await getFcmKey(subscription, 'token')
     };
+  }
+
+  /**
+   * Check for native subscription, and is it, subscribe to FCM.
+   * @returns {Promise<void>}
+   */
+  async getFCMToken() {
+    const serviceWorkerRegistration = await navigator.serviceWorker.getRegistration();
+    const subscription = await serviceWorkerRegistration.pushManager.getSubscription();
+    const senderID = await keyValue.get(keyDBSenderID);
+    const fcmURL = 'https://fcm.googleapis.com/fcm/connect/subscribe';
+
+    if (!senderID) {
+      console.warn('SenderID can not be found');
+      return;
+    }
+
+    const body = {
+      endpoint: subscription.endpoint,
+      encryption_key: getPublicKey(subscription), //p256
+      encryption_auth: getAuthToken(subscription), //auth
+      authorized_entity: senderID,
+    };
+    await fetch(fcmURL, {
+      method: 'post',
+      headers: {'Content-Type': 'text/plain;charset=UTF-8'},
+      body: JSON.stringify(body)
+    }).then((response: Response) => this.onFCMSubscribe(response));
+  }
+
+  /**
+   * Set FCM pushset and tokens in indexDB.
+   * @returns {Promise<void>}
+   */
+  async onFCMSubscribe(response: Response) {
+    if (response.status === 200) {
+      try {
+        const subscription = await response.json();
+        await keyValue.set(keyFcmSubscription, {
+          token: subscription.token || '',
+          pushSet: subscription.pushSet || ''
+        });
+      }
+      catch (error) {
+        console.warn('Can\'t parse FCM response', error);
+      }
+    }
+    else {
+      console.warn('Error while FCM Subscribe', response.text());
+      return;
+    }
   }
 
   /**
@@ -143,7 +200,18 @@ class WorkerDriver implements IPWDriver {
    */
   async isNeedUnsubscribe() {
     const isValidSenderID = await this.checkSenderId();
-    return !isValidSenderID;
+    const isFCMSubscribed = await this.checkFCMKeys();
+
+    return !isValidSenderID || !isFCMSubscribed;
+  }
+
+  /**
+   * Check for FCM keys in indexDB
+   * @returns {Promise<boolean>}
+   */
+  async checkFCMKeys() {
+    const {pushSet = '', token = ''} = await keyValue.get(keyFcmSubscription) || {};
+    return !!(pushSet && token);
   }
 
   /**

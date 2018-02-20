@@ -62,7 +62,14 @@ export default class PushwooshNotification {
   async show() {
     if (!this._canceled) {
       const code = `notificationCode-${Date.now()}`;
-      const {buttons, image} = this._changedMess;
+      const {image} = this._changedMess;
+      let {buttons} = this._changedMess;
+
+      //XMPP Chrome Sender payload contains buttons as string
+      if (typeof(buttons) === "string") {
+        buttons = await JSON.parse(buttons);
+      }
+
       buttons.forEach((button: NotificationButton, key: number) => {
         button.action = `action-${key}`
       });
