@@ -53,7 +53,7 @@ async function getNotificationData(event: PushEvent) {
     messageHash,
     payload,
     notificationPayload: {
-      title: notificationData.header || initParams.defaultnotificationTitle || defaultNotificationTitle,
+      title: notificationData.header || initParams.defaultNotificationTitle || defaultNotificationTitle,
       body: notificationData.body,
       icon: notificationData.i || initParams.defaultNotificationImage || defaultNotificationImage,
       openUrl: notificationData.l || defaultNotificationUrl,
