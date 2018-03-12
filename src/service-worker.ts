@@ -138,7 +138,7 @@ async function onClick(event: NotificationEvent) {
   ]);
 }
 
-self.addEventListener('install', (event: InstallEvent) => {
+self.addEventListener('install', (event: ExtendableEvent) => {
   event.waitUntil(Promise.all([
     keyValue.set(keyWorkerVersion, getVersion()),
     Logger.write('info', 'install')

@@ -53,8 +53,8 @@ class SubscribeWidget {
     this.config.tooltipText = tooltipText;
 
     // Render if not subscribed
-    this.pw.isSubscribed().then(subscribed => {
-      if (!subscribed) {
+    this.pw.isSubscribed().then((subscribed: boolean) => {
+      if (!subscribed && !this.pw.isDeviceUnregistered()) {
         this.render();
       }
     });
@@ -65,9 +65,9 @@ class SubscribeWidget {
    * @param styles
    * @param {HTMLElement} element
    */
-  private addStylesToElement(styles:any, element: HTMLElement) {
-    Object.keys(styles).forEach(st => {
-      element.style[st as any] = styles[st];
+  private addStylesToElement(styles: TCSSStylesObject, element: HTMLElement) {
+    Object.keys(styles).forEach((st: TStyleKeys) => {
+      element.style[st] = styles[st];
     });
   }
 
@@ -347,6 +347,10 @@ class SubscribeWidget {
    * @param {string} widget
    */
   triggerPwEvent(event: string, widget: string) {
+    if (this.pw.api === undefined) {
+      return;
+    }
+
     const {applicationCode} = this.pw.api.params;
     this.pw.api.triggerEvent({
       event_id: event,

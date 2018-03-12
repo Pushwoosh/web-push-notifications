@@ -55,7 +55,7 @@ export default class Positioning {
     return positionStyles;
   }
 
-  public static getTooltipPosition(bellPosition: TBellPosition, bellSize: string) {
+  public static getTooltipPosition(bellPosition: TBellPosition, bellSize: string): [{left: string} | {right: string}, string] {
     let positionStyles;
     let tooltipModification;
     const increaseIndent = (parseInt(bellSize) + 12) + 'px';
@@ -85,7 +85,7 @@ export default class Positioning {
     return [positionStyles, tooltipModification];
   }
 
-  public static getPopoverPosition(bellPosition: TBellPosition, bellSize: string) {
+  public static getPopoverPosition(bellPosition: TBellPosition, bellSize: string): [TPositionStyles, string] {
     let positionStyles;
     let popoverModification;
     const increaseIndent = (parseInt(bellSize) + 15) + 'px';
@@ -94,7 +94,7 @@ export default class Positioning {
       case BELL_POSITION_BOTTOM_RIGHT:
         positionStyles = {
           bottom: increaseIndent,
-          right: 0,
+          right: '0',
           left: 'auto',
           top: 'auto'
         };
@@ -103,7 +103,7 @@ export default class Positioning {
       case BELL_POSITION_BOTTOM_LEFT:
         positionStyles = {
           bottom: increaseIndent,
-          left: 0,
+          left: '0',
           right: 'auto',
           top: 'auto'
         };
@@ -112,7 +112,7 @@ export default class Positioning {
       case BELL_POSITION_TOP_LEFT:
         positionStyles = {
           top: increaseIndent,
-          left: 0,
+          left: '0',
           right: 'auto',
           bottom: 'auto'
         };
@@ -121,7 +121,7 @@ export default class Positioning {
       case BELL_POSITION_TOP_RIGHT:
         positionStyles = {
           top: increaseIndent,
-          right: 0,
+          right: '0',
           left: 'auto',
           bottom: 'auto'
         };
@@ -130,7 +130,7 @@ export default class Positioning {
       default:
         positionStyles = {
           bottom: increaseIndent,
-          right: 0,
+          right: '0',
           left: 'auto',
           top: 'auto'
         };

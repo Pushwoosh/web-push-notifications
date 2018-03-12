@@ -100,16 +100,20 @@ class WorkerDriver implements IPWDriver {
     return subscription;
   }
 
-  async unsubscribe() {
+  /**
+   * Unsubscribe device
+   * @returns {Promise<boolean>}
+   */
+  async unsubscribe(): Promise<boolean> {
     const serviceWorkerRegistration = await navigator.serviceWorker.getRegistration();
     if (!serviceWorkerRegistration) {
-      return Promise.resolve();
+      return false;
     }
     const subscription = await serviceWorkerRegistration.pushManager.getSubscription();
     if (subscription && subscription.unsubscribe) {
       return subscription.unsubscribe();
     } else {
-      return Promise.resolve(false);
+      return false;
     }
   }
 

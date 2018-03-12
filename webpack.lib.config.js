@@ -1,3 +1,4 @@
+const fs = require('fs');
 const path = require('path');
 const webpack = require('webpack');
 const CleanWebpackPlugin = require('clean-webpack-plugin');
@@ -14,6 +15,13 @@ const uglifyOptions = {
   beautify: true,
   mangle: false
 };
+
+function copyPublicTypes() {
+  this.plugin('done', function() {
+    console.log('copy types public/index.d.ts to lib/index.d.ts');
+    fs.createReadStream(path.join(__dirname, 'public/index.d.ts')).pipe(fs.createWriteStream(path.join(__dirname, 'lib/index.d.ts')));
+  });
+}
 
 module.exports = {
   devtool: 'source-map',
@@ -45,6 +53,7 @@ module.exports = {
     new CleanWebpackPlugin(['lib']),
     new webpack.optimize.OccurrenceOrderPlugin(),
     new webpack.DefinePlugin(defines),
-    new webpack.optimize.UglifyJsPlugin(uglifyOptions)
+    new webpack.optimize.UglifyJsPlugin(uglifyOptions),
+    copyPublicTypes
   ]
 };

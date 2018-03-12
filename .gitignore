@@ -1,9 +1,12 @@
 syntax: glob
 
 .idea
-lib/
-dist/
-node_modules/
+lib/*
+dist/*
+node_modules
 debug.html
 debug.js
 npm-debug.log
+package-lock.json
+yarn.lock
+ts-build

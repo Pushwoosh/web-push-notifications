@@ -172,7 +172,7 @@ export abstract class LogBase {
 export class LogLog extends LogBase {
   protected name = objectStoreLogName;
   protected maxItems = 100;
-  protected environment = (typeof self !== 'undefined' && self.registration) ? 'worker' : 'browser';
+  protected environment = (typeof self !== 'undefined' && (self as ServiceWorkerGlobalScope).registration) ? 'worker' : 'browser';
   add(type: string, message: any, additional?: any) {
     const obj: any = {
       type,

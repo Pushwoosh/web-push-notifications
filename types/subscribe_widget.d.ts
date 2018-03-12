@@ -30,3 +30,23 @@ type TEvent = {
   event_id: number | string,
   application: string
 }
+
+type TStyleKeys = 'left'
+  | 'right'
+  | 'top'
+  | 'bottom'
+  | 'zIndex'
+  | 'position'
+  | 'backgroundColor'
+  | 'background'
+  | 'zIndex'
+  | 'width'
+  | 'height'
+  | 'boxShadow'
+  | 'lineHeight'
+  | 'border'
+  | 'maxWidth'
+  | 'maxHeight';
+type TCSSStylesObject = {
+  [style: string]: string;
+};

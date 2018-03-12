@@ -163,6 +163,8 @@ interface ILogger {
 
 type ListenerFn = (...args: Array<any>) => void | Promise<any>;
 
+type HandlerFn = (api: any, params?: any) => any;
+
 type TWorkerDriverParams = {
   eventEmitter?: any,
   scope?: string,
@@ -192,6 +194,13 @@ type TServiceWorkerClientExtended = ServiceWorkerClient & {
 
 type TDoPushwooshMethod = (type: string, params: any) => Promise<any>;
 
+type PWInput = PushOnReadyCallback | PushInitCallback | PushEventCallback;
+type PushOnReadyCallback = HandlerFn;
+type PushInitCallback = ['init', IInitParams];
+type PushEventCallback = [PWEvent, HandlerFn];
+type PWEvent = 'onReady' | 'onSubscribe' | 'onUnsubscribe'
+  | 'onRegister' | 'onPermissionPrompt' | 'onPermissionDenied' | 'onPermissionGranted'
+  | 'onNotificationClick' | 'onPushDelivery' | 'onNotificationClose' | 'onSWInitError';
+
 declare const __VERSION__: string;
 declare const __API_URL__: string;
-declare const caches: Cache;

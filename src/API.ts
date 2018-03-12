@@ -1,6 +1,15 @@
-import {keyDeviceRegistrationStatus, keyInitParams} from "./constants";
-import {isSafariBrowser, validateParams} from "./functions";
-import {keyValue} from "./storage";
+import {
+  DEVICE_REGISTRATION_STATUS_REGISTERED,
+  DEVICE_REGISTRATION_STATUS_UNREGISTERED,
+  KEY_DEVICE_REGISTRATION_STATUS,
+  keyInitParams
+} from './constants';
+import {
+  isSafariBrowser,
+  validateParams
+} from './functions';
+import {keyValue} from './storage';
+
 
 export default class PushwooshAPI {
   private timezone: number = -(new Date).getTimezoneOffset() * 60;
@@ -48,7 +57,7 @@ export default class PushwooshAPI {
         device_type: params.deviceType,
       })
         .then(() => {
-          localStorage.setItem(keyDeviceRegistrationStatus, 'registered');
+          localStorage.setItem(KEY_DEVICE_REGISTRATION_STATUS, DEVICE_REGISTRATION_STATUS_REGISTERED);
           resolve();
         })
         .catch(reject);
@@ -63,7 +72,7 @@ export default class PushwooshAPI {
     return new Promise((resolve, reject) => {
       this.callAPI('unregisterDevice')
         .then(() => {
-          localStorage.setItem(keyDeviceRegistrationStatus, '');
+          localStorage.setItem(KEY_DEVICE_REGISTRATION_STATUS, DEVICE_REGISTRATION_STATUS_UNREGISTERED);
           resolve();
         })
         .catch(reject);
