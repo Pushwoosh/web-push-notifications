@@ -2,7 +2,6 @@ import EventEmitter from './EventEmitter';
 import API from './API';
 import {
   isSafariBrowser,
-  getDeviceName,
   getBrowserVersion,
   getBrowserType,
   canUseServiceWorkers,
@@ -10,7 +9,9 @@ import {
   getVersion,
   patchPromise,
   clearLocationHash,
-  validateParams
+  validateParams,
+  isSupportSDK,
+  canUsePromise
 } from './functions';
 import {
   defaultServiceWorkerUrl,
@@ -89,11 +90,15 @@ class Pushwoosh {
   };
 
   constructor() {
-    this._onPromises = {
-      [eventOnPermissionDenied]: new Promise(resolve => this._ee.once(eventOnPermissionDenied, resolve)),
-      [eventOnPermissionPrompt]: new Promise(resolve => this._ee.once(eventOnPermissionPrompt, resolve)),
-      [eventOnPermissionGranted]: new Promise(resolve => this._ee.once(eventOnPermissionGranted, resolve)),
-    };
+    this._onPromises = {};
+
+    if (canUsePromise()) {
+      this._onPromises = {
+        [eventOnPermissionDenied]: new Promise(resolve => this._ee.once(eventOnPermissionDenied, resolve)),
+        [eventOnPermissionPrompt]: new Promise(resolve => this._ee.once(eventOnPermissionPrompt, resolve)),
+        [eventOnPermissionGranted]: new Promise(resolve => this._ee.once(eventOnPermissionGranted, resolve)),
+      };
+    }
 
     // Bindings
     this.onServiceWorkerMessage = this.onServiceWorkerMessage.bind(this);
@@ -176,7 +181,7 @@ class Pushwoosh {
           if (typeof cmdFunc !== 'function') {
             break;
           }
-          this._onPromises[cmdName].then(() => cmdFunc(this.api));
+          this._onPromises[cmdName] && this._onPromises[cmdName].then(() => cmdFunc(this.api));
           break;
         default:
           throw new Error('unknown command');
@@ -192,7 +197,7 @@ class Pushwoosh {
    * @returns {boolean}
    */
   public shouldInit() {
-    if (!((this.isSafari && getDeviceName() === 'PC') || canUseServiceWorkers())) {
+    if (!isSupportSDK()) {
       Logger.info('This browser does not support pushes');
       return false;
     }

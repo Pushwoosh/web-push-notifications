@@ -29,6 +29,10 @@ export function canUseServiceWorkers() {
   return navigator.serviceWorker && 'PushManager' in window && 'Notification' in window;
 }
 
+export function isSupportSDK() {
+  return (isSafariBrowser() && getDeviceName() === 'PC') || canUseServiceWorkers();
+}
+
 type TBrowserType = typeof BROWSER_TYPE_SAFARI | typeof BROWSER_TYPE_CHROME | typeof BROWSER_TYPE_FF;
 export function getBrowserType(): TBrowserType {
   if (isSafariBrowser()) {
@@ -224,12 +228,17 @@ export function patchConsole() {
 
 export function patchPromise() {
   const global = getGlobal();
-  if (!('Promise' in global)) {
+  if (!canUsePromise() && isSupportSDK()) {
     global.Promise = () => ({
       then: () => {},
       catch: () => {}
     });
   }
+}
+
+export function canUsePromise() {
+  const global = getGlobal();
+  return 'Promise' in global;
 }
 
 export function clearLocationHash() {
