@@ -12,8 +12,8 @@ import {
   EVENT_SHOW_SUBSCRIBE_BUTTON,
   EVENT_CLICK_SUBSCRIBE_BUTTON,
 
-  keyShowSubscribeWidget,
-  keyClickSubscribeWidget
+  KEY_SHOW_SUBSCRIBE_WIDGET,
+  KEY_CLICK_SUBSCRIBE_WIDGET
 } from '../constants';
 import {getBrowserType, isOperaBrowser} from '../functions';
 
@@ -269,7 +269,7 @@ class SubscribeWidget {
     this.pw.push(['onSubscribe', this.onSubscribeEvent]);
     this.pw.push(['onPermissionDenied', this.onPermissionDeniedEvent]);
     window.addEventListener('click', this.clickOutOfPopover);
-    this.triggerPwEvent(EVENT_SHOW_SUBSCRIBE_BUTTON, keyShowSubscribeWidget);
+    await this.triggerPwEvent(EVENT_SHOW_SUBSCRIBE_BUTTON, KEY_SHOW_SUBSCRIBE_WIDGET);
   }
 
   /**
@@ -285,7 +285,7 @@ class SubscribeWidget {
    */
   private async clickBell() {
     const permission = await this.pw.driver.getPermission();
-    this.triggerPwEvent(EVENT_CLICK_SUBSCRIBE_BUTTON, keyClickSubscribeWidget);
+    await this.triggerPwEvent(EVENT_CLICK_SUBSCRIBE_BUTTON, KEY_CLICK_SUBSCRIBE_WIDGET);
     switch (permission) {
       case PERMISSION_GRANTED:
         return;
@@ -345,13 +345,14 @@ class SubscribeWidget {
    * Trigger PW API event
    * @param {string} event
    * @param {string} widget
+   * @returns {Promise<void>}
    */
-  triggerPwEvent(event: string, widget: string) {
+  async triggerPwEvent(event: string, widget: string) {
     if (this.pw.api === undefined) {
       return;
     }
 
-    const {applicationCode} = this.pw.api.params;
+    const {applicationCode} = await this.pw.getParams();
     this.pw.api.triggerEvent({
       event_id: event,
       application: applicationCode

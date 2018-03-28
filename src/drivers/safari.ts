@@ -1,6 +1,5 @@
-import {eventOnPermissionGranted, eventOnPermissionDenied} from "../Pushwoosh";
-import {getPushwooshUrl} from "../functions";
-import {PERMISSION_GRANTED} from '../constants';
+import {getPushwooshUrl} from '../functions';
+import {PERMISSION_GRANTED, EVENT_ON_PERMISSION_GRANTED, EVENT_ON_PERMISSION_DENIED} from '../constants';
 
 
 class SafariDriver implements IPWDriver {
@@ -30,19 +29,18 @@ class SafariDriver implements IPWDriver {
       pushwooshApiUrl = ''
     } = this.params || {};
     return new Promise((resolve, reject) => {
-      // @TODO: remove second parameter when base_url bug will be fixed by backend
-      getPushwooshUrl(applicationCode, true, pushwooshApiUrl).then(pushwooshUrl => {
+      getPushwooshUrl(applicationCode, pushwooshApiUrl).then(pushwooshUrl => {
         safari.pushNotification.requestPermission(
           `${pushwooshUrl}safari`,
           webSitePushID,
           {application: applicationCode},
           (permission) => {
             if (permission.permission === PERMISSION_GRANTED) {
-              eventEmitter.emit(eventOnPermissionGranted);
+              eventEmitter.emit(EVENT_ON_PERMISSION_GRANTED);
               resolve(true);
             }
             else {
-              eventEmitter.emit(eventOnPermissionDenied);
+              eventEmitter.emit(EVENT_ON_PERMISSION_DENIED);
               reject('Safari permission denied');
             }
           }

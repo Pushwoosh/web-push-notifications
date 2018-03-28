@@ -14,16 +14,16 @@ import {
   canUsePromise
 } from './functions';
 import {
-  defaultServiceWorkerUrl,
-  keyApiParams,
-  keyInitParams,
-  keySDKVersion,
-  keyLastOpenMessage,
-  keyLastSentAppOpen,
-  periodSendAppOpen,
+  DEFAULT_SERVICE_WORKER_URL,
+  KEY_API_PARAMS,
+  KEY_INIT_PARAMS,
+  KEY_SDK_VERSION,
+  KEY_LAST_OPEN_MESSAGE,
+  KEY_LAST_SENT_APP_OPEN,
+  PERIOD_SEND_APP_OPEN,
   KEY_DEVICE_REGISTRATION_STATUS,
-  keySafariPreviousPermission,
-  manualSetLoggerLevel,
+  KEY_SAFARI_PREVIOUS_PERMISSION,
+  MANUAL_SET_LOGGER_LEVEL,
 
   PERMISSION_DENIED,
   PERMISSION_GRANTED,
@@ -32,26 +32,25 @@ import {
   KEY_DELAYED_EVENT,
 
   DEVICE_REGISTRATION_STATUS_REGISTERED,
-  DEVICE_REGISTRATION_STATUS_UNREGISTERED
+  DEVICE_REGISTRATION_STATUS_UNREGISTERED,
+
+  EVENT_ON_READY,
+  EVENT_ON_SUBSCRIBE,
+  EVENT_ON_UNSUBSCRIBE,
+  EVENT_ON_REGISTER,
+  EVENT_ON_PERMISSION_PROMPT,
+  EVENT_ON_PERMISSION_DENIED,
+  EVENT_ON_PERMISSION_GRANTED,
+  EVENT_ON_SW_INIT_ERROR,
+  EVENT_ON_PUSH_DELIVERY,
+  EVENT_ON_NOTIFICATION_CLICK,
+  EVENT_ON_NOTIFICATION_CLOSE
 } from './constants';
 import Logger from './logger'
 import WorkerDriver from './drivers/worker';
 import SafariDriver from './drivers/safari';
 import createDoApiXHR from './createDoApiXHR';
 import {keyValue, log as logStorage, message as messageStorage} from './storage';
-
-
-export const eventOnReady = 'onReady';
-export const eventOnSubscribe = 'onSubscribe';
-export const eventOnUnsubscribe = 'onUnsubscribe';
-export const eventOnRegister = 'onRegister';
-export const eventOnPermissionPrompt = 'onPermissionPrompt';
-export const eventOnPermissionDenied = 'onPermissionDenied';
-export const eventOnPermissionGranted = 'onPermissionGranted';
-export const eventOnSWInitError = 'onSWInitError';
-export const eventOnPushDelivery = 'onPushDelivery';
-export const eventOnNotificationClick = 'onNotificationClick';
-export const eventOnNotificationClose = 'onNotificationClose';
 
 type ChainFunction = (param: any) => Promise<any> | any;
 
@@ -94,9 +93,9 @@ class Pushwoosh {
 
     if (canUsePromise()) {
       this._onPromises = {
-        [eventOnPermissionDenied]: new Promise(resolve => this._ee.once(eventOnPermissionDenied, resolve)),
-        [eventOnPermissionPrompt]: new Promise(resolve => this._ee.once(eventOnPermissionPrompt, resolve)),
-        [eventOnPermissionGranted]: new Promise(resolve => this._ee.once(eventOnPermissionGranted, resolve)),
+        [EVENT_ON_PERMISSION_DENIED]: new Promise(resolve => this._ee.once(EVENT_ON_PERMISSION_DENIED, resolve)),
+        [EVENT_ON_PERMISSION_PROMPT]: new Promise(resolve => this._ee.once(EVENT_ON_PERMISSION_PROMPT, resolve)),
+        [EVENT_ON_PERMISSION_GRANTED]: new Promise(resolve => this._ee.once(EVENT_ON_PERMISSION_GRANTED, resolve)),
       };
     }
 
@@ -113,7 +112,7 @@ class Pushwoosh {
       cmd(this.api);
     }
     else {
-      this._ee.on(eventOnReady, (params) => cmd(this.api, params));
+      this._ee.on(EVENT_ON_READY, (params) => cmd(this.api, params));
     }
   }
 
@@ -157,27 +156,27 @@ class Pushwoosh {
                 .catch(e => Logger.info('Pushwoosh init failed', e));
           }
           break;
-        case eventOnReady:
+        case EVENT_ON_READY:
           if (typeof cmdFunc !== 'function') {
             break;
           }
           this.onReadyHandler(cmdFunc);
           break;
-        case eventOnRegister:
-        case eventOnSubscribe:
-        case eventOnUnsubscribe:
-        case eventOnSWInitError:
-        case eventOnPushDelivery:
-        case eventOnNotificationClick:
-        case eventOnNotificationClose:
+        case EVENT_ON_REGISTER:
+        case EVENT_ON_SUBSCRIBE:
+        case EVENT_ON_UNSUBSCRIBE:
+        case EVENT_ON_SW_INIT_ERROR:
+        case EVENT_ON_PUSH_DELIVERY:
+        case EVENT_ON_NOTIFICATION_CLICK:
+        case EVENT_ON_NOTIFICATION_CLOSE:
           if (typeof cmdFunc !== 'function') {
             break;
           }
           this._ee.on(cmdName, (params: any) => cmdFunc(this.api, params));
           break;
-        case eventOnPermissionDenied:
-        case eventOnPermissionPrompt:
-        case eventOnPermissionGranted:
+        case EVENT_ON_PERMISSION_DENIED:
+        case EVENT_ON_PERMISSION_PROMPT:
+        case EVENT_ON_PERMISSION_GRANTED:
           if (typeof cmdFunc !== 'function') {
             break;
           }
@@ -224,7 +223,7 @@ class Pushwoosh {
     }
 
     // Build initial params
-    const pushwooshUrl = await getPushwooshUrl(applicationCode, false, pushwooshApiUrl);
+    const pushwooshUrl = await getPushwooshUrl(applicationCode, pushwooshApiUrl);
     const params = this.params = {
       autoSubscribe: true,
       serviceWorkerUrl: null,
@@ -238,7 +237,7 @@ class Pushwoosh {
       },
       driversSettings: {
         worker: {
-          serviceWorkerUrl: defaultServiceWorkerUrl,
+          serviceWorkerUrl: DEFAULT_SERVICE_WORKER_URL,
           ...(initParams.driversSettings && initParams.driversSettings.worker),
         }
       },
@@ -247,10 +246,10 @@ class Pushwoosh {
         ...initParams.subscribeWidget,
       }
     };
-    this.subscribeWidgetConfig = this.params.subscribeWidget;
+    this.subscribeWidgetConfig = params.subscribeWidget;
 
     // Set log level
-    const manualDebug = localStorage.getItem(manualSetLoggerLevel);
+    const manualDebug = localStorage.getItem(MANUAL_SET_LOGGER_LEVEL);
     Logger.setLevel(manualDebug || logLevel);
 
     // Init worker driver
@@ -279,11 +278,11 @@ class Pushwoosh {
       this.driver = new SafariDriver({
         eventEmitter: this._ee,
         applicationCode,
-        pushwooshUrl: params.pushwooshUrl,
+        pushwooshUrl,
         pushwooshApiUrl: params.pushwooshApiUrl,
         webSitePushID: params.safariWebsitePushID,
       });
-      this._ee.on(eventOnReady, () => {
+      this._ee.on(EVENT_ON_READY, () => {
         const hashReg: any = /#P(.*)/;
         const hash = decodeURIComponent(document.location.hash);
 
@@ -298,7 +297,7 @@ class Pushwoosh {
       throw new Error('can\'t initialize safari')
     }
 
-    // Default actioons on init
+    // Default actions on init
     try {
       await this.defaultProcess();
       if ('serviceWorker' in navigator) {
@@ -329,9 +328,11 @@ class Pushwoosh {
    * @returns {Promise<void>}
    */
   private async initApi() {
-    const driverApiParams = await this.driver.getAPIParams();
-    const lastOpenMessage = await keyValue.get(keyLastOpenMessage) || {};
     const {params} = this;
+    const driverApiParams = await this.driver.getAPIParams();
+    const lastOpenMessage = await keyValue.get(KEY_LAST_OPEN_MESSAGE) || {};
+
+    // TODO apiParams will be deprecated in next minor version
     const apiParams: TPWAPIParams = {
       ...driverApiParams,
       deviceType: params.deviceType,
@@ -343,18 +344,25 @@ class Pushwoosh {
     if (params.userId) {
       apiParams.userId = params.userId
     }
+
+    await Promise.all([
+      keyValue.extend(KEY_INIT_PARAMS, validateParams(this.params)),
+      keyValue.extend(KEY_API_PARAMS, driverApiParams)
+    ]);
+
     const func = createDoApiXHR(params.applicationCode, params.pushwooshApiUrl);
     this.api = new API(func, apiParams, lastOpenMessage);
+
   }
 
   /**
    * Method initializes the permission dialog on the device
    * and registers through the API in case the device hasn't been registered before.
-   * @param {{registerLess?: boolean}} params
+   * @param {{registerLess?: boolean}} options
    * @returns {Promise<void>}
    */
-  public async subscribe(params?: {registerLess?: boolean}) {
-    const {registerLess = false} = params || {};
+  public async subscribe(options?: {registerLess?: boolean}) {
+    const {registerLess = false} = options || {};
     try {
       const subscribed = await this.driver.isSubscribed();
 
@@ -378,7 +386,6 @@ class Pushwoosh {
    */
   private async registerDuringSubscribe() {
     const subscribed = await this.driver.isSubscribed();
-    await this.initApi();
     if (this.isSafari) {
       await this.open();
     }
@@ -392,7 +399,7 @@ class Pushwoosh {
   private async onSubscribeEmitter() {
     const subscribed = await this.driver.isSubscribed();
     if (subscribed) {
-      this._ee.emit(eventOnSubscribe);
+      this._ee.emit(EVENT_ON_SUBSCRIBE);
     }
   }
 
@@ -405,7 +412,7 @@ class Pushwoosh {
       await this.driver.unsubscribe();
       await this.api.unregisterDevice();
       if (notify) {
-        this._ee.emit(eventOnUnsubscribe);
+        this._ee.emit(EVENT_ON_UNSUBSCRIBE);
       }
     }
     catch(e) {
@@ -445,30 +452,32 @@ class Pushwoosh {
     }
 
     const {
-      [keySDKVersion]: savedSDKVersion,
-      [keyApiParams]: savedApiParams,
-      [keyInitParams]: savedInitParams
+      [KEY_SDK_VERSION]: savedSDKVersion,
+      [KEY_API_PARAMS]: savedApiParams,
+      [KEY_INIT_PARAMS]: savedInitParams
     } = await keyValue.getAll();
 
     const apiParams = await this.driver.getAPIParams();
-    const {params} = this;
+    const params = this.params;
 
     const shouldRegister = !(
       getVersion() === savedSDKVersion &&
       JSON.stringify(savedApiParams) === JSON.stringify(apiParams) &&
-      JSON.stringify(savedInitParams) === JSON.stringify(params)
+      JSON.stringify(savedInitParams.tags) === JSON.stringify(params.tags)
     );
 
     if (shouldRegister || forceRequests) {
       await Promise.all([
-        keyValue.set(keyApiParams, apiParams),
-        keyValue.extend(keyInitParams, validateParams(params)),
-        keyValue.set(keySDKVersion, getVersion()),
+        keyValue.set(KEY_API_PARAMS, apiParams),
+        keyValue.extend(KEY_INIT_PARAMS, {tags: params.tags}),
+        keyValue.set(KEY_SDK_VERSION, getVersion()),
+      ]);
+      await Promise.all([
         this.api.registerDevice(),
         this.api.setTags({...params.tags}),
         this.api.registerUser()
       ]);
-      this._ee.emit(eventOnRegister);
+      this._ee.emit(EVENT_ON_REGISTER);
     }
   }
 
@@ -480,15 +489,15 @@ class Pushwoosh {
   private async open() {
     const apiParams = await this.driver.getAPIParams();
     const curTime = Date.now();
-    const val = await keyValue.get(keyLastSentAppOpen);
+    const val = await keyValue.get(KEY_LAST_SENT_APP_OPEN);
     const lastSentTime = isNaN(val) ? 0 : Number(val);
     const force = await this.needForcedOpen();
     if (this.isSafari && !apiParams.hwid) {
       return Promise.resolve();
     }
-    if (force || (curTime - lastSentTime) > periodSendAppOpen) {
+    if (force || (curTime - lastSentTime) > PERIOD_SEND_APP_OPEN) {
       await Promise.all([
-        keyValue.set(keyLastSentAppOpen, curTime || Date.now()),
+        keyValue.set(KEY_LAST_SENT_APP_OPEN, curTime || Date.now()),
         this.api.applicationOpen()
       ]);
     }
@@ -502,10 +511,10 @@ class Pushwoosh {
     if (!this.isSafari) {
       return Promise.resolve(false);
     }
-    const previousPermission = await keyValue.get(keySafariPreviousPermission);
+    const previousPermission = await keyValue.get(KEY_SAFARI_PREVIOUS_PERMISSION);
     const currentPermission = await this.driver.getPermission();
     const compare = (prev: string, curr: string) => prev !== PERMISSION_GRANTED && curr === PERMISSION_GRANTED;
-    await keyValue.set(keySafariPreviousPermission, currentPermission);
+    await keyValue.set(KEY_SAFARI_PREVIOUS_PERMISSION, currentPermission);
     const result = compare(this.permissionOnInit, currentPermission) || compare(previousPermission, currentPermission);
     return Promise.resolve(result);
   }
@@ -527,7 +536,7 @@ class Pushwoosh {
     // Actions depending of the permissions
     switch (this.permissionOnInit) {
       case PERMISSION_DENIED:
-        this._ee.emit(eventOnPermissionDenied);
+        this._ee.emit(EVENT_ON_PERMISSION_DENIED);
         // if permission === PERMISSION_DENIED and device is registered do unsubscribe (unregister device)
         if (!this.isSafari && this.isDeviceRegistered()) {
           await this.unsubscribe();
@@ -541,11 +550,11 @@ class Pushwoosh {
         if (autoSubscribe) {
           await this.subscribe({registerLess: true});
         } else {
-          this._ee.emit(eventOnPermissionPrompt);
+          this._ee.emit(EVENT_ON_PERMISSION_PROMPT);
         }
         break;
       case PERMISSION_GRANTED:
-        this._ee.emit(eventOnPermissionGranted);
+        this._ee.emit(EVENT_ON_PERMISSION_GRANTED);
         // if permission === PERMISSION_GRANTED and device is not registered do subscribe
         if (!this.isSafari && !this.isDeviceRegistered() && !this.isDeviceUnregistered()) {
           await this.subscribe({registerLess: true});
@@ -554,10 +563,9 @@ class Pushwoosh {
       default:
         Logger.write('error', this.permissionOnInit, 'unknown permission value');
     }
-    await this.initApi();
     await this.open();
     await this.register();
-    this._ee.emit(eventOnReady);
+    this._ee.emit(EVENT_ON_READY);
     this.ready = true;
 
     const delayedEvent = await keyValue.get(KEY_DELAYED_EVENT);
@@ -591,17 +599,21 @@ class Pushwoosh {
    * @returns {Promise<string | null>}
    */
   async getUserId() {
-    const initParams = await keyValue.get(keyInitParams);
-    return initParams.userId || this.params.userId || null;
+    const {userId}: IPWParams = await this.getParams();
+    return userId || this.params.userId || null;
   }
 
   /**
-   * Method returns an object with init params.
-   * @returns {Promise<TPWAPIParams>}
+   * Method returns an object with all params.
+   * @returns {Promise<IPWParams>}
    */
-  async getParams() {
-    const {params = {}} = this.api || {};
-    return Promise.resolve(params);
+  public async getParams() {
+    const {
+      [KEY_API_PARAMS]: apiParams,
+      [KEY_INIT_PARAMS]: initParams,
+    } = await keyValue.getAll();
+
+    return {...apiParams, ...initParams};
   }
 }
 

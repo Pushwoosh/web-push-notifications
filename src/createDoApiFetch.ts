@@ -4,7 +4,7 @@ import {getPushwooshUrl} from "./functions";
 export default function createDoApiFetch(applicationCode: string, pushwooshApiUrl?: string) {
   return function doApiFetch(methodName: string, request: any) {
     return new Promise((resolve, reject) => {
-      getPushwooshUrl(applicationCode, false, pushwooshApiUrl).then(pushwooshUrl => {
+      getPushwooshUrl(applicationCode, pushwooshApiUrl).then(pushwooshUrl => {
         try {
           const url = `${pushwooshUrl}${methodName}`;
           const params = {request};

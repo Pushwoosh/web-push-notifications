@@ -1,12 +1,12 @@
-import {keyValue} from "./storage";
+import {keyValue} from './storage';
 import {
-  keyApiBaseUrl,
-  keyFakePushToken,
-  keyFcmSubscription,
+  KEY_API_BASE_URL,
+  KEY_FAKE_PUSH_TOKEN,
+  KEY_FCM_SUBSCRIPTION,
   BROWSER_TYPE_CHROME,
   BROWSER_TYPE_FF,
   BROWSER_TYPE_SAFARI
-} from "./constants";
+} from './constants';
 
 export function getGlobal() {
   return Function('return this')();
@@ -120,12 +120,12 @@ export function generateHwid(applicationCode: string, pushToken: string) {
 }
 
 export function getFakePushToken() {
-  return localStorage.getItem(keyFakePushToken);
+  return localStorage.getItem(KEY_FAKE_PUSH_TOKEN);
 }
 
 export function generateFakePushToken() {
   const token = generateToken();
-  localStorage.setItem(keyFakePushToken, token);
+  localStorage.setItem(KEY_FAKE_PUSH_TOKEN, token);
   return token;
 }
 
@@ -161,7 +161,7 @@ export function getFcmKey(pushSubscription: PushSubscription, key: string): Prom
   }
 
   return new Promise((resolve => {
-    keyValue.get(keyFcmSubscription)
+    keyValue.get(KEY_FCM_SUBSCRIPTION)
       .then((fcmSubscription: any) => {
         resolve(fcmSubscription && fcmSubscription[key] || '')
       })
@@ -184,7 +184,7 @@ export function getPublicKey(pushSubscription: PushSubscription) {
   return getSubsKey(pushSubscription, 'p256dh');
 }
 
-export function getPushwooshUrl(applicationCode: string, ignoreBaseUrl?: boolean, pushwooshApiUrl?: string) {
+export function getPushwooshUrl(applicationCode: string, pushwooshApiUrl?: string) {
   let subDomain = 'cp';
   if (!isSafariBrowser() && applicationCode && !~applicationCode.indexOf('.')) {
     subDomain = `${applicationCode}.api`;
@@ -192,10 +192,7 @@ export function getPushwooshUrl(applicationCode: string, ignoreBaseUrl?: boolean
   const url = `https://${pushwooshApiUrl || __API_URL__ || subDomain + '.pushwoosh.com'}/json/1.3/`;
 
   return new Promise<any>(resolve => {
-    if (ignoreBaseUrl) {
-      resolve(url);
-    }
-    keyValue.get(keyApiBaseUrl)
+    keyValue.get(KEY_API_BASE_URL)
       .then((base_url = null) => {
         resolve(base_url || url);
       })

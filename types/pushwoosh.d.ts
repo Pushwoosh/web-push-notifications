@@ -111,6 +111,24 @@ interface IInitParamsWithDefaults extends IInitParams {
   subscribeWidget: ISubscribeWidget;
 }
 
+interface IPWParams extends IInitParamsWithDefaults {
+  applicationCode: string;
+  defaultNotificationImage?: string;
+  defaultNotificationTitle?: string;
+  logLevel?: 'error' | 'info' | 'debug';
+  pushwooshApiUrl?: string;
+  safariWebsitePushID?: string;
+  scope?: string;
+  userId?: string;
+  pushwooshUrl: string;
+  authToken?: string;
+  fcmPushSet?: string;
+  fcmToken?: string;
+  hwid?: string;
+  publicKey?: string;
+  pushToken?: string;
+}
+
 type TPWCanWaitCallback = (f: any) => Promise<any> | any;
 
 interface IWorkerPushwooshGlobal {

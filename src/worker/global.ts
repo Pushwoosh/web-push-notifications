@@ -1,8 +1,8 @@
 import {keyValue} from '../storage';
 import {
-  keyApiParams,
-  keyInitParams,
-  keyLastOpenMessage
+  KEY_INIT_PARAMS,
+  KEY_API_PARAMS,
+  KEY_LAST_OPEN_MESSAGE
 } from '../constants';
 import API from '../API';
 import createDoApiFetch from '../createDoApiFetch';
@@ -27,9 +27,11 @@ export default class WorkerPushwooshGlobal {
 
   async initApi() {
     const values = await keyValue.getAll();
-    const initParams: IInitParamsWithDefaults = values[keyInitParams];
-    const driverApiParams: TPWAPIParams = values[keyApiParams];
-    const lastOpenMessage: TPWLastOpenMessage = values[keyLastOpenMessage] || {};
+    const initParams: IInitParamsWithDefaults = values[KEY_INIT_PARAMS];
+    const lastOpenMessage: TPWLastOpenMessage = values[KEY_LAST_OPEN_MESSAGE] || {};
+
+    // TODO apiParams will be deprecated in next minor version
+    const driverApiParams: TPWAPIParams = values[KEY_API_PARAMS];
     const apiParams: TPWAPIParams = {
       ...driverApiParams,
       deviceType: initParams.deviceType,
@@ -41,6 +43,7 @@ export default class WorkerPushwooshGlobal {
     if (initParams.userId) {
       apiParams.userId = initParams.userId
     }
+
     const func = createDoApiFetch(initParams.applicationCode, initParams.pushwooshApiUrl);
     this.api = new API(func, apiParams, lastOpenMessage);
   }

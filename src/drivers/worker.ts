@@ -12,12 +12,14 @@ import {
   PERMISSION_PROMPT,
   PERMISSION_DENIED,
   PERMISSION_GRANTED,
-  keyDBSenderID,
-  keyApiParams,
-  keyFcmSubscription
+  KEY_SENDER_ID,
+  KEY_API_PARAMS,
+  KEY_FCM_SUBSCRIPTION,
+  EVENT_ON_SW_INIT_ERROR,
+  EVENT_ON_PERMISSION_DENIED,
+  EVENT_ON_PERMISSION_GRANTED
 } from '../constants';
-import {eventOnSWInitError, eventOnPermissionDenied, eventOnPermissionGranted} from "../Pushwoosh";
-import {keyValue} from "../storage";
+import {keyValue} from '../storage';
 
 
 declare const Notification: {
@@ -84,7 +86,7 @@ class WorkerDriver implements IPWDriver {
       return await this.subscribe(serviceWorkerRegistration);
     }
     else if (permission === PERMISSION_DENIED) {
-      this.emit(eventOnPermissionDenied);
+      this.emit(EVENT_ON_PERMISSION_DENIED);
     }
     return subscription;
   }
@@ -95,7 +97,7 @@ class WorkerDriver implements IPWDriver {
       options.applicationServerKey = urlB64ToUint8Array(this.params.applicationServerPublicKey);
     }
     const subscription = await registration.pushManager.subscribe(options);
-    this.emit(eventOnPermissionGranted);
+    this.emit(EVENT_ON_PERMISSION_GRANTED);
     await this.getFCMToken();
     return subscription;
   }
@@ -121,13 +123,13 @@ class WorkerDriver implements IPWDriver {
     let serviceWorkerRegistration = await navigator.serviceWorker.getRegistration();
     if (!serviceWorkerRegistration) {
       const {
-        [keyApiParams]: savedApiParams
+        [KEY_API_PARAMS]: savedApiParams
       } = await keyValue.getAll();
       if (savedApiParams && this.scope !== '/') {
         return savedApiParams;
       }
       else {
-        this.emit(eventOnSWInitError);
+        this.emit(EVENT_ON_SW_INIT_ERROR);
         throw new Error('No service worker registration');
       }
     }
@@ -138,8 +140,8 @@ class WorkerDriver implements IPWDriver {
     const pushToken = getPushToken(subscription);
 
     return {
+      pushToken,
       hwid: generateHwid(this.params.applicationCode, pushToken),
-      pushToken: pushToken,
       publicKey: getPublicKey(subscription),
       authToken: getAuthToken(subscription),
       fcmPushSet: await getFcmKey(subscription, 'pushSet'),
@@ -154,7 +156,7 @@ class WorkerDriver implements IPWDriver {
   async getFCMToken() {
     const serviceWorkerRegistration = await navigator.serviceWorker.getRegistration();
     const subscription = await serviceWorkerRegistration.pushManager.getSubscription();
-    const senderID = await keyValue.get(keyDBSenderID);
+    const senderID = await keyValue.get(KEY_SENDER_ID);
     const fcmURL = 'https://fcm.googleapis.com/fcm/connect/subscribe';
 
     if (!senderID) {
@@ -183,7 +185,7 @@ class WorkerDriver implements IPWDriver {
     if (response.status === 200) {
       try {
         const subscription = await response.json();
-        await keyValue.set(keyFcmSubscription, {
+        await keyValue.set(KEY_FCM_SUBSCRIPTION, {
           token: subscription.token || '',
           pushSet: subscription.pushSet || ''
         });
@@ -214,7 +216,7 @@ class WorkerDriver implements IPWDriver {
    * @returns {Promise<boolean>}
    */
   async checkFCMKeys() {
-    const {pushSet = '', token = ''} = await keyValue.get(keyFcmSubscription) || {};
+    const {pushSet = '', token = ''} = await keyValue.get(KEY_FCM_SUBSCRIPTION) || {};
     return !!(pushSet && token);
   }
 
@@ -253,10 +255,10 @@ class WorkerDriver implements IPWDriver {
         manifestSenderID = match[4];
       }
 
-      const senderId = await keyValue.get(keyDBSenderID);
+      const senderId = await keyValue.get(KEY_SENDER_ID);
 
       if (manifestSenderID && senderId !== manifestSenderID) {
-        await keyValue.set(keyDBSenderID, manifestSenderID);
+        await keyValue.set(KEY_SENDER_ID, manifestSenderID);
         return false;
       }
 

@@ -61,10 +61,10 @@ declare namespace PW {
     getUserId(): Promise<string>;
 
     /**
-     * Method returns an object with init params.
-     * @returns {Promise<TPWAPIParams>}
+     * Method returns an object with all params.
+     * @returns {Promise<IPWParams>}
      */
-    getParams(): Promise<InitParams>;
+    getParams(): Promise<IPWParams>;
 
     /**
      * Method initializes the permission dialog on the device
@@ -197,6 +197,42 @@ declare namespace PW {
     subscribeWidget?: SubscribeWidget;
     tags?: { [key: string]: any };
     userId?: string;
+  }
+
+  /**
+   * Init params and driver api params
+   */
+  interface PWParams {
+    applicationCode: string;
+    autoSubscribe?: boolean;
+    defaultNotificationImage?: string;
+    defaultNotificationTitle?: string;
+    logLevel?: 'error' | 'info' | 'debug';
+    pushwooshApiUrl?: string;
+    safariWebsitePushID?: string;
+    scope?: string;
+    subscribeWidget?: SubscribeWidget;
+    tags?: {
+      Language: string;
+      'Device Model': string;
+      [key: string]: any;
+    };
+    userId?: string;
+    pushwooshUrl?: string;
+    deviceType?: number;
+    serviceWorkerUrl?: string | null;
+    authToken?: string;
+    fcmPushSet?: string;
+    fcmToken?: string;
+    hwid?: string;
+    publicKey?: string;
+    pushToken?: string;
+    driversSettings?: {
+      worker: {
+        serviceWorkerUrl: string;
+        applicationServerPublicKey?: string;
+      }
+    };
   }
 
   /**

@@ -66,7 +66,7 @@ export default class PushwooshNotification {
       let {buttons} = this._changedMess;
 
       //XMPP Chrome Sender payload contains buttons as string
-      if (typeof(buttons) === "string") {
+      if (typeof(buttons) === 'string') {
         buttons = await JSON.parse(buttons);
       }
 

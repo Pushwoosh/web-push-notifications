@@ -1,5 +1,5 @@
-import {log as logStorage} from "./storage";
-import {patchConsole} from "./functions";
+import {log as logStorage} from './storage';
+import {patchConsole} from './functions';
 
 const levels: { [key: string]: number } = {
   error: 1,

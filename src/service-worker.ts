@@ -1,23 +1,22 @@
 import {keyValue, message as messagesLog} from './storage';
 import {
-  keyWorkerVersion,
-  keyLastOpenMessage,
-  periodGoalEvent,
-  defaultNotificationTitle,
-  defaultNotificationImage,
-  defaultNotificationUrl,
-  keyInitParams,
-  KEY_DELAYED_EVENT
+  KEY_WORKER_VERSION,
+  KEY_LAST_OPEN_MESSAGE,
+  PERIOD_GOAL_EVENT,
+  DEFAULT_NOTIFICATION_TITLE,
+  DEFAULT_NOTIFICATION_IMAGE,
+  DEFAULT_NOTIFICATION_URL,
+  KEY_INIT_PARAMS,
+
+  KEY_DELAYED_EVENT,
+  EVENT_ON_PUSH_DELIVERY,
+  EVENT_ON_NOTIFICATION_CLICK,
+  EVENT_ON_NOTIFICATION_CLOSE
 } from './constants';
 import {getVersion, prepareDuration} from './functions';
 import Logger from './logger';
 import WorkerPushwooshGlobal from './worker/global';
 import PushwooshNotification from './worker/notification';
-import {
-  eventOnPushDelivery,
-  eventOnNotificationClick,
-  eventOnNotificationClose
-} from './Pushwoosh';
 
 const Pushwoosh = self.Pushwoosh = new WorkerPushwooshGlobal();
 
@@ -39,7 +38,7 @@ async function parseCustomData(customData: any) {
 }
 
 async function getNotificationData(event: PushEvent) {
-  const initParams = await keyValue.get(keyInitParams);
+  const initParams = await keyValue.get(KEY_INIT_PARAMS);
   Logger.setLevel(initParams.logLevel);
   const payload = await event.data.json();
   const notificationData = payload.data || payload;
@@ -53,10 +52,10 @@ async function getNotificationData(event: PushEvent) {
     messageHash,
     payload,
     notificationPayload: {
-      title: notificationData.header || initParams.defaultNotificationTitle || defaultNotificationTitle,
+      title: notificationData.header || initParams.defaultNotificationTitle || DEFAULT_NOTIFICATION_TITLE,
       body: notificationData.body,
-      icon: notificationData.i || initParams.defaultNotificationImage || defaultNotificationImage,
-      openUrl: notificationData.l || defaultNotificationUrl,
+      icon: notificationData.i || initParams.defaultNotificationImage || DEFAULT_NOTIFICATION_IMAGE,
+      openUrl: notificationData.l || DEFAULT_NOTIFICATION_URL,
       messageHash,
       customData,
       duration,
@@ -83,7 +82,7 @@ async function onPush(event: PushEvent) {
         ...notification._forLog(),
         payload
       }),
-      broadcastClients({type: eventOnPushDelivery, payload: notificationPayload})
+      broadcastClients({type: EVENT_ON_PUSH_DELIVERY, payload: notificationPayload})
     ]);
   }
   catch (e) {
@@ -109,7 +108,7 @@ async function onClick(event: NotificationEvent) {
   } else {
     url = tag.url;
   }
-  const message = {type: eventOnNotificationClick, payload: {...tag, url}};
+  const message = {type: EVENT_ON_NOTIFICATION_CLICK, payload: {...tag, url}};
   if (url) {
     await event.waitUntil(self.clients.matchAll({
       type: "window"
@@ -129,10 +128,10 @@ async function onClick(event: NotificationEvent) {
   }
   await Promise.all([
     Pushwoosh.initApi().then(() => Pushwoosh.api.pushStat(tag.messageHash)),
-    keyValue.set(keyLastOpenMessage, {
+    keyValue.set(KEY_LAST_OPEN_MESSAGE, {
       url,
       messageHash: tag.messageHash,
-      expiry: Date.now() + periodGoalEvent
+      expiry: Date.now() + PERIOD_GOAL_EVENT
     }),
     broadcastClients(message)
   ]);
@@ -140,7 +139,7 @@ async function onClick(event: NotificationEvent) {
 
 self.addEventListener('install', (event: ExtendableEvent) => {
   event.waitUntil(Promise.all([
-    keyValue.set(keyWorkerVersion, getVersion()),
+    keyValue.set(KEY_WORKER_VERSION, getVersion()),
     Logger.write('info', 'install')
   ]).then(() => self.skipWaiting()));
 });
@@ -168,6 +167,6 @@ self.addEventListener('notificationclose', (event: NotificationEvent) => {
   if (index >= 0) {
     clickedNotifications.splice(index, 1);
   } else {
-    broadcastClients({type: eventOnNotificationClose, payload: tag}).catch(e => console.log(e));
+    broadcastClients({type: EVENT_ON_NOTIFICATION_CLOSE, payload: tag}).catch(e => console.log(e));
   }
 });
