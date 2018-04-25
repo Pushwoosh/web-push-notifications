@@ -18,6 +18,8 @@ export const KEY_API_BASE_URL = 'API_BASE_URL';
 export const KEY_SHOW_SUBSCRIBE_WIDGET = 'WIDGET_SHOWED';
 export const KEY_CLICK_SUBSCRIBE_WIDGET = 'WIDGET_CLICKED';
 export const KEY_DELAYED_EVENT = 'DELAYED_EVENT';
+export const KEY_COMMUNICATION_ENABLED = 'COMMUNICATION_ENABLED';
+export const KEY_DEVICE_DATA_REMOVED = 'DEVICE_DATA_REMOVED';
 
 // Local storage keys
 export const KEY_FAKE_PUSH_TOKEN = 'fakePushToken';
@@ -55,7 +57,10 @@ export const EVENT_ON_SW_INIT_ERROR = 'onSWInitError';
 export const EVENT_ON_PUSH_DELIVERY = 'onPushDelivery';
 export const EVENT_ON_NOTIFICATION_CLICK = 'onNotificationClick';
 export const EVENT_ON_NOTIFICATION_CLOSE = 'onNotificationClose';
+export const EVENT_ON_CHANGE_COMMUNICATION_ENABLED = 'onChangeCommunicationEnabled';
 
 // Post Events
 export const EVENT_SHOW_SUBSCRIBE_BUTTON = 'showSubscribeButton';
 export const EVENT_CLICK_SUBSCRIBE_BUTTON = 'clickSubscribeButton';
+export const EVENT_GDPR_CONSENT = 'GDPRConsent';
+export const EVENT_GDPR_DELETE = 'GDPRDelete';

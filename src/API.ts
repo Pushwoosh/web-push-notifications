@@ -3,14 +3,17 @@ import {
   DEVICE_REGISTRATION_STATUS_UNREGISTERED,
   KEY_DEVICE_REGISTRATION_STATUS,
   KEY_INIT_PARAMS,
-  KEY_API_PARAMS
+  KEY_API_PARAMS,
+  KEY_COMMUNICATION_ENABLED,
+  KEY_DEVICE_DATA_REMOVED
 } from './constants';
 import {
+  getVersion,
   isSafariBrowser,
   validateParams
 } from './functions';
 import {keyValue} from './storage';
-import {logAndThrowError} from './logger';
+import Logger, {logAndThrowError} from './logger';
 
 
 export default class PushwooshAPI {
@@ -59,6 +62,14 @@ export default class PushwooshAPI {
 
   async callAPI(methodName: string, methodParams?: any) {
     const params: IPWParams = await this.getParams();
+
+    // can't call any api methods if device data is removed
+    const dataIsRemoved = await keyValue.get(KEY_DEVICE_DATA_REMOVED);
+    if (dataIsRemoved) {
+      Logger.error('Device data has been removed');
+      return;
+    }
+
     const {hwid = '', applicationCode = '', userId = ''} = params;
     if (this.isSafari && !hwid) {
       return;
@@ -68,7 +79,8 @@ export default class PushwooshAPI {
       hwid,
       application: applicationCode,
       userId: customUserId || userId || hwid,
-      device_type: params.deviceType
+      device_type: params.deviceType,
+      v: getVersion()
     };
     return this.doPushwooshApiMethod(methodName, {
       ...methodParams,
@@ -84,6 +96,13 @@ export default class PushwooshAPI {
     }
 
     try {
+      const isCommunicationEnabled = await keyValue.get(KEY_COMMUNICATION_ENABLED) !== 0;
+
+      if (!isCommunicationEnabled) {
+        Logger.error('Communication is disabled');
+        return;
+      }
+
       await this.callAPI('registerDevice', {
           push_token: params.pushToken,
           public_key: params.publicKey,

@@ -216,9 +216,10 @@ type PWInput = PushOnReadyCallback | PushInitCallback | PushEventCallback;
 type PushOnReadyCallback = HandlerFn;
 type PushInitCallback = ['init', IInitParams];
 type PushEventCallback = [PWEvent, HandlerFn];
-type PWEvent = 'onReady' | 'onSubscribe' | 'onUnsubscribe'
-  | 'onRegister' | 'onPermissionPrompt' | 'onPermissionDenied' | 'onPermissionGranted'
-  | 'onNotificationClick' | 'onPushDelivery' | 'onNotificationClose' | 'onSWInitError';
+type PWEvent = 'onReady' | 'onSubscribe' | 'onUnsubscribe' | 'onRegister' | 'onSWInitError'
+  | 'onPermissionPrompt' | 'onPermissionDenied' | 'onPermissionGranted'
+  | 'onNotificationClick' | 'onPushDelivery' | 'onNotificationClose'
+  | 'onChangeCommunicationEnabled';
 
 declare const __VERSION__: string;
 declare const __API_URL__: string;

@@ -82,6 +82,17 @@
     </table>
 
     <fieldset>
+        <legend>GDPR communication</legend>
+        <p>
+            <label for="GDPRSetCommunicationEnabled">
+                <input type="checkbox" id="GDPRSetCommunicationEnabled">
+                Set Communication Enabled
+            </label>
+        </p>
+        <button id="GDPRRemoveAllDeviceData">Remove All Device Data</button>
+    </fieldset>
+
+    <fieldset>
         <legend>/postEvent</legend>
         <form id="postEventForm">
             <div class="success"></div>
@@ -138,11 +149,29 @@
         catch (e) {
           console.error('Got error on stringify default params', params);
         }
+
+        Pushwoosh.isCommunicationEnabled().then(function(isEnabled) {
+            document.querySelector('#GDPRSetCommunicationEnabled').checked = isEnabled;
+        });
+
+        document.querySelector('#GDPRSetCommunicationEnabled').addEventListener('click', function (event) {
+            event.preventDefault();
+            Pushwoosh.setCommunicationEnabled(event.target.checked);
+        }, false);
+
+        document.querySelector('#GDPRRemoveAllDeviceData').addEventListener('click', function() {
+          Pushwoosh.removeAllDeviceData();
+        });
       });
 
 //      Pushwoosh.push(['onReady', function(api) {
 //        console.log('EVENT: onReady alternative', api);
 //      }]);
+
+      Pushwoosh.push(['onChangeCommunicationEnabled', function(api, isEnabled) {
+        console.log('EVENT: onChangeCommunicationEnabled', isEnabled);
+        document.querySelector('#GDPRSetCommunicationEnabled').checked = isEnabled;
+      }]);
 
       Pushwoosh.push(['onSubscribe', function(api) {
         console.log('EVENT: onSubscribe', api);
@@ -156,6 +185,7 @@
 
       Pushwoosh.push(['onRegister', function(api) {
         console.log('EVENT: onRegister', api);
+        checkSubscription();
       }]);
 
       Pushwoosh.push(['onPermissionPrompt', function(api) {

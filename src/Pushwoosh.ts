@@ -24,12 +24,17 @@ import {
   KEY_DEVICE_REGISTRATION_STATUS,
   KEY_SAFARI_PREVIOUS_PERMISSION,
   MANUAL_SET_LOGGER_LEVEL,
+  KEY_COMMUNICATION_ENABLED,
+  KEY_DEVICE_DATA_REMOVED,
 
   PERMISSION_DENIED,
   PERMISSION_GRANTED,
   PERMISSION_PROMPT,
 
   KEY_DELAYED_EVENT,
+
+  EVENT_GDPR_CONSENT,
+  EVENT_GDPR_DELETE,
 
   DEVICE_REGISTRATION_STATUS_REGISTERED,
   DEVICE_REGISTRATION_STATUS_UNREGISTERED,
@@ -44,7 +49,8 @@ import {
   EVENT_ON_SW_INIT_ERROR,
   EVENT_ON_PUSH_DELIVERY,
   EVENT_ON_NOTIFICATION_CLICK,
-  EVENT_ON_NOTIFICATION_CLOSE
+  EVENT_ON_NOTIFICATION_CLOSE,
+  EVENT_ON_CHANGE_COMMUNICATION_ENABLED
 } from './constants';
 import Logger from './logger'
 import WorkerDriver from './drivers/worker';
@@ -169,6 +175,7 @@ class Pushwoosh {
         case EVENT_ON_PUSH_DELIVERY:
         case EVENT_ON_NOTIFICATION_CLICK:
         case EVENT_ON_NOTIFICATION_CLOSE:
+        case EVENT_ON_CHANGE_COMMUNICATION_ENABLED:
           if (typeof cmdFunc !== 'function') {
             break;
           }
@@ -363,6 +370,12 @@ class Pushwoosh {
    */
   public async subscribe(options?: {registerLess?: boolean}) {
     const {registerLess = false} = options || {};
+    const isCommunicationEnabled = await this.isCommunicationEnabled();
+
+    if (!isCommunicationEnabled) {
+      Logger.error('Communication is disabled');
+      return;
+    }
     try {
       const subscribed = await this.driver.isSubscribed();
 
@@ -434,7 +447,7 @@ class Pushwoosh {
 
   /**
    * Check device's subscription status
-   * @returns {boolean | Promise<boolean>}
+   * @returns {Promise<boolean>}
    */
   public async isSubscribed(): Promise<boolean> {
     const deviceRegistration = this.isSafari || this.isDeviceRegistered();
@@ -451,6 +464,12 @@ class Pushwoosh {
       throw new Error('API is not inited');
     }
 
+    const isCommunicationEnabled = await this.isCommunicationEnabled();
+
+    if (!isCommunicationEnabled) {
+      return;
+    }
+
     const {
       [KEY_SDK_VERSION]: savedSDKVersion,
       [KEY_API_PARAMS]: savedApiParams,
@@ -458,6 +477,7 @@ class Pushwoosh {
     } = await keyValue.getAll();
 
     const apiParams = await this.driver.getAPIParams();
+
     const params = this.params;
 
     const shouldRegister = !(
@@ -479,6 +499,62 @@ class Pushwoosh {
       ]);
       this._ee.emit(EVENT_ON_REGISTER);
     }
+  }
+
+  /**
+   * Check current communication state
+   * @returns {Promise<boolean>}
+   */
+  public async isCommunicationEnabled() {
+    const isEnabled = await keyValue.get(KEY_COMMUNICATION_ENABLED);
+    return isEnabled !== 0;
+  }
+
+  /**
+   * Send "GDPRConsent" postEvent and depends on param "isEnabled"
+   * device will be registered/unregistered from all communication channels.
+   * @param {boolean} isEnabled
+   * @returns {Promise<void>}
+   */
+  public async setCommunicationEnabled(isEnabled: boolean = true) {
+    if (!this.api) {
+      throw new Error('API is not inited');
+    }
+    const {deviceType: device_type} = await this.getParams();
+    await this.api.postEvent(EVENT_GDPR_CONSENT, {channel: !!isEnabled, device_type});
+    await keyValue.set(KEY_COMMUNICATION_ENABLED, isEnabled ? 1 : 0);
+
+    this._ee.emit(EVENT_ON_CHANGE_COMMUNICATION_ENABLED, !!isEnabled);
+
+    if (!!isEnabled) {
+      return this.api.registerDevice();
+    }
+    else {
+      return this.api.unregisterDevice();
+    }
+  }
+
+  /**
+   * Send "GDPRDelete" postEvent and remove all device device data from Pushwoosh.
+   * @returns {Promise<void>}
+   */
+  public async removeAllDeviceData() {
+    if (!this.api) {
+      throw new Error('API is not inited');
+    }
+    const {deviceType: device_type} = await this.getParams();
+    const currentTags = await this.api.getTags();
+    const clearTags = Object.keys(currentTags.result).reduce(
+      (acc: any, tagName: string) => {
+        acc[tagName] = null;
+        return acc;
+      }, {});
+    await this.api.postEvent(EVENT_GDPR_DELETE, {status: true, device_type});
+    await Promise.all([
+      this.api.setTags(clearTags),
+      this.api.unregisterDevice()
+    ]);
+    return keyValue.set(KEY_DEVICE_DATA_REMOVED, 1);
   }
 
   /**
@@ -528,9 +604,18 @@ class Pushwoosh {
   private async defaultProcess() {
     const {autoSubscribe = true} = this.params || {};
     this.permissionOnInit = await this.driver.getPermission();
+
     await this.initApi();
+
     if (this.driver.isNeedUnsubscribe) {
       await this.driver.isNeedUnsubscribe() && this.isDeviceRegistered() && await this.unsubscribe(false);
+    }
+
+    // can't call any api methods if device data is removed
+    const dataIsRemoved = await keyValue.get(KEY_DEVICE_DATA_REMOVED);
+    if (dataIsRemoved) {
+      Logger.error('Device data has been removed');
+      return;
     }
 
     // Actions depending of the permissions
@@ -563,8 +648,11 @@ class Pushwoosh {
       default:
         Logger.write('error', this.permissionOnInit, 'unknown permission value');
     }
+
+    await this.initApi();
     await this.open();
     await this.register();
+
     this._ee.emit(EVENT_ON_READY);
     this.ready = true;
 

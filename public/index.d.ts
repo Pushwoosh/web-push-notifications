@@ -64,7 +64,7 @@ declare namespace PW {
      * Method returns an object with all params.
      * @returns {Promise<IPWParams>}
      */
-    getParams(): Promise<IPWParams>;
+    getParams(): Promise<PWParams>;
 
     /**
      * Method initializes the permission dialog on the device
@@ -93,7 +93,8 @@ declare namespace PW {
     | 'onNotificationClick'
     | 'onPushDelivery'
     | 'onNotificationClose'
-    | 'onSWInitError';
+    | 'onSWInitError'
+    | 'onChangeCommunicationEnabled';
 
   interface API {
     /**
@@ -172,6 +173,26 @@ declare namespace PW {
      * @returns {Promise<void>}
      */
     unregisterDevice(): Promise<void>;
+
+    /**
+     * Send "GDPRConsent" postEvent and depends on param "isEnabled"
+     * device will be registered/unregistered from all communication channels.
+     * @param {boolean} isEnabled
+     * @returns {Promise<void>}
+     */
+    setCommunicationEnabled(isEnabled: boolean): Promise<void>;
+
+    /**
+     * Check current communication enabled
+     * @returns {Promise<boolean>}
+     */
+    isCommunicationEnabled(): Promise<boolean>;
+
+    /**
+     * Send "GDPRDelete" postEvent and remove all device device data from Pushwoosh.
+     * @returns {Promise<void>}
+     */
+    removeAllDeviceData(): Promise<void>;
   }
 
   /**

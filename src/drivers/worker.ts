@@ -15,11 +15,13 @@ import {
   KEY_SENDER_ID,
   KEY_API_PARAMS,
   KEY_FCM_SUBSCRIPTION,
+  KEY_DEVICE_DATA_REMOVED,
   EVENT_ON_SW_INIT_ERROR,
   EVENT_ON_PERMISSION_DENIED,
-  EVENT_ON_PERMISSION_GRANTED
+  EVENT_ON_PERMISSION_GRANTED,
 } from '../constants';
 import {keyValue} from '../storage';
+import Logger from '../logger';
 
 
 declare const Notification: {
@@ -75,10 +77,16 @@ class WorkerDriver implements IPWDriver {
 
   async askSubscribe(registerLess?:boolean) {
     const serviceWorkerRegistration = await navigator.serviceWorker.ready;
-    let subscription = await serviceWorkerRegistration.pushManager.getSubscription();
+    const subscription = await serviceWorkerRegistration.pushManager.getSubscription();
 
     if (subscription && subscription.unsubscribe && registerLess) {
       await subscription.unsubscribe();
+    }
+
+    const dataIsRemoved = await keyValue.get(KEY_DEVICE_DATA_REMOVED);
+    if (dataIsRemoved) {
+      Logger.error('Device data has been removed');
+      return;
     }
 
     const permission = await (window as WindowExtended).Notification.requestPermission();
@@ -92,6 +100,12 @@ class WorkerDriver implements IPWDriver {
   }
 
   private async subscribe(registration: ServiceWorkerRegistration) {
+    const dataIsRemoved = await keyValue.get(KEY_DEVICE_DATA_REMOVED);
+    if (dataIsRemoved) {
+      Logger.error('Device data has been removed');
+      return;
+    }
+
     const options: any = {userVisibleOnly: true};
     if (getBrowserType() == 11 && this.params.applicationServerPublicKey) {
       options.applicationServerKey = urlB64ToUint8Array(this.params.applicationServerPublicKey);
