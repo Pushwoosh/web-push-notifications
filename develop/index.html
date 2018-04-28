@@ -55,31 +55,24 @@
 
     <p><em>Status === subscribed, when notifications permission granted and device registered.</em></p>
 
-    <table cellpadding="0" cellspacing="0" width="100%">
-      <tr>
-        <td valign="top">
-          <p>
-            Permission:
-            <b id="prompt" class="permission-status">Prompt</b>
-            <b id="denied" class="permission-status">Denied</b>
-            <b id="granted" class="permission-status">Granted</b>
-          </p>
-          <p>
-            Status:
-            <b id="actionSubscribe" class="subscription-status">
-              Unsubscribed <br><br><button onclick="Pushwoosh.subscribe()">Subscribe</button>
-            </b>
-            <b id="actionUnsubscribe" class="subscription-status">
-              Subscribed <br><br><button onclick="Pushwoosh.unsubscribe()">Unsubscribe</button>
-            </b>
-          </p>
-        </td>
-        <td valign="top">
-          <p>Init params:</p>
-          <pre id="initParams"></pre>
-        </td>
-      </tr>
-    </table>
+    <p>
+        Permission:
+        <b id="prompt" class="permission-status">Prompt</b>
+        <b id="denied" class="permission-status">Denied</b>
+        <b id="granted" class="permission-status">Granted</b>
+    </p>
+    <p>
+        Status:
+        <b id="actionSubscribe" class="subscription-status">
+          Unsubscribed <br><br><button onclick="Pushwoosh.subscribe()">Subscribe</button>
+        </b>
+        <b id="actionUnsubscribe" class="subscription-status">
+          Subscribed <br><br><button onclick="Pushwoosh.unsubscribe()">Unsubscribe</button>
+        </b>
+    </p>
+
+    <p>Params:</p>
+    <pre id="deviceParams"></pre>
 
     <fieldset>
         <legend>GDPR communication</legend>
@@ -140,15 +133,6 @@
     <script>
       Pushwoosh.push(function(api) {
         console.log('EVENT: onReady', api);
-        checkSubscription();
-        var params = Pushwoosh._initParams || {};
-
-        try {
-          document.querySelector('#initParams').innerHTML = JSON.stringify(params, null, 2) || '';
-        }
-        catch (e) {
-          console.error('Got error on stringify default params', params);
-        }
 
         Pushwoosh.isCommunicationEnabled().then(function(isEnabled) {
             document.querySelector('#GDPRSetCommunicationEnabled').checked = isEnabled;
@@ -162,6 +146,8 @@
         document.querySelector('#GDPRRemoveAllDeviceData').addEventListener('click', function() {
           Pushwoosh.removeAllDeviceData();
         });
+
+        checkSubscription();
       });
 
 //      Pushwoosh.push(['onReady', function(api) {
@@ -226,6 +212,10 @@
           toggleNodesVisibility('.subscription-status', res ? 'actionUnsubscribe' : 'actionSubscribe');
         }).catch(function(err) {
           console.error('Is subscribed error', err);
+        });
+
+        Pushwoosh.getParams().then(function(params) {
+          document.querySelector('#deviceParams').innerHTML = JSON.stringify(params, null, 2) || '';
         });
       }
 

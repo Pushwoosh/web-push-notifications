@@ -5,7 +5,8 @@ import {
   KEY_FCM_SUBSCRIPTION,
   BROWSER_TYPE_CHROME,
   BROWSER_TYPE_FF,
-  BROWSER_TYPE_SAFARI
+  BROWSER_TYPE_SAFARI,
+  KEY_INTERNAL_EVENTS
 } from './constants';
 
 export function getGlobal() {
@@ -262,4 +263,33 @@ export function validateParams(params: any) {
     delete result.userId;
   }
   return result;
+}
+
+export function sendInternalPostEvent(params: any) {
+  keyValue.get(KEY_INTERNAL_EVENTS)
+    .then((events: {[key: string]: number} = {}) => {
+      if (Object.keys(events).length === 0) {
+        keyValue.set(KEY_INTERNAL_EVENTS, {});
+      }
+
+      const currentDate = new Date().setHours(0, 0, 0, 0);
+      const dateFromStore = events[params.event];
+
+      if (!dateFromStore || currentDate > dateFromStore) {
+        keyValue.extend(KEY_INTERNAL_EVENTS, {
+          [params.event]: currentDate
+        });
+
+        const xhr = new XMLHttpRequest();
+        const url = 'https://cp.pushwoosh.com/json/1.3/postEvent';
+        const request = {
+          application: 'DD275-06947',
+          ...params
+        };
+
+        xhr.open('POST', url, true);
+        xhr.setRequestHeader('Content-Type', 'text/plain;charset=UTF-8');
+        xhr.send(JSON.stringify({request}));
+      }
+    });
 }

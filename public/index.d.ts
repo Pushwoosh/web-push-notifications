@@ -62,7 +62,7 @@ declare namespace PW {
 
     /**
      * Method returns an object with all params.
-     * @returns {Promise<IPWParams>}
+     * @returns {Promise<PWParams>}
      */
     getParams(): Promise<PWParams>;
 

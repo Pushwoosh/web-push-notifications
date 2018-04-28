@@ -44,7 +44,10 @@ class WorkerDriver implements IPWDriver {
         scope = `/${scope}`;
       if (scope.substr(scope.length - 1) !== '/')
         scope = `${scope}/`;
+    } else if (serviceWorkerUrl && scope === '/') {
+      return './';
     }
+
     return scope;
   }
 

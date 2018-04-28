@@ -10,7 +10,8 @@ import {
 import {
   getVersion,
   isSafariBrowser,
-  validateParams
+  validateParams,
+  sendInternalPostEvent
 } from './functions';
 import {keyValue} from './storage';
 import Logger, {logAndThrowError} from './logger';
@@ -25,11 +26,8 @@ export default class PushwooshAPI {
   public get params() {
     console.error('Property "Pushwoosh.api.params" will be deprecated in next minor version. Instead, use the async method "Pushwoosh.api.getParams()"');
 
-    const xhr = new XMLHttpRequest();
-    const url = 'https://cp.pushwoosh.com/json/1.3/postEvent';
-    const request = {
+    sendInternalPostEvent({
       hwid: this.apiParams.hwid,
-      application: 'DD275-06947',
       userId: this.apiParams.userId,
       device_type: this.apiParams.deviceType,
       event: 'API Params',
@@ -38,11 +36,7 @@ export default class PushwooshAPI {
         'device_type': this.apiParams.deviceType,
         'url': `${this.apiParams.applicationCode} - ${location ? location.href : 'none'}`
       }
-    };
-
-    xhr.open('POST', url, true);
-    xhr.setRequestHeader('Content-Type', 'text/plain;charset=UTF-8');
-    xhr.send(JSON.stringify({request}));
+    });
 
     return this.apiParams;
   }

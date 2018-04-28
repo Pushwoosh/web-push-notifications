@@ -11,7 +11,8 @@ import {
   clearLocationHash,
   validateParams,
   isSupportSDK,
-  canUsePromise
+  canUsePromise,
+  sendInternalPostEvent
 } from './functions';
 import {
   DEFAULT_SERVICE_WORKER_URL,
@@ -222,7 +223,8 @@ class Pushwoosh {
       scope,
       applicationCode,
       logLevel = 'error',
-      pushwooshApiUrl
+      pushwooshApiUrl,
+      serviceWorkerUrl
     } = initParams;
 
     if (!applicationCode) {
@@ -302,6 +304,23 @@ class Pushwoosh {
     }
     else {
       throw new Error('can\'t initialize safari')
+    }
+
+    // Check deprecated scope usage
+    if (scope && scope.length > 1 && serviceWorkerUrl === null) {
+      const params = await this.getParams();
+
+      sendInternalPostEvent({
+        hwid: params.hwid,
+        userId: params.userId || '',
+        device_type: params.deviceType,
+        event: 'API Deprecated scope',
+        attributes: {
+          'app_code': params.applicationCode,
+          'device_type': params.deviceType,
+          'url': `${params.applicationCode} - ${location ? location.href : 'none'}`
+        }
+      });
     }
 
     // Default actions on init

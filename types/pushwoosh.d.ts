@@ -129,6 +129,20 @@ interface IPWParams extends IInitParamsWithDefaults {
   pushToken?: string;
 }
 
+interface INotificationOptions extends ServiceWorkerNotificationOptions {
+  title: string,
+  messageHash: string,
+  duration: number,
+  openUrl: string,
+  url?: string,
+
+  image?: string,
+  code?: string,
+  buttons?: TNotificationButton[],
+  customData?: {[key: string]: any},
+  campaignCode?: string
+}
+
 type TPWCanWaitCallback = (f: any) => Promise<any> | any;
 
 interface IWorkerPushwooshGlobal {
@@ -142,26 +156,10 @@ interface Window {
   Pushwoosh: IWorkerPushwooshGlobal;
 }
 
-interface SubscribeMethodParams {
-  cancelApiReInit?: boolean;
-}
-
 interface IPWBroadcastClientsParams {
   type: string;
   payload: any;
 }
-
-type TMessageInfo = {
-  title: string;
-  body: string;
-  icon: string;
-  openUrl: string;
-  messageHash: string;
-  customData?: any;
-  duration?: any;
-  buttons?: any;
-  image?: string;
-};
 
 interface IEevetTargetWithResult extends EventTarget {
   result: IDBDatabase;
@@ -200,7 +198,7 @@ type TWorkerSafariDriverParams = {
   pushwooshApiUrl?: string
 };
 
-type NotificationButton = {
+type TNotificationButton = {
   title: string,
   action: string,
   url: string
@@ -208,7 +206,7 @@ type NotificationButton = {
 
 type TServiceWorkerClientExtended = ServiceWorkerClient & {
   focus: () => void
-}
+};
 
 type TDoPushwooshMethod = (type: string, params: any) => Promise<any>;
 

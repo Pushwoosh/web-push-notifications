@@ -1,11 +1,9 @@
-import {prepareDuration} from '../functions';
-
 export default class PushwooshNotification {
-  private _origMess: TMessageInfo;
-  private _changedMess: TMessageInfo;
+  private _origMess: INotificationOptions;
+  private _changedMess: INotificationOptions;
   private _canceled = false;
 
-  constructor(info: TMessageInfo) {
+  constructor(info: INotificationOptions) {
     this._origMess = info;
     this._changedMess = {...info};
   }
@@ -18,7 +16,7 @@ export default class PushwooshNotification {
   }
 
   get body() {
-    return this._changedMess.body;
+    return this._changedMess.body || '';
   }
   set body(body: string) {
     this._changedMess.body = body;
@@ -39,7 +37,7 @@ export default class PushwooshNotification {
   }
 
   get duration() {
-    return prepareDuration(this._changedMess.duration);
+    return this._changedMess.duration;
   }
   set duration(duration) {
     this._changedMess.duration = duration;
@@ -59,21 +57,25 @@ export default class PushwooshNotification {
     this._changedMess.customData = customData;
   }
 
+  get campaignCode() {
+    return this._changedMess.campaignCode
+  }
+  set campaignCode(campaignCode) {
+    this._changedMess.campaignCode = campaignCode;
+  }
+
   async show() {
     if (!this._canceled) {
       const code = `notificationCode-${Date.now()}`;
       const {image} = this._changedMess;
       let {buttons} = this._changedMess;
 
-      //XMPP Chrome Sender payload contains buttons as string
-      if (typeof(buttons) === 'string') {
-        buttons = await JSON.parse(buttons);
+      if (buttons && Array.isArray(buttons)) {
+        buttons.forEach((button: TNotificationButton, key: number) => {
+          button.action = `action-${key}`
+        });
       }
-
-      buttons.forEach((button: NotificationButton, key: number) => {
-        button.action = `action-${key}`
-      });
-      await self.registration.showNotification(this.title, {
+      const notificationOptions = {
         body: this.body,
         icon: this.icon,
         requireInteraction: this.duration === 0 || this.duration > 20,
@@ -84,11 +86,15 @@ export default class PushwooshNotification {
         }),
         data: {
           code,
-          buttons
+          buttons,
+          duration: this.duration,
+          image,
+          campaignCode: this.campaignCode
         },
         actions: buttons,
         image
-      });
+      };
+      await self.registration.showNotification(this.title, notificationOptions);
       const notifications = await self.registration.getNotifications();
       notifications.forEach(notification => {
         if (notification.data && notification.data.code === code && this.duration) {
