@@ -26,7 +26,8 @@ function copyPublicTypes() {
 module.exports = {
   devtool: 'source-map',
   entry: {
-    index: './src/index.ts'
+    index: './src/index.ts',
+    'service-worker': './src/service-worker.ts',
   },
   output: {
     path: path.join(__dirname, 'lib'),

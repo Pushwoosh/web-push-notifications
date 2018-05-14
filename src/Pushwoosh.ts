@@ -384,11 +384,9 @@ class Pushwoosh {
   /**
    * Method initializes the permission dialog on the device
    * and registers through the API in case the device hasn't been registered before.
-   * @param {{registerLess?: boolean}} options
    * @returns {Promise<void>}
    */
-  public async subscribe(options?: {registerLess?: boolean}) {
-    const {registerLess = false} = options || {};
+  public async subscribe() {
     const isCommunicationEnabled = await this.isCommunicationEnabled();
 
     if (!isCommunicationEnabled) {
@@ -398,9 +396,9 @@ class Pushwoosh {
     try {
       const subscribed = await this.driver.isSubscribed();
 
-      await this.driver.askSubscribe(registerLess);
+      await this.driver.askSubscribe(this.isDeviceRegistered());
 
-      if (!registerLess) {
+      if (!this.isDeviceRegistered()) {
         await this.registerDuringSubscribe();
       }
       if (!subscribed) {
@@ -645,14 +643,16 @@ class Pushwoosh {
         if (!this.isSafari && this.isDeviceRegistered()) {
           await this.unsubscribe();
         }
+        localStorage.removeItem(KEY_DEVICE_REGISTRATION_STATUS);
         break;
       case PERMISSION_PROMPT:
         // if permission === PERMISSION_PROMPT and device is registered do unsubscribe (unregister device)
         if (!this.isSafari && this.isDeviceRegistered()) {
           await this.unsubscribe();
         }
+        localStorage.removeItem(KEY_DEVICE_REGISTRATION_STATUS);
         if (autoSubscribe) {
-          await this.subscribe({registerLess: true});
+          await this.subscribe();
         } else {
           this._ee.emit(EVENT_ON_PERMISSION_PROMPT);
         }
@@ -661,7 +661,7 @@ class Pushwoosh {
         this._ee.emit(EVENT_ON_PERMISSION_GRANTED);
         // if permission === PERMISSION_GRANTED and device is not registered do subscribe
         if (!this.isSafari && !this.isDeviceRegistered() && !this.isDeviceUnregistered()) {
-          await this.subscribe({registerLess: true});
+          await this.subscribe();
         }
         break;
       default:

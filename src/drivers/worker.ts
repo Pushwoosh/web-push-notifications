@@ -78,11 +78,11 @@ class WorkerDriver implements IPWDriver {
     eventEmitter.emit(event);
   }
 
-  async askSubscribe(registerLess?:boolean) {
+  async askSubscribe(isDeviceRegistered?:boolean) {
     const serviceWorkerRegistration = await navigator.serviceWorker.ready;
     const subscription = await serviceWorkerRegistration.pushManager.getSubscription();
 
-    if (subscription && subscription.unsubscribe && registerLess) {
+    if (subscription && subscription.unsubscribe && isDeviceRegistered) {
       await subscription.unsubscribe();
     }
 
