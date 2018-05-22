@@ -7,7 +7,7 @@ Pushwoosh Web Push Notification SDK
 
 
 | [Download](https://cdn.pushwoosh.com/webpush/v3/PushwooshWebSDKFiles.zip) | [Guide](https://www.pushwoosh.com/docs/web-push-sdk-30) | [Sample](https://github.com/Pushwoosh/web-push-notifications-sample) |
-| ----------------------------------------------------------- | ------------------------------- | -------------------------------------------------------------------- |
+| ------------------------------------------------------------------------- | ------------------------------------------------------- | -------------------------------------------------------------------- |
 
 
 ### Integration
@@ -16,8 +16,8 @@ Pushwoosh Web Push Notification SDK
 2. Place all these files to top-level root of your website directory.
 
 3. Open manifest.json and make the following changes:
-3.1. Change name and short_name to the name of your website.
-3.2. Change `gcm_sender_id` to your Sender ID. Please keep in mind that Sender ID is usually a 12-digit number, and it can't contain any letters.
+  - Change name and short_name to the name of your website.
+  - Change `gcm_sender_id` to your Sender ID. Please keep in mind that Sender ID is usually a 12-digit number, and it can't contain any letters.
 
 4. Include manifest.json in `<head>`
 
@@ -64,6 +64,6 @@ pwInstance.push(function(api) {
 ```
 
 | [Chrome Guide](https://www.pushwoosh.com/docs/chrome-web-push) | [Firefox Guide](https://www.pushwoosh.com/docs/firefox-web-push) | [Safari Guide](https://www.pushwoosh.com/docs/safari-website-notifications) | [HTTP integration Guide](https://www.pushwoosh.com/docs/chrome-web-push-for-http-websites) | [Subscription Button Guide](https://www.pushwoosh.com/v1.0/docs/push-subscription-button) |
-| ----------------------------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------- |
+| -------------------------------------------------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
 
 
