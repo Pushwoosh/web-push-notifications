@@ -11,15 +11,15 @@ Pushwoosh Web Push Notification SDK
 
 
 ### Integration
-1. Download Pushwoosh Web Push SDK and unzip it. You should have the following files: `manifest.json`, `pushwoosh-service-worker.js`
+- Download Pushwoosh Web Push SDK and unzip it. You should have the following files: `manifest.json`, `pushwoosh-service-worker.js`
 
-2. Place all these files to top-level root of your website directory.
+- Place all these files to top-level root of your website directory.
 
-3. Open manifest.json and make the following changes:
+- Open manifest.json and make the following changes:
   - Change name and short_name to the name of your website.
   - Change `gcm_sender_id` to your Sender ID. Please keep in mind that Sender ID is usually a 12-digit number, and it can't contain any letters.
 
-4. Include manifest.json in `<head>`
+- Include manifest.json in `<head>`
 
 ```html
 <link rel="manifest" href="/manifest.json">
