@@ -64,6 +64,6 @@ pwInstance.push(function(api) {
 ```
 
 | [Chrome Guide](https://www.pushwoosh.com/docs/chrome-web-push) | [Firefox Guide](https://www.pushwoosh.com/docs/firefox-web-push) | [Safari Guide](https://www.pushwoosh.com/docs/safari-website-notifications) | [HTTP integration Guide](https://www.pushwoosh.com/docs/chrome-web-push-for-http-websites) | [Subscription Button Guide](https://www.pushwoosh.com/v1.0/docs/push-subscription-button) |
-| ----------------------------------------------------------- | ------------------------------- | -------------------------------------------------------------------- |
+| ----------------------------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------- |
 
 
