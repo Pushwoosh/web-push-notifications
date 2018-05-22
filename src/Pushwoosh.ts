@@ -11,8 +11,7 @@ import {
   clearLocationHash,
   validateParams,
   isSupportSDK,
-  canUsePromise,
-  sendInternalPostEvent
+  canUsePromise
 } from './functions';
 import {
   DEFAULT_SERVICE_WORKER_URL,
@@ -247,6 +246,7 @@ class Pushwoosh {
       driversSettings: {
         worker: {
           serviceWorkerUrl: DEFAULT_SERVICE_WORKER_URL,
+          applicationServerPublicKey: undefined,
           ...(initParams.driversSettings && initParams.driversSettings.worker),
         }
       },
@@ -268,9 +268,8 @@ class Pushwoosh {
         eventEmitter: this._ee,
         scope,
         applicationCode,
-        serviceWorkerUrlDeprecated: worker.serviceWorkerUrl,
         serviceWorkerUrl: params.serviceWorkerUrl,
-        applicationServerPublicKey: worker.applicationServerPublicKey,
+        applicationServerPublicKey: worker.applicationServerPublicKey
       });
       try {
         if (this.driver && this.driver.initWorker) {
@@ -306,23 +305,6 @@ class Pushwoosh {
       throw new Error('can\'t initialize safari')
     }
 
-    // Check deprecated scope usage
-    if (scope && scope.length > 1 && serviceWorkerUrl === null) {
-      const params = await this.getParams();
-
-      sendInternalPostEvent({
-        hwid: params.hwid,
-        userId: params.userId || '',
-        device_type: params.deviceType,
-        event: 'API Deprecated scope',
-        attributes: {
-          'app_code': params.applicationCode,
-          'device_type': params.deviceType,
-          'url': `${params.applicationCode} - ${location ? location.href : 'none'}`
-        }
-      });
-    }
-
     // Default actions on init
     try {
       await this.defaultProcess();
@@ -343,7 +325,7 @@ class Pushwoosh {
    *
    * @param {MessageEvent} event
    */
-  private onServiceWorkerMessage(event: MessageEvent) {
+  private onServiceWorkerMessage(event: ServiceWorkerMessageEvent) {
     const {data = {}} = event || {};
     const {type = '', payload = {}} = data || {};
     this._ee.emit(type, payload);

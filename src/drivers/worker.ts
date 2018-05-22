@@ -19,13 +19,14 @@ import {
   EVENT_ON_SW_INIT_ERROR,
   EVENT_ON_PERMISSION_DENIED,
   EVENT_ON_PERMISSION_GRANTED,
+  DEFAULT_SERVICE_WORKER_URL,
 } from '../constants';
 import {keyValue} from '../storage';
 import Logger from '../logger';
 
 
 declare const Notification: {
-  permission: typeof PERMISSION_GRANTED | typeof PERMISSION_DENIED | typeof PERMISSION_PROMPT
+  permission: typeof PERMISSION_DENIED | typeof PERMISSION_GRANTED | typeof PERMISSION_PROMPT
 };
 
 type WindowExtended = Window & {Notification: any}
@@ -34,30 +35,15 @@ type WindowExtended = Window & {Notification: any}
 class WorkerDriver implements IPWDriver {
   constructor(private params: TWorkerDriverParams) {}
 
-  get scope() {
-    let {scope = '/', serviceWorkerUrl = null} = this.params || {};
-    if (typeof scope !== 'string') {
-      throw new Error('invalid scope value');
-    }
-    if (scope.length > 1 && serviceWorkerUrl === null) {
-      if (scope.substr(0, 1) !== '/')
-        scope = `/${scope}`;
-      if (scope.substr(scope.length - 1) !== '/')
-        scope = `${scope}/`;
-    } else if (serviceWorkerUrl && scope === '/') {
-      return './';
-    }
-
-    return scope;
-  }
-
   async initWorker() {
-    const scope = this.scope;
-    const {serviceWorkerUrl, serviceWorkerUrlDeprecated} = this.params;
-    const scriptUrl = serviceWorkerUrl === null
-        ? `${scope}${serviceWorkerUrlDeprecated}?version=${getVersion()}`
-        : `${serviceWorkerUrl}?version=${getVersion()}`;
-    await navigator.serviceWorker.register(scriptUrl, {scope});
+    const {serviceWorkerUrl, scope} = this.params;
+
+    const options = scope ? {scope} : undefined;
+    const url = serviceWorkerUrl === null
+      ? `/${DEFAULT_SERVICE_WORKER_URL}?version=${getVersion()}`
+      : `${serviceWorkerUrl}?version=${getVersion()}`;
+
+    await navigator.serviceWorker.register(url, options);
   }
 
   async getPermission() {
@@ -142,7 +128,7 @@ class WorkerDriver implements IPWDriver {
       const {
         [KEY_API_PARAMS]: savedApiParams
       } = await keyValue.getAll();
-      if (savedApiParams && this.scope !== '/') {
+      if (savedApiParams) {
         return savedApiParams;
       }
       else {
@@ -172,7 +158,11 @@ class WorkerDriver implements IPWDriver {
    */
   async getFCMToken() {
     const serviceWorkerRegistration = await navigator.serviceWorker.getRegistration();
-    const subscription = await serviceWorkerRegistration.pushManager.getSubscription();
+
+    let subscription = null;
+    if (serviceWorkerRegistration) {
+      subscription = await serviceWorkerRegistration.pushManager.getSubscription();
+    }
     const senderID = await keyValue.get(KEY_SENDER_ID);
     const fcmURL = 'https://fcm.googleapis.com/fcm/connect/subscribe';
 
@@ -182,7 +172,7 @@ class WorkerDriver implements IPWDriver {
     }
 
     const body = {
-      endpoint: subscription.endpoint,
+      endpoint: subscription ? subscription.endpoint : '',
       encryption_key: getPublicKey(subscription), //p256
       encryption_auth: getAuthToken(subscription), //auth
       authorized_entity: senderID,

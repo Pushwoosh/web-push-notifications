@@ -37,9 +37,9 @@ export const KEY_SENDER_ID = 'GCM_SENDER_ID';
 export const KEY_FCM_SUBSCRIPTION = 'FCM_SUBSCRIPTION';
 
 // Permissions
-export const PERMISSION_DENIED: string = 'denied';
-export const PERMISSION_GRANTED: string = 'granted';
-export const PERMISSION_PROMPT: string = 'default';
+export const PERMISSION_DENIED = 'denied';
+export const PERMISSION_GRANTED = 'granted';
+export const PERMISSION_PROMPT = 'default';
 
 // Browsers
 export const BROWSER_TYPE_SAFARI: number = 10;

@@ -9,6 +9,8 @@ import {
   KEY_INTERNAL_EVENTS
 } from './constants';
 
+type TPushSubscription = PushSubscription | null;
+
 export function getGlobal() {
   return Function('return this')();
 }
@@ -140,7 +142,7 @@ function generateToken(len?: number) {
   return text;
 }
 
-export function getPushToken(pushSubscription: PushSubscription) {
+export function getPushToken(pushSubscription: TPushSubscription) {
   if (!pushSubscription) {
     return '';
   }
@@ -153,10 +155,10 @@ export function getPushToken(pushSubscription: PushSubscription) {
     return pushSubscription.endpoint;
   }
 
-  return pushSubscription.endpoint.split('/').pop();
+  return pushSubscription.endpoint.split('/').pop() || '';
 }
 
-export function getFcmKey(pushSubscription: PushSubscription, key: string): Promise<string> {
+export function getFcmKey(pushSubscription: TPushSubscription, key: string): Promise<string> {
   if (!pushSubscription) {
     return Promise.resolve('');
   }
@@ -172,16 +174,16 @@ export function getFcmKey(pushSubscription: PushSubscription, key: string): Prom
   }))
 }
 
-function getSubsKey(pushSubscription: any, key: any): string {
+function getSubsKey(pushSubscription: TPushSubscription, key: PushEncryptionKeyName): string {
   const rawKey = pushSubscription && pushSubscription.getKey && pushSubscription.getKey(key);
   return rawKey ? btoa(String.fromCharCode.apply(String, new Uint8Array(rawKey))) : '';
 }
 
-export function getAuthToken(pushSubscription: PushSubscription) {
+export function getAuthToken(pushSubscription: TPushSubscription) {
   return getSubsKey(pushSubscription, 'auth');
 }
 
-export function getPublicKey(pushSubscription: PushSubscription) {
+export function getPublicKey(pushSubscription: TPushSubscription) {
   return getSubsKey(pushSubscription, 'p256dh');
 }
 

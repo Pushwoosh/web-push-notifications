@@ -26,7 +26,7 @@ interface TPWAPIParams extends IPWDriverAPIParams {
 
 interface TPWLastOpenMessage {
   messageHash?: string,
-  expiry?: number,
+  expiry: number,
   url?: string
 }
 
@@ -36,6 +36,7 @@ interface PushManager {
 
 interface PushSubscription {
   unsubscribe(): Promise<boolean>;
+  subscriptionId: string
 }
 
 interface IPWDriver {
@@ -186,7 +187,6 @@ type TWorkerDriverParams = {
   scope?: string,
   applicationCode: string,
   serviceWorkerUrl: string | null,
-  serviceWorkerUrlDeprecated?: string,
   applicationServerPublicKey?: string,
 };
 
