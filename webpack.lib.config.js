@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const webpack = require('webpack');
 const CleanWebpackPlugin = require('clean-webpack-plugin');
+const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 
 
 const apiUrlValue = process.env.API_URL || '';
@@ -9,11 +10,6 @@ const apiUrlValue = process.env.API_URL || '';
 const defines = {
   __VERSION__: JSON.stringify(require('./package.json').version),
   __API_URL__: JSON.stringify(apiUrlValue)
-};
-
-const uglifyOptions = {
-  beautify: true,
-  mangle: false
 };
 
 function copyPublicTypes() {
@@ -24,6 +20,7 @@ function copyPublicTypes() {
 }
 
 module.exports = {
+  mode: 'production',
   devtool: 'source-map',
   entry: {
     index: './src/index.ts',
@@ -42,7 +39,7 @@ module.exports = {
     rules: [
       {
         test: /\.ts$/,
-        use: ['ts-loader']
+        use: 'awesome-typescript-loader'
       },
       {
         test: /\.css$/,
@@ -50,11 +47,20 @@ module.exports = {
       }
     ]
   },
+  optimization: {
+    minimizer: [
+      new UglifyJsPlugin({
+        uglifyOptions: {
+          beautify: true,
+          mangle: false
+        }
+      })
+    ]
+  },
   plugins: [
     new CleanWebpackPlugin(['lib']),
     new webpack.optimize.OccurrenceOrderPlugin(),
     new webpack.DefinePlugin(defines),
-    new webpack.optimize.UglifyJsPlugin(uglifyOptions),
     copyPublicTypes
   ]
 };

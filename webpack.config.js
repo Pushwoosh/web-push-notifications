@@ -6,6 +6,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const GenerateJsonPlugin = require('generate-json-webpack-plugin');
 const CleanWebpackPlugin = require('clean-webpack-plugin');
 const ScriptExtHtmlWebpackPlugin = require('script-ext-html-webpack-plugin');
+const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 
 
 let config = {};
@@ -37,18 +38,6 @@ const defines = {
   __API_URL__: JSON.stringify(apiUrlValue)
 };
 
-const uglifyOptions = {
-  compress: {
-    pure_getters: true,
-    unsafe: true,
-    unsafe_comps: true,
-    warnings: false
-  },
-  mangle: true,
-  output: {
-    comments: false
-  }
-};
 
 const devServer = {
   host: process.env.HOST || '0.0.0.0',
@@ -66,7 +55,9 @@ if (config.ssl && config.ssl.key && config.ssl.cert) {
   };
 }
 
+
 module.exports = {
+  mode: isProduction ? 'production' : 'development',
   devtool: 'source-map',
   entry: {
     'web-notifications': './src/web-notifications.ts',
@@ -84,12 +75,30 @@ module.exports = {
     rules: [
       {
         test: /\.ts$/,
-        use: ['ts-loader']
+        use: 'awesome-typescript-loader'
       },
       {
         test: /\.css$/,
         use: ['to-string-loader', 'css-loader', 'postcss-loader']
       }
+    ]
+  },
+  optimization: {
+    minimizer: [
+      new UglifyJsPlugin({
+        uglifyOptions: {
+          compress: {
+            pure_getters: true,
+            unsafe: true,
+            unsafe_comps: true,
+            warnings: false
+          },
+          mangle: true,
+          output: {
+            comments: false
+          }
+        }
+      })
     ]
   },
   plugins: [
@@ -103,12 +112,11 @@ module.exports = {
         initParams: JSON.stringify(initParams)
       },
       excludeChunks: ['service-worker'],
-      minify: false
+      minify: false,
     }),
-    new ScriptExtHtmlWebpackPlugin({defaultAttribute: 'async'}),
+    new ScriptExtHtmlWebpackPlugin({async: /\.js$/}),
     new GenerateJsonPlugin('manifest.json', config.manifest),
 
-    isProduction && new webpack.optimize.UglifyJsPlugin(uglifyOptions),
     !isProduction && new webpack.HotModuleReplacementPlugin()
   ].filter(x => x),
 

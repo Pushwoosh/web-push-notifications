@@ -67,6 +67,7 @@ class Pushwoosh {
   private _initParams: IInitParams;
   private _ee: EventEmitter = new EventEmitter();
   private _onPromises: {[key: string]: Promise<ChainFunction>};
+  private _isNeedResubscribe: boolean = false;
 
   public api: API;
   public driver: IPWDriver;
@@ -228,6 +229,11 @@ class Pushwoosh {
 
     if (!applicationCode) {
       throw new Error('no application code');
+    }
+
+    const prevParams = await this.getParams();
+    if (prevParams.applicationCode && prevParams.applicationCode !== applicationCode) {
+      this._isNeedResubscribe = true;
     }
 
     // Build initial params
@@ -610,6 +616,10 @@ class Pushwoosh {
       await this.driver.isNeedUnsubscribe() && this.isDeviceRegistered() && await this.unsubscribe(false);
     }
 
+    if (this._isNeedResubscribe) {
+      await this.unsubscribe(false);
+    }
+
     // can't call any api methods if device data is removed
     const dataIsRemoved = await keyValue.get(KEY_DEVICE_DATA_REMOVED);
     if (dataIsRemoved) {
@@ -642,7 +652,7 @@ class Pushwoosh {
       case PERMISSION_GRANTED:
         this._ee.emit(EVENT_ON_PERMISSION_GRANTED);
         // if permission === PERMISSION_GRANTED and device is not registered do subscribe
-        if (!this.isSafari && !this.isDeviceRegistered() && !this.isDeviceUnregistered()) {
+        if ((!this.isSafari && !this.isDeviceRegistered() && !this.isDeviceUnregistered()) || this._isNeedResubscribe) {
           await this.subscribe();
         }
         break;
