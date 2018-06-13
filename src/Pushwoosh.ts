@@ -223,8 +223,7 @@ class Pushwoosh {
       scope,
       applicationCode,
       logLevel = 'error',
-      pushwooshApiUrl,
-      serviceWorkerUrl
+      pushwooshApiUrl
     } = initParams;
 
     if (!applicationCode) {
@@ -405,7 +404,8 @@ class Pushwoosh {
   private async registerDuringSubscribe() {
     const subscribed = await this.driver.isSubscribed();
     if (this.isSafari) {
-      await this.open();
+      const force = await this.needForcedOpen();
+      await this.open(force);
     }
     await this.register(subscribed);
   }
@@ -564,15 +564,16 @@ class Pushwoosh {
 
   /**
    * Check device's session and call the appOpen method,
-   * no more than once an hour
+   * no more than once an hour.
+   * Force need to Safari await subscribe status
+   * @param {boolean} force
    * @returns {Promise<void>}
    */
-  private async open() {
+  private async open(force?: boolean) {
     const apiParams = await this.driver.getAPIParams();
     const curTime = Date.now();
     const val = await keyValue.get(KEY_LAST_SENT_APP_OPEN);
     const lastSentTime = isNaN(val) ? 0 : Number(val);
-    const force = await this.needForcedOpen();
     if (this.isSafari && !apiParams.hwid) {
       return Promise.resolve();
     }
@@ -611,6 +612,7 @@ class Pushwoosh {
     this.permissionOnInit = await this.driver.getPermission();
 
     await this.initApi();
+    await this.open();
 
     if (this.driver.isNeedUnsubscribe) {
       await this.driver.isNeedUnsubscribe() && this.isDeviceRegistered() && await this.unsubscribe(false);
@@ -661,8 +663,13 @@ class Pushwoosh {
     }
 
     await this.initApi();
-    await this.open();
     await this.register();
+
+    // Safari await subscribe status
+    const force = await this.needForcedOpen();
+    if (force) {
+      await this.open(true);
+    }
 
     this._ee.emit(EVENT_ON_READY);
     this.ready = true;
