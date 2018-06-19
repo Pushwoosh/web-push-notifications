@@ -131,7 +131,7 @@ export default class PushwooshAPI {
   async registerUser(userId?: string) {
     const params: IPWParams = await this.getParams();
 
-    if (!params.userId || !userId) {
+    if (!params.userId && !userId) {
       return;
     }
 
