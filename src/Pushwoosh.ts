@@ -366,6 +366,7 @@ class Pushwoosh implements IPushwoosh {
     /////////////////////////////
 
     await keyValue.extend(KEY_API_PARAMS, driverApiParams);
+    await keyValue.extend(KEY_INIT_PARAMS, params);
 
     const func = createDoApiXHR(params.applicationCode, params.pushwooshApiUrl);
     this.api = new API(func, apiParams, lastOpenMessage);
