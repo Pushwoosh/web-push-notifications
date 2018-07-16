@@ -65,7 +65,8 @@ module.exports = {
   },
   output: {
     path: path.join(__dirname, 'dist'),
-    filename: `pushwoosh-[name].${isProduction ? '' : 'uncompress.'}js`
+    filename: `pushwoosh-[name].${isProduction ? '' : 'uncompress.'}js`,
+    globalObject: 'this'
   },
   resolve: {
     extensions: ['.ts', '.js', '.json'],
@@ -75,7 +76,8 @@ module.exports = {
     rules: [
       {
         test: /\.ts$/,
-        use: 'awesome-typescript-loader'
+        use: 'awesome-typescript-loader',
+        include: [path.resolve(__dirname, 'src'), path.resolve(__dirname, '@types')]
       },
       {
         test: /\.css$/,

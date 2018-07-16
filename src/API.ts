@@ -10,7 +10,6 @@ import {
 import {
   getVersion,
   isSafariBrowser,
-  validateParams,
   sendInternalPostEvent
 } from './functions';
 import {keyValue} from './storage';
@@ -140,7 +139,7 @@ export default class PushwooshAPI {
       userId: userId || params.userId,
     };
 
-    await keyValue.extend(KEY_INIT_PARAMS, validateParams(methodParams));
+    await keyValue.extend(KEY_INIT_PARAMS, methodParams);
 
     this.callAPI('registerUser', methodParams);
   }

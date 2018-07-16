@@ -32,8 +32,12 @@ export function canUseServiceWorkers() {
   return navigator.serviceWorker && 'PushManager' in window && 'Notification' in window;
 }
 
+export function canUseStorage() {
+  return 'indexedDB' in window && 'localStorage' in window;
+}
+
 export function isSupportSDK() {
-  return (isSafariBrowser() && getDeviceName() === 'PC') || canUseServiceWorkers();
+  return ((isSafariBrowser() && getDeviceName() === 'PC') || canUseServiceWorkers()) && canUseStorage();
 }
 
 type TBrowserType = typeof BROWSER_TYPE_SAFARI | typeof BROWSER_TYPE_CHROME | typeof BROWSER_TYPE_FF;
@@ -205,27 +209,6 @@ export function getPushwooshUrl(applicationCode: string, pushwooshApiUrl?: strin
   });
 }
 
-export function patchConsole() {
-  let method;
-  const noop = function() {};
-  const methods = [
-    'assert', 'clear', 'count', 'debug', 'dir', 'dirxml', 'error',
-    'exception', 'group', 'groupCollapsed', 'groupEnd', 'info', 'log',
-    'markTimeline', 'profile', 'profileEnd', 'table', 'time', 'timeEnd',
-    'timeStamp', 'trace', 'warn'
-  ];
-  let len = methods.length;
-  const global = getGlobal();
-  const console = (global.console = global.console || {});
-
-  while (len--) {
-    method = methods[len];
-    if (!console[method]) {
-      console[method] = noop;
-    }
-  }
-}
-
 export function patchPromise() {
   const global = getGlobal();
   if (!canUsePromise() && isSupportSDK()) {
@@ -251,20 +234,12 @@ export function clearLocationHash() {
   }
 }
 
-export function prepareDuration(duration: any) {
+export function prepareDuration(duration: number): number {
   if (isNaN(duration)) {
     return 20;
   }
   duration = Math.round(duration);
   return Math.min(60, duration < 0 ? 20 : duration);
-}
-
-export function validateParams(params: any) {
-  const {...result} = params;
-  if (result.userId && (result.userId === 'user_id' || !!result.userId === false)) {
-    delete result.userId;
-  }
-  return result;
 }
 
 export function sendInternalPostEvent(params: any) {
