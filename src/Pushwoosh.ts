@@ -68,6 +68,9 @@ class Pushwoosh implements IPushwoosh {
   private _ee: EventEmitter = new EventEmitter();
   private _onPromises: {[key: string]: Promise<ChainFunction>};
   private _isNeedResubscribe: boolean = false;
+  private _isNeedRegisterUser: boolean = false;
+  private _isNeedRegisterDevice: boolean = false;
+  private _isNeedSetTags: boolean = false;
 
   public api: API;
   public driver: IPWDriver;
@@ -230,11 +233,6 @@ class Pushwoosh implements IPushwoosh {
       throw new Error('no application code');
     }
 
-    const prevParams = await this.getParams();
-    if (prevParams.applicationCode && prevParams.applicationCode !== applicationCode) {
-      this._isNeedResubscribe = true;
-    }
-
     // Build initial params
     const pushwooshUrl = await getPushwooshUrl(applicationCode, pushwooshApiUrl);
     const params = this.params = {
@@ -267,6 +265,13 @@ class Pushwoosh implements IPushwoosh {
     }
 
     this.subscribeWidgetConfig = params.subscribeWidget;
+
+    // TODO hotfix: checking new init params
+    const prevParams = await this.getParams();
+    this._isNeedResubscribe = !!(prevParams.applicationCode && prevParams.applicationCode !== params.applicationCode);
+    this._isNeedRegisterUser = !!(prevParams.userId && params.userId && prevParams.userId !== params.userId);
+    this._isNeedSetTags = !!(prevParams.tags && JSON.stringify(prevParams.tags) !== JSON.stringify(params.tags));
+    ///////////////////////////////////
 
     // Set log level
     const manualDebug = localStorage.getItem(MANUAL_SET_LOGGER_LEVEL);
@@ -350,6 +355,7 @@ class Pushwoosh implements IPushwoosh {
     const {params} = this;
     const driverApiParams = await this.driver.getAPIParams();
     const lastOpenMessage = await keyValue.get(KEY_LAST_OPEN_MESSAGE) || {};
+    const savedApiParams = await keyValue.get(KEY_API_PARAMS) || {};
 
     // TODO apiParams will be deprecated in next minor version
     const apiParams: TPWAPIParams = {
@@ -363,6 +369,10 @@ class Pushwoosh implements IPushwoosh {
     if (params.userId) {
       apiParams.userId = params.userId
     }
+    /////////////////////////////
+
+    // TODO hotfix: if api params have been changed
+    this._isNeedRegisterDevice = JSON.stringify(driverApiParams) !== JSON.stringify(savedApiParams);
     /////////////////////////////
 
     await keyValue.extend(KEY_API_PARAMS, driverApiParams);
@@ -500,55 +510,39 @@ class Pushwoosh implements IPushwoosh {
     // Get params from indexedDB
     const {
       [KEY_SDK_VERSION]: savedSDKVersion,
-      [KEY_API_PARAMS]: savedApiParams,
       [KEY_INIT_PARAMS]: savedInitParams
     } = await keyValue.getAll();
 
-    // Get new params
-    const apiParams = await this.driver.getAPIParams();
-    const {params} = this;
+    // Checking new sdk version
+    const isNewVersion = getVersion() !== savedSDKVersion;
 
     // Force flag
-    const forceInstallFlag = forceRequests || getVersion() !== savedSDKVersion;
-    const needRegisterDevice = JSON.stringify(savedApiParams) !== JSON.stringify(apiParams);
-    const needSetTags = JSON.stringify(savedInitParams.tags) !== JSON.stringify(params.tags);
-    const needRegisterUser = JSON.stringify(savedInitParams.userId) !== JSON.stringify(params.userId)
-      && params.userId
-      && params.userId !== DEFAULT_USER_ID;
-
-    if (forceInstallFlag
-      || needRegisterDevice
-      || needSetTags
-      || needRegisterUser) {
-      await Promise.all([
-        keyValue.set(KEY_API_PARAMS, apiParams),
-        keyValue.extend(KEY_INIT_PARAMS, params),
-        keyValue.set(KEY_SDK_VERSION, getVersion()),
-      ]);
-    }
-    else {
-      await keyValue.extend(KEY_INIT_PARAMS, params)
+    const forceInstallFlag = forceRequests || isNewVersion;
+    
+    if (isNewVersion) {
+      installationMethods.push(keyValue.set(KEY_SDK_VERSION, getVersion()));
     }
 
     // need register device
-    if (needRegisterDevice || forceInstallFlag) {
+    if (this._isNeedRegisterDevice || forceInstallFlag) {
       installationMethods.push(this.api.registerDevice());
     }
 
     // need set tags
-    if (needSetTags || forceInstallFlag) {
-      installationMethods.push(this.api.setTags({...params.tags}));
+    if (this._isNeedSetTags || forceInstallFlag) {
+      installationMethods.push(this.api.setTags({...savedInitParams.tags}));
     }
 
     // need register user
-    if (needRegisterUser || forceInstallFlag) {
+    if (this._isNeedRegisterUser || forceInstallFlag) {
       installationMethods.push(this.api.registerUser());
     }
 
     // Call installation methods
     await Promise.all([installationMethods]);
+
     // Emit registration event
-    if (needRegisterDevice || forceInstallFlag) {
+    if (this._isNeedRegisterDevice || forceInstallFlag) {
       this._ee.emit(EVENT_ON_REGISTER);
     }
   }
