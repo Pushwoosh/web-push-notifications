@@ -9,6 +9,7 @@ import {
   getVersion,
   patchPromise,
   clearLocationHash,
+  validateParams,
   isSupportSDK,
   canUsePromise
 } from './functions';
@@ -49,7 +50,7 @@ import {
   EVENT_ON_PUSH_DELIVERY,
   EVENT_ON_NOTIFICATION_CLICK,
   EVENT_ON_NOTIFICATION_CLOSE,
-  EVENT_ON_CHANGE_COMMUNICATION_ENABLED, DEFAULT_USER_ID
+  EVENT_ON_CHANGE_COMMUNICATION_ENABLED
 } from './constants';
 import Logger from './logger'
 import WorkerDriver from './drivers/worker';
@@ -57,20 +58,16 @@ import SafariDriver from './drivers/safari';
 import createDoApiXHR from './createDoApiXHR';
 import {keyValue, log as logStorage, message as messageStorage} from './storage';
 
-
 type ChainFunction = (param: any) => Promise<any> | any;
 
 patchPromise();
 
-class Pushwoosh implements IPushwoosh {
+class Pushwoosh {
   private params: IInitParamsWithDefaults;
   private _initParams: IInitParams;
   private _ee: EventEmitter = new EventEmitter();
   private _onPromises: {[key: string]: Promise<ChainFunction>};
   private _isNeedResubscribe: boolean = false;
-  private _isNeedRegisterUser: boolean = false;
-  private _isNeedRegisterDevice: boolean = false;
-  private _isNeedSetTags: boolean = false;
 
   public api: API;
   public driver: IPWDriver;
@@ -233,6 +230,11 @@ class Pushwoosh implements IPushwoosh {
       throw new Error('no application code');
     }
 
+    const prevParams = await this.getParams();
+    if (prevParams.applicationCode && prevParams.applicationCode !== applicationCode) {
+      this._isNeedResubscribe = true;
+    }
+
     // Build initial params
     const pushwooshUrl = await getPushwooshUrl(applicationCode, pushwooshApiUrl);
     const params = this.params = {
@@ -258,20 +260,7 @@ class Pushwoosh implements IPushwoosh {
         ...initParams.subscribeWidget,
       }
     };
-
-    // Fix for users who copy default initParams without thinking
-    if (params.userId === DEFAULT_USER_ID) {
-      delete params.userId;
-    }
-
     this.subscribeWidgetConfig = params.subscribeWidget;
-
-    // TODO hotfix: checking new init params
-    const prevParams = await this.getParams();
-    this._isNeedResubscribe = !!(prevParams.applicationCode && prevParams.applicationCode !== params.applicationCode);
-    this._isNeedRegisterUser = !!(prevParams.userId && params.userId && prevParams.userId !== params.userId);
-    this._isNeedSetTags = !!(prevParams.tags && JSON.stringify(prevParams.tags) !== JSON.stringify(params.tags));
-    ///////////////////////////////////
 
     // Set log level
     const manualDebug = localStorage.getItem(MANUAL_SET_LOGGER_LEVEL);
@@ -348,14 +337,13 @@ class Pushwoosh implements IPushwoosh {
   }
 
   /**
-   * Init api
+   *
    * @returns {Promise<void>}
    */
   private async initApi() {
     const {params} = this;
     const driverApiParams = await this.driver.getAPIParams();
     const lastOpenMessage = await keyValue.get(KEY_LAST_OPEN_MESSAGE) || {};
-    const savedApiParams = await keyValue.get(KEY_API_PARAMS) || {};
 
     // TODO apiParams will be deprecated in next minor version
     const apiParams: TPWAPIParams = {
@@ -369,17 +357,15 @@ class Pushwoosh implements IPushwoosh {
     if (params.userId) {
       apiParams.userId = params.userId
     }
-    /////////////////////////////
 
-    // TODO hotfix: if api params have been changed
-    this._isNeedRegisterDevice = JSON.stringify(driverApiParams) !== JSON.stringify(savedApiParams);
-    /////////////////////////////
-
-    await keyValue.extend(KEY_API_PARAMS, driverApiParams);
-    await keyValue.extend(KEY_INIT_PARAMS, params);
+    await Promise.all([
+      keyValue.extend(KEY_INIT_PARAMS, validateParams(this.params)),
+      keyValue.extend(KEY_API_PARAMS, driverApiParams)
+    ]);
 
     const func = createDoApiXHR(params.applicationCode, params.pushwooshApiUrl);
     this.api = new API(func, apiParams, lastOpenMessage);
+
   }
 
   /**
@@ -388,26 +374,20 @@ class Pushwoosh implements IPushwoosh {
    * @returns {Promise<void>}
    */
   public async subscribe() {
-    // Check permission on receive push
     const isCommunicationEnabled = await this.isCommunicationEnabled();
+
     if (!isCommunicationEnabled) {
       Logger.error('Communication is disabled');
       return;
     }
-
     try {
       const subscribed = await this.driver.isSubscribed();
-      const isDeviceRegistered = this.isDeviceRegistered();
 
-      // Subscribe
-      await this.driver.askSubscribe(isDeviceRegistered);
+      await this.driver.askSubscribe(this.isDeviceRegistered());
 
-      // Install device
-      if (!isDeviceRegistered) {
+      if (!this.isDeviceRegistered()) {
         await this.registerDuringSubscribe();
       }
-
-      // if the user has not been subscribed before, emit subscribe event
       if (!subscribed) {
         await this.onSubscribeEmitter();
       }
@@ -425,9 +405,9 @@ class Pushwoosh implements IPushwoosh {
     const subscribed = await this.driver.isSubscribed();
     if (this.isSafari) {
       const force = await this.needForcedOpen();
-      await this.callApplicationOpen(force);
+      await this.open(force);
     }
-    await this.installDevice(subscribed);
+    await this.register(subscribed);
   }
 
   /**
@@ -480,71 +460,59 @@ class Pushwoosh implements IPushwoosh {
   }
 
   /**
+   * Registers the device and stores the information in the IndexedDB.
+   * @param {boolean} forceRequests
+   * @returns {Promise<void>}
+   */
+  private async register(forceRequests?: boolean) {
+    if (!this.api) {
+      throw new Error('API is not inited');
+    }
+
+    const isCommunicationEnabled = await this.isCommunicationEnabled();
+
+    if (!isCommunicationEnabled) {
+      return;
+    }
+
+    const {
+      [KEY_SDK_VERSION]: savedSDKVersion,
+      [KEY_API_PARAMS]: savedApiParams,
+      [KEY_INIT_PARAMS]: savedInitParams
+    } = await keyValue.getAll();
+
+    const apiParams = await this.driver.getAPIParams();
+
+    const params = this.params;
+
+    const shouldRegister = !(
+      getVersion() === savedSDKVersion &&
+      JSON.stringify(savedApiParams) === JSON.stringify(apiParams) &&
+      JSON.stringify(savedInitParams.tags) === JSON.stringify(params.tags)
+    );
+
+    if (shouldRegister || forceRequests) {
+      await Promise.all([
+        keyValue.set(KEY_API_PARAMS, apiParams),
+        keyValue.extend(KEY_INIT_PARAMS, {tags: params.tags}),
+        keyValue.set(KEY_SDK_VERSION, getVersion()),
+      ]);
+      await Promise.all([
+        this.api.registerDevice(),
+        this.api.setTags({...params.tags}),
+        this.api.registerUser()
+      ]);
+      this._ee.emit(EVENT_ON_REGISTER);
+    }
+  }
+
+  /**
    * Check current communication state
    * @returns {Promise<boolean>}
    */
   public async isCommunicationEnabled() {
     const isEnabled = await keyValue.get(KEY_COMMUNICATION_ENABLED);
     return isEnabled !== 0;
-  }
-
-  /**
-   * Call all installation device methods (registerDevice, setTags, registerUser) and stores the information in the IndexedDB.
-   * @param {boolean} forceRequests
-   * @returns {Promise<void>}
-   */
-  private async installDevice(forceRequests?: boolean) {
-    if (!this.api) {
-      throw new Error('API is not inited');
-    }
-
-    // Check permission on receive push
-    const isCommunicationEnabled = await this.isCommunicationEnabled();
-    if (!isCommunicationEnabled) {
-      return;
-    }
-
-    // methods to needed installation
-    const installationMethods = [];
-
-    // Get params from indexedDB
-    const {
-      [KEY_SDK_VERSION]: savedSDKVersion,
-      [KEY_INIT_PARAMS]: savedInitParams
-    } = await keyValue.getAll();
-
-    // Checking new sdk version
-    const isNewVersion = getVersion() !== savedSDKVersion;
-
-    // Force flag
-    const forceInstallFlag = forceRequests || isNewVersion;
-    
-    if (isNewVersion) {
-      installationMethods.push(keyValue.set(KEY_SDK_VERSION, getVersion()));
-    }
-
-    // need register device
-    if (this._isNeedRegisterDevice || forceInstallFlag) {
-      installationMethods.push(this.api.registerDevice());
-    }
-
-    // need set tags
-    if (this._isNeedSetTags || forceInstallFlag) {
-      installationMethods.push(this.api.setTags({...savedInitParams.tags}));
-    }
-
-    // need register user
-    if (this._isNeedRegisterUser || forceInstallFlag) {
-      installationMethods.push(this.api.registerUser());
-    }
-
-    // Call installation methods
-    await Promise.all([installationMethods]);
-
-    // Emit registration event
-    if (this._isNeedRegisterDevice || forceInstallFlag) {
-      this._ee.emit(EVENT_ON_REGISTER);
-    }
   }
 
   /**
@@ -601,7 +569,7 @@ class Pushwoosh implements IPushwoosh {
    * @param {boolean} force
    * @returns {Promise<void>}
    */
-  private async callApplicationOpen(force?: boolean) {
+  private async open(force?: boolean) {
     const apiParams = await this.driver.getAPIParams();
     const curTime = Date.now();
     const val = await keyValue.get(KEY_LAST_SENT_APP_OPEN);
@@ -644,7 +612,7 @@ class Pushwoosh implements IPushwoosh {
     this.permissionOnInit = await this.driver.getPermission();
 
     await this.initApi();
-    await this.callApplicationOpen();
+    await this.open();
 
     if (this.driver.isNeedUnsubscribe) {
       await this.driver.isNeedUnsubscribe() && this.isDeviceRegistered() && await this.unsubscribe(false);
@@ -695,12 +663,12 @@ class Pushwoosh implements IPushwoosh {
     }
 
     await this.initApi();
-    await this.installDevice();
+    await this.register();
 
     // Safari await subscribe status
     const force = await this.needForcedOpen();
     if (force) {
-      await this.callApplicationOpen(true);
+      await this.open(true);
     }
 
     this._ee.emit(EVENT_ON_READY);

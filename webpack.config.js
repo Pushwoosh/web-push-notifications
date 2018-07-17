@@ -76,8 +76,7 @@ module.exports = {
     rules: [
       {
         test: /\.ts$/,
-        use: 'awesome-typescript-loader',
-        include: [path.resolve(__dirname, 'src'), path.resolve(__dirname, '@types')]
+        use: 'awesome-typescript-loader'
       },
       {
         test: /\.css$/,

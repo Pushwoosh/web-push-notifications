@@ -3,6 +3,7 @@
     "module": "commonjs",
     "target": "es5",
     "moduleResolution": "node",
+    "baseUrl": "src",
     "allowSyntheticDefaultImports": true,
     "noImplicitAny": true,
     "sourceMap": true,
@@ -17,7 +18,7 @@
     ],
     "typeRoots": [
       "./node_modules/@types",
-      "./@types"
+      "./types/*"
     ]
   },
   "exclude": [

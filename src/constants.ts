@@ -7,8 +7,6 @@ export const DEFAULT_NOTIFICATION_TITLE = 'Pushwoosh notification';
 export const DEFAULT_NOTIFICATION_IMAGE = 'https://cp.pushwoosh.com/img/logo-medium.png';
 export const DEFAULT_NOTIFICATION_URL = '/';
 
-export const DEFAULT_USER_ID = 'user_id';
-
 // Keys
 export const KEY_API_PARAMS = 'API_PARAMS';
 export const KEY_INIT_PARAMS = 'INIT_PARAMS';
