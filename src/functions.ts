@@ -6,7 +6,9 @@ import {
   BROWSER_TYPE_CHROME,
   BROWSER_TYPE_FF,
   BROWSER_TYPE_SAFARI,
-  KEY_INTERNAL_EVENTS
+  KEY_INTERNAL_EVENTS,
+  DEFAULT_NOTIFICATION_DURATION,
+  MAX_NOTIFICATION_DURATION
 } from './constants';
 
 type TPushSubscription = PushSubscription | null;
@@ -253,10 +255,10 @@ export function clearLocationHash() {
 
 export function prepareDuration(duration: any) {
   if (isNaN(duration)) {
-    return 20;
+    return DEFAULT_NOTIFICATION_DURATION;
   }
   duration = Math.round(duration);
-  return Math.min(60, duration < 0 ? 20 : duration);
+  return Math.min(MAX_NOTIFICATION_DURATION, duration < 0 ? DEFAULT_NOTIFICATION_DURATION : duration);
 }
 
 export function validateParams(params: any) {

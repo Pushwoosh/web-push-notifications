@@ -2,6 +2,10 @@ export const DEFAULT_SERVICE_WORKER_URL = 'pushwoosh-service-worker.js';
 
 export const PERIOD_SEND_APP_OPEN = 3600000;
 export const PERIOD_GOAL_EVENT = 86400000;
+export const DEFAULT_NOTIFICATION_DURATION = 10;
+export const MIN_NOTIFICATION_DURATION = 10; // The min time when the interaction buttons will be displayed
+export const MAX_NOTIFICATION_DURATION = 90; // Service worker dies if he pokes more than 110 seconds
+export const WAKE_UP_SERVICE_WORKER_INTERVAL = 20; // seconds
 
 export const DEFAULT_NOTIFICATION_TITLE = 'Pushwoosh notification';
 export const DEFAULT_NOTIFICATION_IMAGE = 'https://cp.pushwoosh.com/img/logo-medium.png';

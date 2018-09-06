@@ -52,6 +52,7 @@ interface IPWDriver {
 
 interface ServiceWorkerRegistration {
   showNotification(a: any, b: any): Promise<any>;
+  readonly periodicSync: SyncManager;
 }
 
 interface ITooltipText {
