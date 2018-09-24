@@ -49,6 +49,7 @@ export const PERMISSION_PROMPT = 'default';
 export const BROWSER_TYPE_SAFARI: number = 10;
 export const BROWSER_TYPE_CHROME: number = 11;
 export const BROWSER_TYPE_FF: number = 12;
+export const BROWSER_TYPE_EDGE: number = 15;
 
 // Events
 export const EVENT_ON_READY = 'onReady';

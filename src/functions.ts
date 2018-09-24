@@ -6,6 +6,7 @@ import {
   BROWSER_TYPE_CHROME,
   BROWSER_TYPE_FF,
   BROWSER_TYPE_SAFARI,
+  BROWSER_TYPE_EDGE,
   KEY_INTERNAL_EVENTS,
   DEFAULT_NOTIFICATION_DURATION,
   MAX_NOTIFICATION_DURATION
@@ -30,6 +31,10 @@ export function isOperaBrowser(): boolean {
   return navigator.userAgent.indexOf('Opera') !== -1 || navigator.userAgent.indexOf('OPR') !== -1;
 }
 
+export function isEdgeBrowser(): boolean {
+  return navigator.userAgent.indexOf('Edge') > -1;
+}
+
 export function canUseServiceWorkers() {
   return navigator.serviceWorker && 'PushManager' in window && 'Notification' in window;
 }
@@ -38,11 +43,16 @@ export function isSupportSDK() {
   return (isSafariBrowser() && getDeviceName() === 'PC') || canUseServiceWorkers();
 }
 
-type TBrowserType = typeof BROWSER_TYPE_SAFARI | typeof BROWSER_TYPE_CHROME | typeof BROWSER_TYPE_FF;
+type TBrowserType = typeof BROWSER_TYPE_SAFARI | typeof BROWSER_TYPE_CHROME | typeof BROWSER_TYPE_FF | typeof BROWSER_TYPE_EDGE;
 export function getBrowserType(): TBrowserType {
   if (isSafariBrowser()) {
     return BROWSER_TYPE_SAFARI;
   }
+
+  if (isEdgeBrowser()) {
+    return BROWSER_TYPE_EDGE;
+  }
+
   return ~navigator.userAgent.toLowerCase().indexOf('firefox')
     ? BROWSER_TYPE_FF
     : BROWSER_TYPE_CHROME;
@@ -59,9 +69,14 @@ export function getBrowserVersion() {
   }
 
   if (match[1] === 'Chrome') {
-    version = userAgent.match(/\bOPR\/(\d+)/);
-    if (version !== null) {
-      return `Opera ${version[1]}`;
+    const operaVersion = userAgent.match(/\bOPR\/(\d+)/);
+    if (operaVersion !== null) {
+      return `Opera ${operaVersion[1]}`;
+    }
+
+    const edgeVersion = userAgent.match(/\bEdge\/(\d+)/);
+    if (edgeVersion !== null) {
+      return `Edge ${edgeVersion[1]}`;
     }
   }
 
