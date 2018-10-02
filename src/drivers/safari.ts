@@ -56,7 +56,7 @@ class SafariDriver implements IPWDriver {
   async getAPIParams() {
     const {deviceToken = ''} = this.getPermissionObject() || {};
     const hwid = deviceToken && deviceToken.toLowerCase() || '';
-    const pushToken = deviceToken && deviceToken.toUpperCase() || '';
+    const pushToken = deviceToken && deviceToken.toLowerCase() || '';
     return {hwid, pushToken};
   }
 }
