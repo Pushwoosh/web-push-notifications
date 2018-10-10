@@ -26,6 +26,7 @@ import {
   MANUAL_SET_LOGGER_LEVEL,
   KEY_COMMUNICATION_ENABLED,
   KEY_DEVICE_DATA_REMOVED,
+  KEY_UNSUBSCRIBED_DUE_TO_UNDEFINED_KEYS,
 
   PERMISSION_DENIED,
   PERMISSION_GRANTED,
@@ -160,7 +161,7 @@ class Pushwoosh {
               break;
             }
             this.init(cmdFunc)
-                .catch(e => Logger.info('Pushwoosh init failed', e));
+                .catch(e => Logger.write('info', 'Pushwoosh init failed', e));
           }
           break;
         case EVENT_ON_READY:
@@ -205,7 +206,7 @@ class Pushwoosh {
    */
   public shouldInit() {
     if (!isSupportSDK()) {
-      Logger.info('This browser does not support pushes');
+      Logger.write('info', 'This browser does not support pushes');
       return false;
     }
 
@@ -377,7 +378,7 @@ class Pushwoosh {
     const isCommunicationEnabled = await this.isCommunicationEnabled();
 
     if (!isCommunicationEnabled) {
-      Logger.error('Communication is disabled');
+      Logger.write('error', 'Communication is disabled');
       return;
     }
     try {
@@ -615,7 +616,12 @@ class Pushwoosh {
     await this.open();
 
     if (this.driver.isNeedUnsubscribe) {
-      await this.driver.isNeedUnsubscribe() && this.isDeviceRegistered() && await this.unsubscribe(false);
+      const needUnsubscribe = await this.driver.isNeedUnsubscribe() && this.isDeviceRegistered();
+      if (needUnsubscribe) {
+        await this.unsubscribe(false);
+        await keyValue.set(KEY_UNSUBSCRIBED_DUE_TO_UNDEFINED_KEYS, true);
+      }
+
     }
 
     if (this._isNeedResubscribe) {
@@ -625,7 +631,7 @@ class Pushwoosh {
     // can't call any api methods if device data is removed
     const dataIsRemoved = await keyValue.get(KEY_DEVICE_DATA_REMOVED);
     if (dataIsRemoved) {
-      Logger.error('Device data has been removed');
+      Logger.write('error', 'Device data has been removed');
       return;
     }
 
@@ -653,9 +659,11 @@ class Pushwoosh {
         break;
       case PERMISSION_GRANTED:
         this._ee.emit(EVENT_ON_PERMISSION_GRANTED);
+        const trySubscribe = await keyValue.get(KEY_UNSUBSCRIBED_DUE_TO_UNDEFINED_KEYS); // try subscribe if unsubscribed due to undefined fcm keys PUSH-16049
         // if permission === PERMISSION_GRANTED and device is not registered do subscribe
-        if ((!this.isSafari && !this.isDeviceRegistered() && !this.isDeviceUnregistered()) || this._isNeedResubscribe) {
+        if ((!this.isSafari && !this.isDeviceRegistered() && !this.isDeviceUnregistered()) || this._isNeedResubscribe || trySubscribe) {
           await this.subscribe();
+          await keyValue.set(KEY_UNSUBSCRIBED_DUE_TO_UNDEFINED_KEYS, false);
         }
         break;
       default:

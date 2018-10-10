@@ -74,7 +74,7 @@ class WorkerDriver implements IPWDriver {
 
     const dataIsRemoved = await keyValue.get(KEY_DEVICE_DATA_REMOVED);
     if (dataIsRemoved) {
-      Logger.error('Device data has been removed');
+      Logger.write('error', 'Device data has been removed');
       return;
     }
 
@@ -91,7 +91,7 @@ class WorkerDriver implements IPWDriver {
   private async subscribe(registration: ServiceWorkerRegistration) {
     const dataIsRemoved = await keyValue.get(KEY_DEVICE_DATA_REMOVED);
     if (dataIsRemoved) {
-      Logger.error('Device data has been removed');
+      Logger.write('error', 'Device data has been removed');
       return;
     }
 
@@ -235,7 +235,8 @@ class WorkerDriver implements IPWDriver {
     const manifest = document.querySelector('link[rel="manifest"]');
 
     if (manifest === null) {
-      throw new Error('Link to manifest can not find');
+      Logger.write('error', 'Link to manifest can not find');
+      return false;
     }
     const manifestUrl = manifest.getAttribute('href') || '';
 

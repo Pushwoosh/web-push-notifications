@@ -60,7 +60,7 @@ export default class PushwooshAPI {
     // can't call any api methods if device data is removed
     const dataIsRemoved = await keyValue.get(KEY_DEVICE_DATA_REMOVED);
     if (dataIsRemoved) {
-      Logger.error('Device data has been removed');
+      Logger.write('error', 'Device data has been removed');
       return;
     }
 
@@ -93,7 +93,7 @@ export default class PushwooshAPI {
       const isCommunicationEnabled = await keyValue.get(KEY_COMMUNICATION_ENABLED) !== 0;
 
       if (!isCommunicationEnabled) {
-        Logger.error('Communication is disabled');
+        Logger.write('error', 'Communication is disabled');
         return;
       }
 
