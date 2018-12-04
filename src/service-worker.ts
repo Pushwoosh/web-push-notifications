@@ -59,6 +59,7 @@ async function parsePushEvent(event: PushEvent, initParams: IPWParams): Promise<
     campaignCode: notificationData.pwcid || '',
     duration: prepareDuration(notificationData.duration),
     openUrl: notificationData.l || DEFAULT_NOTIFICATION_URL,
+    badge: notificationData.badge
   };
 }
 
