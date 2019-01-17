@@ -46,12 +46,6 @@ export const PERMISSION_DENIED = 'denied';
 export const PERMISSION_GRANTED = 'granted';
 export const PERMISSION_PROMPT = 'default';
 
-// Browsers
-export const BROWSER_TYPE_SAFARI: number = 10;
-export const BROWSER_TYPE_CHROME: number = 11;
-export const BROWSER_TYPE_FF: number = 12;
-export const BROWSER_TYPE_EDGE: number = 15;
-
 // Events
 export const EVENT_ON_READY = 'onReady';
 export const EVENT_ON_SUBSCRIBE = 'onSubscribe';
@@ -65,6 +59,8 @@ export const EVENT_ON_PUSH_DELIVERY = 'onPushDelivery';
 export const EVENT_ON_NOTIFICATION_CLICK = 'onNotificationClick';
 export const EVENT_ON_NOTIFICATION_CLOSE = 'onNotificationClose';
 export const EVENT_ON_CHANGE_COMMUNICATION_ENABLED = 'onChangeCommunicationEnabled';
+export const EVENT_ON_PUT_NEW_MESSAGE_TO_INBOX_STORE = 'onPutNewMessageToInboxStore';
+export const EVENT_ON_UPDATE_INBOX_MESSAGES = 'onUpdateInboxMessages';
 
 // Post Events
 export const EVENT_SHOW_SUBSCRIBE_BUTTON = 'showSubscribeButton';

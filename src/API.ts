@@ -7,20 +7,26 @@ import {
   KEY_COMMUNICATION_ENABLED,
   KEY_DEVICE_DATA_REMOVED
 } from './constants';
+
 import {
   getVersion,
-  isSafariBrowser,
   validateParams,
   sendInternalPostEvent
 } from './functions';
+import platformChecker from './modules/PlatformChecker';
+
 import {keyValue} from './storage';
 import Logger, {logAndThrowError} from './logger';
+import doApiXHR from './modules/api/apiCall';
 
 
 export default class PushwooshAPI {
   private timezone: number = -(new Date).getTimezoneOffset() * 60;
+  private readonly doPushwooshApiMethod: TDoPushwooshMethod;
 
-  constructor(private doPushwooshApiMethod: TDoPushwooshMethod, private apiParams: TPWAPIParams, public lastOpenMessage: TPWLastOpenMessage) {}
+  constructor(private apiParams: TPWAPIParams, public lastOpenMessage: TPWLastOpenMessage) {
+    this.doPushwooshApiMethod = doApiXHR;
+  }
 
   // TODO will be deprecated in next minor version
   public get params() {
@@ -32,17 +38,13 @@ export default class PushwooshAPI {
       device_type: this.apiParams.deviceType,
       event: 'API Params',
       attributes: {
-        'app_code': this.apiParams.applicationCode,
-        'device_type': this.apiParams.deviceType,
-        'url': `${this.apiParams.applicationCode} - ${location ? location.href : 'none'}`
+        app_code: this.apiParams.applicationCode,
+        device_type: this.apiParams.deviceType,
+        url: `${this.apiParams.applicationCode} - ${location ? location.href : 'none'}`
       }
     });
 
     return this.apiParams;
-  }
-
-  get isSafari() {
-    return isSafariBrowser();
   }
 
   async getParams() {
@@ -65,7 +67,7 @@ export default class PushwooshAPI {
     }
 
     const {hwid = '', applicationCode = '', userId = ''} = params;
-    if (this.isSafari && !hwid) {
+    if (platformChecker.isSafari && !hwid) {
       return;
     }
     const customUserId = methodParams && methodParams.userId;
@@ -85,7 +87,7 @@ export default class PushwooshAPI {
   async registerDevice() {
     const params: IPWParams = await this.getParams();
 
-    if (!params.pushToken || this.isSafari) {
+    if (!params.pushToken || platformChecker.isSafari) {
       return;
     }
 
@@ -115,7 +117,7 @@ export default class PushwooshAPI {
   }
 
   async unregisterDevice() {
-    if (this.isSafari) {
+    if (platformChecker.isSafari) {
       return;
     }
 
