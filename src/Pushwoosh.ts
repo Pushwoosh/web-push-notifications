@@ -1,7 +1,6 @@
 import EventEmitter from './EventEmitter';
 import API from './API';
 import {
-  getPushwooshUrl,
   getVersion,
   patchPromise,
   clearLocationHash,
@@ -49,7 +48,7 @@ import {
   EVENT_ON_NOTIFICATION_CLOSE,
   EVENT_ON_CHANGE_COMMUNICATION_ENABLED,
   EVENT_ON_PUT_NEW_MESSAGE_TO_INBOX_STORE,
-  EVENT_ON_UPDATE_INBOX_MESSAGES
+  EVENT_ON_UPDATE_INBOX_MESSAGES, DEFAULT_NOTIFICATION_IMAGE
 } from './constants';
 import Logger from './logger'
 import WorkerDriver from './drivers/worker';
@@ -254,6 +253,8 @@ class Pushwoosh {
     await this.paramsModule.setAppCode(applicationCode);
     await this.paramsModule.setApiUrl(pushwooshApiUrl);
     await this.paramsModule.setUserId(userId);
+    await this.paramsModule.setDefaultNotificationImage(initParams.defaultNotificationImage || '');
+    await this.paramsModule.setDefaultNotificationTitle(initParams.defaultNotificationTitle || '');
 
     // Build initial params
     const pushwooshUrl = await this.paramsModule.apiUrl;
