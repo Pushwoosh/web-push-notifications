@@ -49,7 +49,7 @@ export default class NotificationPayload {
   }
 
   get messageHash(): string {
-    return this.payload.p;
+    return this.payload.p || '';
   }
 
   get image(): string {

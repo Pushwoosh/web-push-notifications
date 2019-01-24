@@ -593,15 +593,24 @@ class Pushwoosh {
     const curTime = Date.now();
     const val = await keyValue.get(KEY_LAST_SENT_APP_OPEN);
     const lastSentTime = isNaN(val) ? 0 : Number(val);
+
+    // Safari device not registered
     if (this.platformChecker.isSafari && !apiParams.hwid) {
-      return Promise.resolve();
+      return;
     }
+
     if (force || (curTime - lastSentTime) > PERIOD_SEND_APP_OPEN) {
-      await Promise.all([
-        keyValue.set(KEY_LAST_SENT_APP_OPEN, curTime || Date.now()),
-        this.api.applicationOpen()
-      ]);
+      const hourlyActions = [
+        keyValue.set(KEY_LAST_SENT_APP_OPEN, curTime || Date.now()),  // Set timer
+        this.api.applicationOpen()  // Application open statistic
+      ];
+      if (this.isDeviceRegistered()) {
+        hourlyActions.push(this.api.registerDevice());  // Register remote unregister devices
+      }
+
+      await Promise.all(hourlyActions);
     }
+
   }
 
   /**

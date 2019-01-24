@@ -5,7 +5,7 @@ interface INotificationPayloadInboxParams {
 
 interface INotificationPayload {
   body: string;  // message text
-  p: string;  // message hash
+  p?: string;  // message hash. Not required for send message on concrete device.
   header?: string;  // message title
   duration?: string;  // required for chrome/opera
   i?: string;  // icon
