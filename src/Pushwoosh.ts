@@ -58,6 +58,7 @@ import {keyValue, log as logStorage, message as messageStorage} from './storage'
 import Params from './modules/data/Params';
 import InboxMessagesModel from './models/InboxMessages';
 import InboxMessagesPublic from './modules/InboxMessagesPublic';
+import {platformChecker} from "./modules/PlatformChecker/PlatformChecker";
 
 
 type ChainFunction = (param: any) => Promise<any> | any;
@@ -425,6 +426,7 @@ class Pushwoosh {
     if (this.platformChecker.isSafari) {
       const force = await this.needForcedOpen();
       await this.open(force);
+      await this.inboxModel.updateMessages();
     }
     await this.register(subscribed);
   }
@@ -641,7 +643,11 @@ class Pushwoosh {
 
     await this.initApi();
     await this.open();
-    await this.inboxModel.updateMessages(this._ee);
+    const apiParams = await this.api.getParams();
+    if (this.platformChecker.isSafari && apiParams.hwid) {
+      await this.inboxModel.updateMessages(this._ee);
+    }
+
 
     if (this.driver.isNeedUnsubscribe) {
       const needUnsubscribe = await this.driver.isNeedUnsubscribe() && this.isDeviceRegistered();
