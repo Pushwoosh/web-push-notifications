@@ -48,7 +48,7 @@ import {
   EVENT_ON_NOTIFICATION_CLOSE,
   EVENT_ON_CHANGE_COMMUNICATION_ENABLED,
   EVENT_ON_PUT_NEW_MESSAGE_TO_INBOX_STORE,
-  EVENT_ON_UPDATE_INBOX_MESSAGES, DEFAULT_NOTIFICATION_IMAGE
+  EVENT_ON_UPDATE_INBOX_MESSAGES
 } from './constants';
 import Logger from './logger'
 import WorkerDriver from './drivers/worker';
@@ -58,7 +58,6 @@ import {keyValue, log as logStorage, message as messageStorage} from './storage'
 import Params from './modules/data/Params';
 import InboxMessagesModel from './models/InboxMessages';
 import InboxMessagesPublic from './modules/InboxMessagesPublic';
-import {platformChecker} from "./modules/PlatformChecker/PlatformChecker";
 
 
 type ChainFunction = (param: any) => Promise<any> | any;

@@ -5,7 +5,7 @@ import {
   getPublicKey,
   getAuthToken,
   urlB64ToUint8Array,
-  getVersion
+  generateUUID
 } from '../functions'
 import platformChecker from '../modules/PlatformChecker';
 
@@ -49,8 +49,8 @@ class WorkerDriver implements IPWDriver {
 
     const options = scope ? {scope} : undefined;
     const url = serviceWorkerUrl === null
-      ? `/${DEFAULT_SERVICE_WORKER_URL}?version=${getVersion()}`
-      : `${serviceWorkerUrl}?version=${getVersion()}`;
+      ? `/${DEFAULT_SERVICE_WORKER_URL}?cache_clean=${generateUUID()}`
+      : `${serviceWorkerUrl}?cache_clean=${generateUUID()}`;
 
     await navigator.serviceWorker.register(url, options);
   }
