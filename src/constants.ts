@@ -1,4 +1,5 @@
 export const DEFAULT_SERVICE_WORKER_URL = 'pushwoosh-service-worker.js';
+export const DEFAULT_API_URL = 'https://cp.pushwoosh.com/json/1.3/';
 
 export const PERIOD_SEND_APP_OPEN = 3600000;
 export const PERIOD_GOAL_EVENT = 86400000;

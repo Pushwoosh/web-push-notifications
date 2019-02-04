@@ -1,5 +1,6 @@
 import {keyValue} from '../../storage';
 import {
+  DEFAULT_API_URL,
   DEFAULT_NOTIFICATION_IMAGE,
   DEFAULT_NOTIFICATION_TITLE
 } from '../../constants';
@@ -16,7 +17,7 @@ export default class Params {
 
   // API url
   get apiUrl(): Promise<string> {
-    return keyValue.get<TIDBApiUrlKey, string>('params.apiUrl', '');
+    return keyValue.get<TIDBApiUrlKey, string>('params.apiUrl', DEFAULT_API_URL);
   }
 
   async setApiUrl(apiUrl?: string): Promise<void> {
