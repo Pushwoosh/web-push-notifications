@@ -18,14 +18,21 @@ import platformChecker from './modules/PlatformChecker';
 import {keyValue} from './storage';
 import Logger, {logAndThrowError} from './logger';
 import doApiXHR from './modules/api/apiCall';
+import Params from './modules/data/Params';
 
 
 export default class PushwooshAPI {
   private timezone: number = -(new Date).getTimezoneOffset() * 60;
   private readonly doPushwooshApiMethod: TDoPushwooshMethod;
+  private readonly paramsModule: Params;
 
-  constructor(private apiParams: TPWAPIParams, public lastOpenMessage: TPWLastOpenMessage) {
+  constructor(
+    private apiParams: TPWAPIParams,
+    public lastOpenMessage: TPWLastOpenMessage,
+    paramsModule: Params = new Params()
+  ) {
     this.doPushwooshApiMethod = doApiXHR;
+    this.paramsModule = paramsModule;
   }
 
   // TODO will be deprecated in next minor version
@@ -142,6 +149,7 @@ export default class PushwooshAPI {
       userId: userId || params.userId,
     };
 
+    await this.paramsModule.setUserId(methodParams.userId || '');
     await keyValue.extend(KEY_INIT_PARAMS, validateParams(methodParams));
 
     this.callAPI('registerUser', methodParams);

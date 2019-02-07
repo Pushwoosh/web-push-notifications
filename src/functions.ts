@@ -185,7 +185,7 @@ export function clearLocationHash() {
 
 export function validateParams(params: any) {
   const {...result} = params;
-  if (result.userId && (result.userId === 'user_id' || !!result.userId)) {
+  if (result.userId && result.userId === 'user_id') {
     delete result.userId;
   }
   return result;
