@@ -78,6 +78,7 @@ class Pushwoosh {
   public permissionOnInit: string;
   public ready: boolean = false;
   public subscribeWidgetConfig: ISubscribeWidget;
+  public inboxWidgetConfig: IInboxWidget;
   private inboxModel: InboxMessagesModel;
 
   // Inbox messages public interface
@@ -279,9 +280,14 @@ class Pushwoosh {
       subscribeWidget: {
         enable: false,
         ...initParams.subscribeWidget,
+      },
+      inboxWidget: {
+        enable: false,
+        ...initParams.inboxWidget,
       }
     };
     this.subscribeWidgetConfig = params.subscribeWidget;
+    this.inboxWidgetConfig = params.inboxWidget;
 
     // Set log level
     const manualDebug = localStorage.getItem(MANUAL_SET_LOGGER_LEVEL);

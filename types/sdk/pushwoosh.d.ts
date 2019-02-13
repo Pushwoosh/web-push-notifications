@@ -74,6 +74,32 @@ interface ISubscribeWidget {
   tooltipText?: ITooltipText
 }
 
+type IWidgetPosition = 'left' | 'right' | 'top' | 'bottom';
+
+interface IInboxWidget {
+  enable: boolean;
+  triggerId?: string;
+  position?: IWidgetPosition;
+  appendTo?: string;
+  title?: string;
+  bgColor?: string;
+  textColor?: string;
+  fontFamily?: string;
+  borderRadius?: number;
+  borderColor?: string;
+  badgeBgColor?: string;
+  badgeTextColor?: string;
+  widgetWidth?: number;
+  zIndex?: number;
+  messageTitleColor?: string;
+  timeTextColor?: string;
+  emptyInboxTitle?: string;
+  emptyInboxText?: string;
+  emptyInboxIconUrl?: string;
+  emptyInboxTitleColor?: string;
+  emptyInboxTextColor?: string;
+}
+
 interface IInitParams {
   applicationCode: string;
   serviceWorkerUrl?: string | null;
@@ -94,6 +120,7 @@ interface IInitParams {
     }
   };
   subscribeWidget?: ISubscribeWidget;
+  inboxWidget?: IInboxWidget;
 }
 
 interface IInitParamsWithDefaults extends IInitParams {
@@ -113,6 +140,7 @@ interface IInitParamsWithDefaults extends IInitParams {
     }
   };
   subscribeWidget: ISubscribeWidget;
+  inboxWidget: IInboxWidget;
 }
 
 interface IPWParams extends IInitParamsWithDefaults {
