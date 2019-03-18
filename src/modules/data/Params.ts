@@ -1,5 +1,6 @@
 import {keyValue} from '../../storage';
 import {
+  KEY_API_PARAMS,
   DEFAULT_API_URL,
   DEFAULT_NOTIFICATION_IMAGE,
   DEFAULT_NOTIFICATION_TITLE
@@ -44,7 +45,16 @@ export default class Params {
     return keyValue.get<TIDBHwidKey, string>('params.hwid', '');
   }
 
-  setHwid(hwid: string): Promise<void> {
+  async setHwid(hwid: string): Promise<void> {
+    const {
+      [KEY_API_PARAMS]: apiParams,
+    } = await keyValue.getAll();
+
+    if (apiParams) {
+      apiParams.hwid = hwid;
+      await keyValue.extend(KEY_API_PARAMS, apiParams);
+    }
+
     return keyValue.set<TIDBHwidKey, string>('params.hwid', hwid);
   }
 
@@ -84,7 +94,7 @@ export default class Params {
     return keyValue.get<TIDBUserIdKey, string>('params.userId', '');
   }
 
-  async setUserId(userId: string): Promise<void>  {
+  async setUserId(userId: string): Promise<void> {
     const oldUserId = await this.userId;
     const newUserId = userId === 'user_id' ? '' : userId;  // fix for default value
 
