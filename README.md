@@ -6,7 +6,7 @@ Pushwoosh Web Push Notification SDK
 ![platforms](https://img.shields.io/badge/platforms-Chrome%20%7C%20Firefox%20%7C%20Safari-green.svg)
 
 
-| [Download](https://cdn.pushwoosh.com/webpush/v3/PushwooshWebSDKFiles.zip) | [Guide](https://www.pushwoosh.com/platform-docs/pushwoosh-sdk/web-push-notifications/web-push-sdk-3.0) | [Sample](https://github.com/Pushwoosh/web-push-notifications-sample) |
+| [Download](https://cdn.pushwoosh.com/webpush/v3/PushwooshWebSDKFiles.zip) | [Guide](https://www.pushwoosh.com/docs/web-push-sdk-30) | [Sample](https://github.com/Pushwoosh/web-push-notifications-sample) |
 | ------------------------------------------------------------------------- | ------------------------------------------------------- | -------------------------------------------------------------------- |
 
 
@@ -63,7 +63,7 @@ pwInstance.push(function(api) {
 });
 ```
 
-| [Chrome Guide](https://www.pushwoosh.com/platform-docs/pushwoosh-sdk/web-push-notifications/chrome-configuration) | [Firefox Guide](https://www.pushwoosh.com/platform-docs/pushwoosh-sdk/web-push-notifications/firefox-configuration) | [Safari Guide](https://www.pushwoosh.com/platform-docs/pushwoosh-sdk/web-push-notifications/safari-configuration) | [HTTP integration Guide](https://www.pushwoosh.com/platform-docs/pushwoosh-sdk/web-push-notifications/chrome-firefox-web-push-for-http-websitesuntitled) | [Subscription Button Guide](https://www.pushwoosh.com/platform-docs/pushwoosh-sdk/web-push-notifications/push-subscription-button) |
+| [Chrome Guide](https://www.pushwoosh.com/docs/chrome-web-push) | [Firefox Guide](https://www.pushwoosh.com/docs/firefox-web-push) | [Safari Guide](https://www.pushwoosh.com/docs/safari-website-notifications) | [HTTP integration Guide](https://www.pushwoosh.com/docs/chrome-web-push-for-http-websites) | [Subscription Button Guide](https://www.pushwoosh.com/v1.0/docs/push-subscription-button) |
 | -------------------------------------------------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
 
 
