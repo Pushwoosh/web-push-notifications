@@ -9,6 +9,10 @@ import {
 } from './constants';
 
 import {
+  sendFatalLogToRemoteServer
+} from './helpers/logger'
+
+import {
   getVersion,
   validateParams,
   sendInternalPostEvent
@@ -68,16 +72,32 @@ export default class PushwooshAPI {
 
     // can't call any api methods if device data is removed
     const dataIsRemoved = await keyValue.get(KEY_DEVICE_DATA_REMOVED);
+
     if (dataIsRemoved) {
+      await sendFatalLogToRemoteServer({
+        message: 'Error in callAPI',
+        code: 'FATAL-API-001',
+        error: 'Device data is removed',
+        applicationCode: params.applicationCode,
+        deviceType: params.deviceType
+      });
+
       Logger.write('error', 'Device data has been removed');
       return;
     }
 
-    const {hwid = '', applicationCode = '', userId = ''} = params;
+    const {
+      hwid = '',
+      applicationCode = '',
+      userId = ''
+    } = params;
+
     if (platformChecker.isSafari && !hwid) {
       return;
     }
+
     const customUserId = methodParams && methodParams.userId;
+
     const mustBeParams: any = {
       hwid,
       application: applicationCode,
@@ -85,10 +105,20 @@ export default class PushwooshAPI {
       device_type: params.deviceType,
       v: getVersion()
     };
+
     return this.doPushwooshApiMethod(methodName, {
       ...methodParams,
       ...mustBeParams
-    });
+    })
+      .catch(async (error) => {
+        await sendFatalLogToRemoteServer({
+          message: 'Error in callAPI',
+          code: 'FATAL-API-002',
+          error: error,
+          applicationCode: params.applicationCode,
+          deviceType: params.deviceType
+        });
+      });
   }
 
   async registerDevice() {
@@ -107,18 +137,17 @@ export default class PushwooshAPI {
       }
 
       await this.callAPI('registerDevice', {
-          push_token: params.pushToken,
-          public_key: params.publicKey,
-          auth_token: params.authToken,
-          fcm_token: params.fcmToken,
-          fcm_push_set: params.fcmPushSet,
-          language: params.tags.Language,
-          timezone: this.timezone,
-          device_model: params.tags['Device Model']
+        push_token: params.pushToken,
+        public_key: params.publicKey,
+        auth_token: params.authToken,
+        fcm_token: params.fcmToken,
+        fcm_push_set: params.fcmPushSet,
+        language: params.tags.Language,
+        timezone: this.timezone,
+        device_model: params.tags['Device Model']
       });
       localStorage.setItem(KEY_DEVICE_REGISTRATION_STATUS, DEVICE_REGISTRATION_STATUS_REGISTERED);
-    }
-    catch (error) {
+    } catch (error) {
       logAndThrowError(error);
     }
   }
@@ -131,8 +160,7 @@ export default class PushwooshAPI {
     try {
       await this.callAPI('unregisterDevice');
       localStorage.setItem(KEY_DEVICE_REGISTRATION_STATUS, DEVICE_REGISTRATION_STATUS_UNREGISTERED);
-    }
-    catch (error) {
+    } catch (error) {
       logAndThrowError(error);
     }
   }
@@ -163,7 +191,7 @@ export default class PushwooshAPI {
     });
   }
 
-  setTags(tags: {[k: string]: any}) {
+  setTags(tags: { [k: string]: any }) {
     return this.callAPI('setTags', {tags});
   }
 
@@ -179,7 +207,7 @@ export default class PushwooshAPI {
     return this.callAPI('messageDeliveryEvent', {hash});
   }
 
-  postEvent(event: string, attributes: {[k: string]: any}) {
+  postEvent(event: string, attributes: { [k: string]: any }) {
     const {lastOpenMessage} = this;
     const date = new Date();
     const time = date.getTime();
@@ -206,13 +234,13 @@ export default class PushwooshAPI {
   }
 
   async triggerEvent(params: TEvent, dbKey?: string) {
-      const eventFlag = dbKey ? await keyValue.get(dbKey) : null;
-      if (dbKey && eventFlag) {
-        return;
-      }
-      await this.callAPI('triggerEvent', params);
-      if (dbKey) {
-        keyValue.set(dbKey, 1);
-      }
+    const eventFlag = dbKey ? await keyValue.get(dbKey) : null;
+    if (dbKey && eventFlag) {
+      return;
+    }
+    await this.callAPI('triggerEvent', params);
+    if (dbKey) {
+      keyValue.set(dbKey, 1);
+    }
   }
 }
