@@ -146,7 +146,9 @@ export abstract class LogBase {
       cursor.onsuccess = (ev) => {
         const cursorResult = (ev.target as any).result;
         if (cursorResult) {
-          result.push(cursorResult.value);
+          if(cursorResult.value) {
+            result.push(cursorResult.value);
+          }
           cursorResult.continue();
         }
         else {
