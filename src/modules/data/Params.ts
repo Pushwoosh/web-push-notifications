@@ -109,4 +109,12 @@ export default class Params {
   async setUserIdWasChanged(userIdWasChanged: boolean) {
     return keyValue.set<TIDBUserIdWasChangedKey, boolean>('params.userIdWasChanged', userIdWasChanged);
   }
+
+  // Subscribe popup last open time
+  get subscriptionPopupLastOpen(): Promise<number> {
+    return keyValue.get<TSubscriptionPopupLastOpen, number>('params.subscriptionPopupLastOpen', 0);
+  }
+  async setSubscriptionPopupLastOpen(timestampWasChanged: boolean) {
+    return keyValue.set<TSubscriptionPopupLastOpen, boolean>('params.subscriptionPopupLastOpen', timestampWasChanged);
+  }
 }

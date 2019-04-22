@@ -74,6 +74,10 @@ interface ISubscribeWidget {
   tooltipText?: ITooltipText
 }
 
+interface ISubscribePopup {
+  enable: boolean;
+}
+
 type IWidgetPosition = 'left' | 'right' | 'top' | 'bottom';
 
 interface IInboxWidget {
@@ -121,6 +125,7 @@ interface IInitParams {
   };
   subscribeWidget?: ISubscribeWidget;
   inboxWidget?: IInboxWidget;
+  subscribePopup?: ISubscribePopup;
 }
 
 interface IInitParamsWithDefaults extends IInitParams {
@@ -141,6 +146,7 @@ interface IInitParamsWithDefaults extends IInitParams {
   };
   subscribeWidget: ISubscribeWidget;
   inboxWidget: IInboxWidget;
+  subscribePopup: ISubscribePopup;
 }
 
 interface IPWParams extends IInitParamsWithDefaults {

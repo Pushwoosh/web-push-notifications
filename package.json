@@ -1,6 +1,6 @@
 {
   "name": "web-push-notifications",
-  "version": "3.4.4",
+  "version": "3.4.5",
   "description": "Pushwoosh web push notifications",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -72,6 +72,7 @@
   "dependencies": {
     "@pushwoosh/logger": "1.0.4",
     "@pushwoosh/web-push-inbox-widget": "1.0.4",
+    "@pushwoosh/web-push-subscribe-popup": "1.0.1",
     "whatwg-fetch": "3.0.0"
   },
   "nyc": {
