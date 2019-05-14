@@ -68,3 +68,15 @@ export const EVENT_SHOW_SUBSCRIBE_BUTTON = 'showSubscribeButton';
 export const EVENT_CLICK_SUBSCRIBE_BUTTON = 'clickSubscribeButton';
 export const EVENT_GDPR_CONSENT = 'GDPRConsent';
 export const EVENT_GDPR_DELETE = 'GDPRDelete';
+
+// HWID excludes
+export const HWID_EXCLUDES = {
+  userAgent: true,
+  language: true,
+  timezoneOffset: true,
+  timezone: true,
+  plugins: true,
+  adBlock: true,
+  fontsFlash: true,
+  enumerateDevices: true
+};
