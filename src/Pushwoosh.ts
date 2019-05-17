@@ -347,6 +347,8 @@ class Pushwoosh {
       Logger.write('error', err, 'defaultProcess fail');
     }
 
+    localStorage.setItem('pushwoosh-websdk-status', 'init');
+
     // Dispatch "pushwoosh.initialized" event
     const event = new CustomEvent('pushwoosh.initialized', {detail: {pw: this}});
     document.dispatchEvent(event);
