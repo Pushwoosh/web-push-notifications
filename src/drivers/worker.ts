@@ -154,7 +154,7 @@ class WorkerDriver implements IPWDriver {
 
     const apiParams = {
       pushToken,
-      hwid: await generateHwid(this.params.applicationCode),
+      hwid: await generateHwid(this.params.applicationCode, pushToken),
       publicKey: getPublicKey(subscription),
       authToken: getAuthToken(subscription),
       fcmPushSet: await getFcmKey(subscription, 'pushSet'),
