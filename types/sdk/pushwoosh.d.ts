@@ -76,6 +76,25 @@ interface ISubscribeWidget {
 
 interface ISubscribePopup {
   enable: boolean;
+  text?: string;
+  askLaterButtonText?: string;
+  confirmSubscriptionButtonText?: string;
+  delay?: number;
+  retryOffset?: number;
+  overlay?: boolean;
+  position?: string;
+  bgColor?: string;
+  borderColor?: string;
+  boxShadow?: string;
+  textColor?: string;
+  textSize?: string;
+  fontFamily?: string;
+  subscribeBtnBgColor?: string;
+  subscribeBtnTextColor?: string;
+  askLaterBtnBgColor?: string;
+  askLaterBtnTextColor?: string;
+  theme?: 'material' | 'topbar',
+  viewport?: string;
 }
 
 type IWidgetPosition = 'left' | 'right' | 'top' | 'bottom';
