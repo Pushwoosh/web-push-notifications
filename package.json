@@ -1,6 +1,6 @@
 {
   "name": "web-push-notifications",
-  "version": "3.5.3",
+  "version": "3.5.4",
   "description": "Pushwoosh web push notifications",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -67,12 +67,12 @@
     "uglifyjs-webpack-plugin": "1.2.7",
     "webpack": "4.8.3",
     "webpack-cli": "2.1.3",
-    "webpack-dev-server": "^3.1.10"
+    "webpack-dev-server": "3.1.10"
   },
   "dependencies": {
     "@pushwoosh/logger": "1.0.4",
     "@pushwoosh/web-push-inbox-widget": "1.0.4",
-    "@pushwoosh/web-push-subscribe-popup": "1.0.2",
+    "@pushwoosh/web-push-subscribe-popup": "1.0.3",
     "whatwg-fetch": "3.0.0"
   },
   "nyc": {

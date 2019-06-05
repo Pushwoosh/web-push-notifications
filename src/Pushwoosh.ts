@@ -712,7 +712,8 @@ class Pushwoosh {
           await this.unsubscribe();
         }
         localStorage.removeItem(KEY_DEVICE_REGISTRATION_STATUS);
-        if (autoSubscribe) {
+
+        if (autoSubscribe && !this.platformChecker.isSafari) {
           await this.subscribe();
         } else {
           this._ee.emit(EVENT_ON_PERMISSION_PROMPT);
