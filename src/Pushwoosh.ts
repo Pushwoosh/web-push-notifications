@@ -636,13 +636,14 @@ class Pushwoosh {
    * Check is device register in local, but unregister on server
    * And reregister it if so
    */
-  private async healthCheck() {
+  private async healthCheck(hwid: string) {
     try {
-      if (this.isDeviceRegistered()) {
-        await this.api.getTags()
-          .catch(() => {
-            return this.api.registerDevice();
-          });
+      const { exist } = await this.api.checkDevice(this.params.applicationCode, hwid);
+
+      if (exist) {
+        return;
+      } else {
+        await this.api.registerDevice()
       }
     } catch (error) {
       const data = await keyValue.getAll();
@@ -668,9 +669,9 @@ class Pushwoosh {
     this.permissionOnInit = await this.driver.getPermission();
 
     await this.initApi();
-    await this.healthCheck();
     await this.open();
     const apiParams = await this.api.getParams();
+    await this.healthCheck(apiParams.hwid);
     if (this.platformChecker.isSafari && apiParams.hwid) {
       await this.inboxModel.updateMessages(this._ee);
     }

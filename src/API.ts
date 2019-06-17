@@ -243,4 +243,11 @@ export default class PushwooshAPI {
       keyValue.set(dbKey, 1);
     }
   }
+
+  checkDevice(code: string, hwid: string) {
+    return this.callAPI('checkDevice', {
+      application: code,
+      hwid
+    });
+  }
 }
