@@ -1,6 +1,10 @@
 export const DEFAULT_SERVICE_WORKER_URL = 'pushwoosh-service-worker.js';
 export const DEFAULT_API_URL = 'https://cp.pushwoosh.com/json/1.3/';
 
+// @TODO: this ID should belong to PUSHWOOSH_APP (not abandoned cart)
+export const FACEBOOK_APP_ID = '436711767081797';
+export const FACEBOOK_HWID_KEY = 'FACEBOOK_HWID_KEY';
+
 export const PERIOD_SEND_APP_OPEN = 3600000;
 export const PERIOD_GOAL_EVENT = 86400000;
 export const DEFAULT_NOTIFICATION_DURATION = 10;
@@ -68,3 +72,6 @@ export const EVENT_SHOW_SUBSCRIBE_BUTTON = 'showSubscribeButton';
 export const EVENT_CLICK_SUBSCRIBE_BUTTON = 'clickSubscribeButton';
 export const EVENT_GDPR_CONSENT = 'GDPRConsent';
 export const EVENT_GDPR_DELETE = 'GDPRDelete';
+
+// Manual unsubscription
+export const MANUAL_UNSUBSCRIBE = 'MANUAL_UNSUBSCRIBE';

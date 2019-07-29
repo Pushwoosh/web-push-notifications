@@ -5,7 +5,7 @@ import {
   getVersion,
   patchPromise,
   clearLocationHash,
-  validateParams,
+  validateParams
 } from './functions';
 import {PlatformChecker} from './modules/PlatformChecker';
 
@@ -49,11 +49,13 @@ import {
   EVENT_ON_NOTIFICATION_CLOSE,
   EVENT_ON_CHANGE_COMMUNICATION_ENABLED,
   EVENT_ON_PUT_NEW_MESSAGE_TO_INBOX_STORE,
-  EVENT_ON_UPDATE_INBOX_MESSAGES
+  EVENT_ON_UPDATE_INBOX_MESSAGES,
+  MANUAL_UNSUBSCRIBE
 } from './constants';
 import Logger from './logger'
 import WorkerDriver from './drivers/worker';
 import SafariDriver from './drivers/safari';
+import FacebookModule from './modules/FacebookModule';
 import {keyValue, log as logStorage, message as messageStorage} from './storage';
 
 import Params from './modules/data/Params';
@@ -172,17 +174,18 @@ class Pushwoosh {
       const [cmdName, cmdFunc] = cmd;
       switch (cmdName) {
         case 'init':
+          if (typeof cmdFunc !== 'object') {
+            break;
+          }
           if (this.platformChecker.isAvailableNotifications) {
-            if (typeof cmdFunc !== 'object') {
-              break;
-            }
-
             try {
+              this.initFacebook(cmdFunc);
               await this.init(cmdFunc);
             } catch (e) {
               Logger.write('info', 'Pushwoosh init failed', e)
             }
           } else {
+            this.initFacebook(cmdFunc);
             Logger.write('info', 'This browser does not support pushes');
           }
           break;
@@ -220,6 +223,34 @@ class Pushwoosh {
       }
     } else {
       throw new Error('invalid command');
+    }
+  }
+
+  /**
+   * Method initiates Facebook
+   * @param {IInitParams} initParams
+   * @returns {Promise<void>}
+   */
+
+  private initFacebook(initParams: IInitParams) {
+    const facebook = {
+      enable: false,
+      pageId: '',
+      containerClass: '',
+      ...initParams.facebook
+    };
+
+    if (facebook && facebook.enable) {
+      try {
+        new FacebookModule({
+          pageId: facebook.pageId,
+          containerClass: facebook.containerClass,
+          applicationCode: initParams.applicationCode,
+          userId: initParams.userId || ''
+        });
+      } catch (error) {
+        Logger.write('error', error, 'facebook module initialization failed');
+      }
     }
   }
 
@@ -406,6 +437,41 @@ class Pushwoosh {
       Logger.write('error', 'Communication is disabled');
       return;
     }
+    try {
+      const subscribed = await this.driver.isSubscribed();
+
+      const isManuallyUnsubscribed = await keyValue.get(MANUAL_UNSUBSCRIBE);
+
+      if (isManuallyUnsubscribed) {
+        return;
+      }
+
+      await this.driver.askSubscribe(this.isDeviceRegistered());
+
+      // always re-register device, because push credentials(pushToken, fcmToken, fcmPushSet) always updated
+      await this.registerDuringSubscribe();
+
+      if (!subscribed) {
+        await this.onSubscribeEmitter();
+      }
+    } catch (error) {
+      Logger.write('error', error, 'subscribe fail');
+    }
+  }
+
+
+  /**
+   * force subscribe if there was a manual unsubscribe
+   * @returns {Promise<void>}
+   */
+  public async forceSubscribe() {
+    const isCommunicationEnabled = await this.isCommunicationEnabled();
+
+    if (!isCommunicationEnabled) {
+      Logger.write('error', 'Communication is disabled');
+      return;
+    }
+
     try {
       const subscribed = await this.driver.isSubscribed();
 
@@ -638,9 +704,9 @@ class Pushwoosh {
    */
   private async healthCheck(hwid: string) {
     try {
-      const { exist } = await this.api.checkDevice(this.params.applicationCode, hwid);
+      const { exist, push_token_exist } = await this.api.checkDevice(this.params.applicationCode, hwid);
 
-      if (exist) {
+      if (exist && push_token_exist) {
         return;
       } else {
         await this.api.registerDevice()
@@ -672,7 +738,7 @@ class Pushwoosh {
     await this.open();
     const apiParams = await this.api.getParams();
     await this.healthCheck(apiParams.hwid);
-    if (this.platformChecker.isSafari && apiParams.hwid) {
+    if (!this.platformChecker.isSafari || (this.platformChecker.isSafari && apiParams.hwid)) {
       await this.inboxModel.updateMessages(this._ee);
     }
 
@@ -731,8 +797,13 @@ class Pushwoosh {
 
         this._ee.emit(EVENT_ON_PERMISSION_GRANTED);
         const trySubscribe = await keyValue.get(KEY_UNSUBSCRIBED_DUE_TO_UNDEFINED_KEYS); // try subscribe if unsubscribed due to undefined fcm keys PUSH-16049
+
         // if permission === PERMISSION_GRANTED and device is not registered do subscribe
-        if ((!this.platformChecker.isSafari && !this.isDeviceRegistered() && !this.isDeviceUnregistered()) || this._isNeedResubscribe || trySubscribe) {
+        if (
+          (!this.platformChecker.isSafari && !this.isDeviceRegistered() && !this.isDeviceUnregistered())
+          || this._isNeedResubscribe
+          || trySubscribe
+          ) {
           await this.subscribe();
           await keyValue.set(KEY_UNSUBSCRIBED_DUE_TO_UNDEFINED_KEYS, false);
         }
@@ -799,6 +870,14 @@ class Pushwoosh {
     } = await keyValue.getAll();
 
     return {...apiParams, ...initParams};
+  }
+
+  /**
+   * Method returns  true if notifications available.
+   * @returns {boolean}
+   */
+  public  isAvailableNotifications() {
+    return this.platformChecker.isAvailableNotifications;
   }
 }
 

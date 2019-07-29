@@ -39,6 +39,13 @@ interface PushSubscription {
   subscriptionId: string
 }
 
+interface FacebookModuleConfig {
+  pageId: string;
+  containerClass: string;
+  applicationCode: string;
+  userId: string;
+}
+
 interface IPWDriver {
   initWorker?(): Promise<any>;
   getPermission(): Promise<TPWPermission>;
@@ -145,6 +152,11 @@ interface IInitParams {
   subscribeWidget?: ISubscribeWidget;
   inboxWidget?: IInboxWidget;
   subscribePopup?: ISubscribePopup;
+  facebook?: {
+    enable?: boolean;
+    pageId?: string;
+    containerClass?: string;
+  };
 }
 
 interface IInitParamsWithDefaults extends IInitParams {

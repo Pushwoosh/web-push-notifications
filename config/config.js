@@ -21,6 +21,11 @@ module.exports = {
     },
     subscribeWidget: {
       enable: true,
+    },
+    facebook: {
+      enable: true,
+      containerClass: 'pwasc-container',
+      pageId: '687279728362093'
     }
   },
 

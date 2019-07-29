@@ -21,6 +21,7 @@ import {
   EVENT_ON_PERMISSION_DENIED,
   EVENT_ON_PERMISSION_GRANTED,
   DEFAULT_SERVICE_WORKER_URL,
+  MANUAL_UNSUBSCRIBE
 } from '../constants';
 import {keyValue} from '../storage';
 import Logger from '../logger';
@@ -91,8 +92,7 @@ class WorkerDriver implements IPWDriver {
     const permission = await (window as WindowExtended).Notification.requestPermission();
     if (permission === PERMISSION_GRANTED) {
       return await this.subscribe(serviceWorkerRegistration);
-    }
-    else if (permission === PERMISSION_DENIED) {
+    } else if (permission === PERMISSION_DENIED) {
       this.emit(EVENT_ON_PERMISSION_DENIED);
     }
     return subscription;
@@ -110,6 +110,7 @@ class WorkerDriver implements IPWDriver {
       options.applicationServerKey = urlB64ToUint8Array(this.params.applicationServerPublicKey);
     }
     const subscription = await registration.pushManager.subscribe(options);
+    await keyValue.set(MANUAL_UNSUBSCRIBE, 0);
     this.emit(EVENT_ON_PERMISSION_GRANTED);
     await this.getFCMToken();
     return subscription;
@@ -126,6 +127,7 @@ class WorkerDriver implements IPWDriver {
     }
     const subscription = await serviceWorkerRegistration.pushManager.getSubscription();
     if (subscription && subscription.unsubscribe) {
+      await keyValue.set(MANUAL_UNSUBSCRIBE, 1);
       return subscription.unsubscribe();
     } else {
       return false;
