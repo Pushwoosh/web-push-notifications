@@ -264,7 +264,8 @@ type TWorkerSafariDriverParams = {
 };
 
 type TServiceWorkerClientExtended = ServiceWorkerClient & {
-  focus: () => void
+  focus: () => void,
+  focused: boolean
 };
 
 type TDoPushwooshMethod = (type: string, params: any) => Promise<any>;

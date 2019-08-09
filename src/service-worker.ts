@@ -264,6 +264,13 @@ async function openWindow(
   url: string,
   message: { type: string, payload: any }
 ) {
+  const isExistFocusedWindow = clientList.some((client: TServiceWorkerClientExtended): boolean => client.focused);
+  const hasNewUrl = clientList.every((client: TServiceWorkerClientExtended): boolean => client.url !== url && url !== '/');
+
+  if (isExistFocusedWindow && !hasNewUrl) {
+    return;
+  }
+
   for (let index = clientList.length - 1; index > -1; --index) {
     const client = clientList[index];
     if ((url === client.url || url === '/') && 'focus' in client) {
@@ -271,6 +278,7 @@ async function openWindow(
       return;
     }
   }
+
   if (self.clients.openWindow) {
     await keyValue.set(KEY_DELAYED_EVENT, message);
     return self.clients.openWindow(url);
