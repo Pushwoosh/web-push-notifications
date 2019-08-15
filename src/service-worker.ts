@@ -50,7 +50,8 @@ function onInstallEventHandler(event: ExtendableEvent): void {
       Logger.write('info', 'install')
     ]);
 
-    await self.skipWaiting();
+    // PUSH-21674 - not auto closing push if push receive when chrome is closed
+    // await self.skipWaiting();
   }
 
   return event.waitUntil(
