@@ -287,6 +287,8 @@ type PWEvent = 'onReady'
   | 'onNotificationClose'
   | 'onChangeCommunicationEnabled'
   | 'onPutNewMessageToInboxStore'
-  | 'onUpdateInboxMessages';
+  | 'onUpdateInboxMessages'
+  | 'onShowNotificationPermissionDialog'
+  | 'onHideNotificationPermissionDialog';
 
 declare const __VERSION__: string;

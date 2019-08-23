@@ -50,7 +50,9 @@ import {
   EVENT_ON_CHANGE_COMMUNICATION_ENABLED,
   EVENT_ON_PUT_NEW_MESSAGE_TO_INBOX_STORE,
   EVENT_ON_UPDATE_INBOX_MESSAGES,
-  MANUAL_UNSUBSCRIBE
+  MANUAL_UNSUBSCRIBE,
+  EVENT_ON_SHOW_NOTIFICATION_PERMISSION_DIALOG,
+  EVENT_ON_HIDE_NOTIFICATION_PERMISSION_DIALOG
 } from './constants';
 import Logger from './logger'
 import WorkerDriver from './drivers/worker';
@@ -205,6 +207,8 @@ class Pushwoosh {
         case EVENT_ON_CHANGE_COMMUNICATION_ENABLED:
         case EVENT_ON_PUT_NEW_MESSAGE_TO_INBOX_STORE:
         case EVENT_ON_UPDATE_INBOX_MESSAGES:
+        case EVENT_ON_SHOW_NOTIFICATION_PERMISSION_DIALOG:
+        case EVENT_ON_HIDE_NOTIFICATION_PERMISSION_DIALOG:
           if (typeof cmdFunc !== 'function') {
             break;
           }

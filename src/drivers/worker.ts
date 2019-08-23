@@ -21,7 +21,9 @@ import {
   EVENT_ON_PERMISSION_DENIED,
   EVENT_ON_PERMISSION_GRANTED,
   DEFAULT_SERVICE_WORKER_URL,
-  MANUAL_UNSUBSCRIBE
+  MANUAL_UNSUBSCRIBE,
+  EVENT_ON_SHOW_NOTIFICATION_PERMISSION_DIALOG,
+  EVENT_ON_HIDE_NOTIFICATION_PERMISSION_DIALOG
 } from '../constants';
 import {keyValue} from '../storage';
 import Logger from '../logger';
@@ -89,7 +91,13 @@ class WorkerDriver implements IPWDriver {
       return;
     }
 
+    // emit event when permission dialog show
+    this.params.eventEmitter.emit(EVENT_ON_SHOW_NOTIFICATION_PERMISSION_DIALOG);
     const permission = await (window as WindowExtended).Notification.requestPermission();
+
+    // emit event when permission dialog hide with permission state
+    this.params.eventEmitter.emit(EVENT_ON_HIDE_NOTIFICATION_PERMISSION_DIALOG, permission);
+
     if (permission === PERMISSION_GRANTED) {
       return await this.subscribe(serviceWorkerRegistration);
     } else if (permission === PERMISSION_DENIED) {

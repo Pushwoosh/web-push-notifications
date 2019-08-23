@@ -224,6 +224,15 @@
         })
       }]);
 
+      Pushwoosh.push(['onShowNotificationPermissionDialog', function(api) {
+        console.log('EVENT: onShowNotificationPermissionDialog');
+      }]);
+
+      Pushwoosh.push(['onHideNotificationPermissionDialog', function(api, permission) {
+        console.log('EVENT: onHideNotificationPermissionDialog', permission);
+        checkSubscription();
+      }]);
+
       function checkSubscription() {
         Pushwoosh.isSubscribed().then(function (res) {
           toggleNodesVisibility('.subscription-status', res ? 'actionUnsubscribe' : 'actionSubscribe');

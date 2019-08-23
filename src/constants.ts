@@ -66,6 +66,8 @@ export const EVENT_ON_NOTIFICATION_CLOSE = 'onNotificationClose';
 export const EVENT_ON_CHANGE_COMMUNICATION_ENABLED = 'onChangeCommunicationEnabled';
 export const EVENT_ON_PUT_NEW_MESSAGE_TO_INBOX_STORE = 'onPutNewMessageToInboxStore';
 export const EVENT_ON_UPDATE_INBOX_MESSAGES = 'onUpdateInboxMessages';
+export const EVENT_ON_SHOW_NOTIFICATION_PERMISSION_DIALOG = 'onShowNotificationPermissionDialog';
+export const EVENT_ON_HIDE_NOTIFICATION_PERMISSION_DIALOG = 'onHideNotificationPermissionDialog';
 
 // Post Events
 export const EVENT_SHOW_SUBSCRIBE_BUTTON = 'showSubscribeButton';
