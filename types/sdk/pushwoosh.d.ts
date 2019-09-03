@@ -157,6 +157,16 @@ interface IInitParams {
     pageId?: string;
     containerClass?: string;
   };
+  inApps?: {
+    enable?: boolean;
+    modal?: {
+      backgroundColor?: string;
+      closeButtonColor?: string;
+      closeButtonHoverColor?: string;
+      preloaderColor?: string;
+      isShowPreloader?: boolean;
+    }
+  }
 }
 
 interface IInitParamsWithDefaults extends IInitParams {

@@ -58,11 +58,13 @@ import Logger from './logger'
 import WorkerDriver from './drivers/worker';
 import SafariDriver from './drivers/safari';
 import FacebookModule from './modules/FacebookModule';
+import { InApps } from './modules/InApps/InApps';
 import {keyValue, log as logStorage, message as messageStorage} from './storage';
 
 import Params from './modules/data/Params';
 import InboxMessagesModel from './models/InboxMessages';
 import InboxMessagesPublic from './modules/InboxMessagesPublic';
+import { EventBus } from './modules/EventBus/EventBus';
 
 
 type ChainFunction = (param: any) => Promise<any> | any;
@@ -77,6 +79,7 @@ class Pushwoosh {
   private _isNeedResubscribe: boolean = false;
   private readonly _onPromises: { [key: string]: Promise<ChainFunction> };
   private inboxModel: InboxMessagesModel;
+  private eventBus: EventBus;
 
   public api: API;
   public driver: IPWDriver;
@@ -86,6 +89,7 @@ class Pushwoosh {
   public inboxWidgetConfig: IInboxWidget;
   public subscribePopupConfig: any; // TODO: !!!
   public paramsModule: Params;
+  public InApps: InApps;
 
   // Inbox messages public interface
   public pwinbox: InboxMessagesPublic;
@@ -112,6 +116,12 @@ class Pushwoosh {
 
     // Bindings
     this.onServiceWorkerMessage = this.onServiceWorkerMessage.bind(this);
+
+    this.eventBus = EventBus.getInstance();
+
+    this.eventBus.on('askSubscribe', () => {
+      this.subscribe();
+    });
   }
 
   /**
@@ -179,10 +189,14 @@ class Pushwoosh {
           if (typeof cmdFunc !== 'object') {
             break;
           }
+
           if (this.platformChecker.isAvailableNotifications) {
             try {
               this.initFacebook(cmdFunc);
-              await this.init(cmdFunc);
+              await this.init(cmdFunc)
+                .then(() => {
+                  return this.initInApp(cmdFunc);
+                });
             } catch (e) {
               Logger.write('info', 'Pushwoosh init failed', e)
             }
@@ -190,6 +204,8 @@ class Pushwoosh {
             this.initFacebook(cmdFunc);
             Logger.write('info', 'This browser does not support pushes');
           }
+
+
           break;
         case EVENT_ON_READY:
           if (typeof cmdFunc !== 'function') {
@@ -254,6 +270,26 @@ class Pushwoosh {
         });
       } catch (error) {
         Logger.write('error', error, 'facebook module initialization failed');
+      }
+    }
+  }
+
+  /**
+   * Method for init InApp module
+   * @param {IInitParams} params
+   * @return {Promise<void>}
+   */
+  private initInApp(params: IInitParams) {
+    const inAppInitParams = {
+      enable: false,
+      ...params.inApps
+    };
+
+    if (inAppInitParams.enable) {
+      try {
+        this.InApps = new InApps(inAppInitParams, this.api);
+      } catch (error) {
+        Logger.write('error', error,'InApp module initialization has been failed')
       }
     }
   }
@@ -376,6 +412,7 @@ class Pushwoosh {
     try {
       await this.defaultProcess();
       if ('serviceWorker' in navigator) {
+        // @ts-ignore
         navigator.serviceWorker.onmessage = this.onServiceWorkerMessage;
       }
     } catch (err) {
@@ -426,7 +463,6 @@ class Pushwoosh {
     ]);
 
     this.api = new API(apiParams, lastOpenMessage);
-
   }
 
   /**
@@ -442,11 +478,13 @@ class Pushwoosh {
       return;
     }
     try {
+
       const subscribed = await this.driver.isSubscribed();
 
       const isManuallyUnsubscribed = await keyValue.get(MANUAL_UNSUBSCRIBE);
+      const isAutoSubscribe = this._initParams.autoSubscribe;
 
-      if (isManuallyUnsubscribed) {
+      if (isManuallyUnsubscribed && isAutoSubscribe) {
         return;
       }
 

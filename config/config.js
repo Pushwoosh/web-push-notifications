@@ -26,7 +26,10 @@ module.exports = {
       enable: true,
       containerClass: 'pwasc-container',
       pageId: '687279728362093'
-    }
+    },
+    inApps: {
+      enable: false
+    },
   },
 
   ssl: {

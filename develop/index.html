@@ -157,10 +157,6 @@
         checkSubscription();
       });
 
-//      Pushwoosh.push(['onReady', function(api) {
-//        console.log('EVENT: onReady alternative', api);
-//      }]);
-
       Pushwoosh.push(['onChangeCommunicationEnabled', function(api, isEnabled) {
         console.log('EVENT: onChangeCommunicationEnabled', isEnabled);
         document.querySelector('#GDPRSetCommunicationEnabled').checked = isEnabled;
@@ -366,8 +362,6 @@
 
         Pushwoosh.api.postEvent(event, attributes)
           .then(function() {
-            eventControl.value = '';
-            attributesControl.value = '';
             successNode.innerHTML = 'Data successfully submitted ' + new Date();
           })
           .catch(function(err) {

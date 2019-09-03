@@ -24,11 +24,14 @@ import Logger, {logAndThrowError} from './logger';
 import doApiXHR from './modules/api/apiCall';
 import Params from './modules/data/Params';
 
+import { EventBus } from './modules/EventBus/EventBus';
+
 
 export default class PushwooshAPI {
   private timezone: number = -(new Date).getTimezoneOffset() * 60;
   private readonly doPushwooshApiMethod: TDoPushwooshMethod;
   private readonly paramsModule: Params;
+  private readonly eventBus: EventBus;
 
   constructor(
     private apiParams: TPWAPIParams,
@@ -37,6 +40,7 @@ export default class PushwooshAPI {
   ) {
     this.doPushwooshApiMethod = doApiXHR;
     this.paramsModule = paramsModule;
+    this.eventBus = EventBus.getInstance();
   }
 
   // TODO will be deprecated in next minor version
@@ -230,7 +234,14 @@ export default class PushwooshAPI {
       attributes,
       timestampUTC,
       timestampCurrent
-    });
+    })
+      .then((response) => {
+        if (response && response.code) {
+          this.eventBus.emit<'needShowInApp'>('needShowInApp', {code: response.code});
+        }
+
+        return response;
+      })
   }
 
   async triggerEvent(params: TEvent, dbKey?: string) {
