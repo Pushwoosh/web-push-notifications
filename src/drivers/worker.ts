@@ -1,33 +1,34 @@
 import {
-  getPushToken,
-  getFcmKey,
   generateHwid,
-  getPublicKey,
+  generateUUID,
   getAuthToken,
-  urlB64ToUint8Array,
-  generateUUID
+  getFcmKey,
+  getPublicKey,
+  getPushToken,
+  urlB64ToUint8Array
 } from '../functions'
 import platformChecker from '../modules/PlatformChecker';
 
 import {
-  PERMISSION_PROMPT,
-  PERMISSION_DENIED,
-  PERMISSION_GRANTED,
-  KEY_SENDER_ID,
-  KEY_API_PARAMS,
-  KEY_FCM_SUBSCRIPTION,
-  KEY_DEVICE_DATA_REMOVED,
-  EVENT_ON_SW_INIT_ERROR,
+  DEFAULT_SERVICE_WORKER_URL,
+  EVENT_ON_HIDE_NOTIFICATION_PERMISSION_DIALOG,
   EVENT_ON_PERMISSION_DENIED,
   EVENT_ON_PERMISSION_GRANTED,
-  DEFAULT_SERVICE_WORKER_URL,
-  MANUAL_UNSUBSCRIBE,
   EVENT_ON_SHOW_NOTIFICATION_PERMISSION_DIALOG,
-  EVENT_ON_HIDE_NOTIFICATION_PERMISSION_DIALOG
+  EVENT_ON_SW_INIT_ERROR,
+  KEY_API_PARAMS,
+  KEY_DEVICE_DATA_REMOVED,
+  KEY_FCM_SUBSCRIPTION,
+  KEY_SENDER_ID,
+  MANUAL_UNSUBSCRIBE,
+  PERMISSION_DENIED,
+  PERMISSION_GRANTED,
+  PERMISSION_PROMPT
 } from '../constants';
 import {keyValue} from '../storage';
 import Logger from '../logger';
 import Params from '../modules/data/Params';
+import {EventBus, TEvents} from '../modules/EventBus/EventBus';
 
 
 declare const Notification: {
@@ -39,12 +40,15 @@ type WindowExtended = Window & {Notification: any}
 
 class WorkerDriver implements IPWDriver {
   private readonly paramsModule: Params;
+  private readonly eventBus: EventBus;
 
   constructor(
     private params: TWorkerDriverParams,
-    paramsModule: Params = new Params()
+    paramsModule: Params = new Params(),
+    eventBus?: EventBus,
   ) {
     this.paramsModule = paramsModule;
+    this.eventBus = eventBus || EventBus.getInstance();
   }
 
   async initWorker() {
@@ -93,10 +97,13 @@ class WorkerDriver implements IPWDriver {
 
     // emit event when permission dialog show
     this.params.eventEmitter.emit(EVENT_ON_SHOW_NOTIFICATION_PERMISSION_DIALOG);
+    this.eventBus.emit(TEvents.SHOW_NOTIFICATION_PERMISSION_DIALOG);
+
     const permission = await (window as WindowExtended).Notification.requestPermission();
 
     // emit event when permission dialog hide with permission state
     this.params.eventEmitter.emit(EVENT_ON_HIDE_NOTIFICATION_PERMISSION_DIALOG, permission);
+    this.eventBus.emit(TEvents.HIDE_NOTIFICATION_PERMISSION_DIALOG);
 
     if (permission === PERMISSION_GRANTED) {
       return await this.subscribe(serviceWorkerRegistration);

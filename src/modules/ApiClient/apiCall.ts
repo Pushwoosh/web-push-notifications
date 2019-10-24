@@ -1,24 +1,34 @@
 import Logger, {logAndRejectError} from '../../logger';
-import {keyValue} from '../../storage';
-import {KEY_API_BASE_URL} from '../../constants';
 import Params from '../data/Params';
+import {
+  sendFatalLogToRemoteServer
+} from '../../helpers/logger';
 
-
-export default function doApiCall<M, Req, Res>(methodName: M, request: Req, customUrl?: string): Promise<Res> {
+export const apiCall = <Method, Request, Response>(methodName: Method, request: Request): Promise<Response> => {
   return new Promise(async (resolve, reject) => {
     const params = new Params();
     const pushwooshUrl = await params.apiUrl;
 
     try {
-      const url = customUrl || `${pushwooshUrl}${methodName}`;
+      const url = `${pushwooshUrl}${methodName}`;
 
       fetch(url, {
         method: 'post',
         headers: {'Content-Type': 'text/plain;charset=UTF-8'},
-        body: JSON.stringify({request})
-      }).then((response) => {
+        body: JSON.stringify({ request })
+      }).then(async (response) => {
         if (!response.ok) {
           logAndRejectError(response.statusText || 'response not ok', reject);
+
+          await sendFatalLogToRemoteServer({
+            message: 'Error in callAPI',
+            code: 'FATAL-API-003',
+            error: response.statusText,
+            applicationCode: params.appCode,
+            deviceType: params.deviceType,
+            methodName
+          });
+
           return;
         }
 
@@ -29,9 +39,8 @@ export default function doApiCall<M, Req, Res>(methodName: M, request: Req, cust
           }
 
           // Set base url
-          const {base_url = null} = responseJson;
+          const { base_url } = responseJson;
           if (base_url) {
-            keyValue.set(KEY_API_BASE_URL, base_url);
             await params.setApiUrl(base_url);
           }
 
@@ -41,6 +50,15 @@ export default function doApiCall<M, Req, Res>(methodName: M, request: Req, cust
       });
     }
     catch (e) {
+      await sendFatalLogToRemoteServer({
+        message: 'Error in callAPI',
+        code: 'FATAL-API-004',
+        error: `Crash on fetch. ${e.name}: ${e.message}`,
+        applicationCode: params.appCode,
+        deviceType: params.deviceType,
+        methodName
+      });
+
       logAndRejectError(`Exception while ${methodName} the device: ${e}`, reject);
     }
   });

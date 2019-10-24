@@ -278,7 +278,7 @@ type TServiceWorkerClientExtended = ServiceWorkerClient & {
   focused: boolean
 };
 
-type TDoPushwooshMethod = (type: string, params: any) => Promise<any>;
+type TDoPushwooshMethod = (type: string, params: any, url?: string) => Promise<any>;
 
 type PWInput = PushOnReadyCallback | PushInitCallback | PushEventCallback;
 type PushOnReadyCallback = HandlerFn;

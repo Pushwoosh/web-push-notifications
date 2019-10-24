@@ -52,7 +52,9 @@ import {
   EVENT_ON_UPDATE_INBOX_MESSAGES,
   MANUAL_UNSUBSCRIBE,
   EVENT_ON_SHOW_NOTIFICATION_PERMISSION_DIALOG,
-  EVENT_ON_HIDE_NOTIFICATION_PERMISSION_DIALOG
+  EVENT_ON_HIDE_NOTIFICATION_PERMISSION_DIALOG,
+  PAGE_VISITED_URL,
+  CHANNELS
 } from './constants';
 import Logger from './logger'
 import WorkerDriver from './drivers/worker';
@@ -64,7 +66,8 @@ import {keyValue, log as logStorage, message as messageStorage} from './storage'
 import Params from './modules/data/Params';
 import InboxMessagesModel from './models/InboxMessages';
 import InboxMessagesPublic from './modules/InboxMessagesPublic';
-import { EventBus } from './modules/EventBus/EventBus';
+import { EventBus, TEvents } from './modules/EventBus/EventBus';
+import { CommandBus, TCommands } from './modules/CommandBus/CommandBus';
 
 
 type ChainFunction = (param: any) => Promise<any> | any;
@@ -80,6 +83,7 @@ class Pushwoosh {
   private readonly _onPromises: { [key: string]: Promise<ChainFunction> };
   private inboxModel: InboxMessagesModel;
   private eventBus: EventBus;
+  private commandBus: CommandBus;
 
   public api: API;
   public driver: IPWDriver;
@@ -117,10 +121,39 @@ class Pushwoosh {
     // Bindings
     this.onServiceWorkerMessage = this.onServiceWorkerMessage.bind(this);
 
+    this.commandBus = CommandBus.getInstance();
     this.eventBus = EventBus.getInstance();
 
-    this.eventBus.on('askSubscribe', () => {
-      this.subscribe();
+    // subscribe by connector
+    this.commandBus.on(TCommands.SUBSCRIBE, ({ commandId }) => {
+      this.subscribe()
+        .then(() => {
+          this.eventBus.emit(TEvents.SUBSCRIBE, commandId);
+        });
+    });
+
+    // unsubscribe by connector
+    this.commandBus.on(TCommands.UNSUBSCRIBE, ({ commandId }) => {
+      this.unsubscribe()
+        .then(() => {
+          this.eventBus.emit(TEvents.UNSUBSCRIBE, commandId);
+        });
+    });
+
+    // check subscribe status by connector
+    this.commandBus.on(TCommands.CHECK_IS_SUBSCRIBED, ({ commandId }) => {
+      this.isSubscribed()
+        .then((state) => {
+          this.eventBus.emit(TEvents.CHECK_IS_SUBSCRIBED, { state: state }, commandId);
+        });
+    });
+
+    // check subscribe status by connector
+    this.commandBus.on(TCommands.CHECK_IS_MANUAL_UNSUBSCRIBED, ({ commandId }) => {
+      keyValue.get(MANUAL_UNSUBSCRIBE)
+        .then((state: boolean) => {
+          this.eventBus.emit(TEvents.CHECK_IS_MANUAL_UNSUBSCRIBED, { state: state }, commandId);
+        });
     });
   }
 
@@ -589,7 +622,7 @@ class Pushwoosh {
    */
   public async isSubscribed(): Promise<boolean> {
     const deviceRegistration = this.platformChecker.isSafari || this.isDeviceRegistered();
-    return deviceRegistration && this.driver.isSubscribed() || false;
+    return deviceRegistration && await this.driver.isSubscribed() || false;
   }
 
   /**
@@ -773,17 +806,38 @@ class Pushwoosh {
    * @returns {Promise<void>}
    */
   private async defaultProcess() {
-    const {autoSubscribe = true} = this.params || {};
+    const {autoSubscribe = false} = this.params || {};
     this.permissionOnInit = await this.driver.getPermission();
 
     await this.initApi();
     await this.open();
     const apiParams = await this.api.getParams();
-    await this.healthCheck(apiParams.hwid);
-    if (!this.platformChecker.isSafari || (this.platformChecker.isSafari && apiParams.hwid)) {
-      await this.inboxModel.updateMessages(this._ee);
+    const {
+      hwid,
+      applicationCode
+    } = apiParams;
+
+    await this.healthCheck(hwid);
+
+    const features = await this.onGetConfig(['page_visit', 'channels']);
+
+    if (features) {
+      // page visited feature
+      if (features.page_visit && features.page_visit.enabled) {
+        await keyValue.set(PAGE_VISITED_URL, features.page_visit.entrypoint);
+        this.sendStatisticsVisitedPage();
+      }
+
+      // channels
+      if (features.channels) {
+        await keyValue.set(CHANNELS, features.channels);
+      }
     }
 
+
+    if (!this.platformChecker.isSafari || (this.platformChecker.isSafari && apiParams.hwid)) {
+      // await this.inboxModel.updateMessages(this._ee);
+    }
 
     if (this.driver.isNeedUnsubscribe) {
       const needUnsubscribe = await this.driver.isNeedUnsubscribe() && this.isDeviceRegistered();
@@ -831,9 +885,10 @@ class Pushwoosh {
       case PERMISSION_GRANTED:
 
         const isSubscribed = await this.isSubscribed();
+        const isManuallyUnsubscribed = await keyValue.get(MANUAL_UNSUBSCRIBE);
 
         // if set autoSubscribe and user allowed send push and he is not subscribed -> resubscribe
-        if (!isSubscribed) {
+        if (!isSubscribed && autoSubscribe && !isManuallyUnsubscribed) {
           await this.subscribe();
         }
 
@@ -920,6 +975,37 @@ class Pushwoosh {
    */
   public  isAvailableNotifications() {
     return this.platformChecker.isAvailableNotifications;
+  }
+
+  public async sendStatisticsVisitedPage() {
+    const {
+      document: { title },
+      location: { origin, pathname, href }
+    } = window;
+
+    this.api.pageVisit({
+      title,
+      url_path: `${origin}${pathname}`,
+      url: href
+    });
+  }
+
+  private async onGetConfig(features: string[]) {
+    try {
+      const config = await this.api.getConfig(features);
+
+      return config && config.features;
+    } catch (error) {
+      const data = await keyValue.getAll();
+
+      await sendFatalLogToRemoteServer({
+        message: 'Error in getConfig',
+        code: 'FATAL-API-002',
+        error,
+        applicationCode: data['params.applicationCode'],
+        workerVersion: data['WORKER_VERSION']
+      });
+    }
   }
 }
 

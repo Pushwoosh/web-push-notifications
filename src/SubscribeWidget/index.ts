@@ -10,7 +10,7 @@ import {
 
   KEY_SHOW_SUBSCRIBE_WIDGET,
   KEY_CLICK_SUBSCRIBE_WIDGET,
-  MANUAL_UNSUBSCRIBE
+  MANUAL_UNSUBSCRIBE, CHANNELS
 } from '../constants';
 
 import platformChecker from '../modules/PlatformChecker';
@@ -32,6 +32,7 @@ class SubscribeWidget {
   style: HTMLElement;
   pw: Pushwoosh;
   config: TBellConfig;
+  isUseChannels?: boolean;
 
   constructor(pw: Pushwoosh) {
     // Set Pushwoosh object
@@ -52,12 +53,26 @@ class SubscribeWidget {
     this.config = Object.assign(SUBSCRIBE_WIDGET_DEFAULT_CONFIG, this.pw.subscribeWidgetConfig);
     this.config.tooltipText = tooltipText;
 
+    const arrActions = [];
+
+    // if use in channels
+    const channels = keyValue.get(CHANNELS);
+    arrActions.push(channels);
+
     // Render if not subscribed
-    this.pw.isSubscribed().then((subscribed: boolean) => {
-      if (!subscribed) {
-        this.render();
-      }
-    });
+    const isSubscribed = this.pw.isSubscribed();
+    arrActions.push(isSubscribed);
+
+    Promise.all(arrActions)
+      .then(([channels, isSubscribed]) => {
+        if (channels) {
+          this.isUseChannels = true;
+        }
+
+        if (!isSubscribed || channels) {
+          this.render();
+        }
+      });
   }
 
   /**
@@ -265,7 +280,17 @@ class SubscribeWidget {
     document.body.appendChild(this.widget);
 
     // Events
-    bell.addEventListener('click', this.clickBell);
+    if (this.isUseChannels && <TPlatformSafari>platformChecker.platform !== 10) {
+      this.widget.addEventListener('click', () => {
+        this.pw.push((api) => {
+          api.postEvent('Subscription Segments', {});
+        })
+      });
+
+      return;
+    }
+
+    this.widget.addEventListener('click', this.clickBell);
     this.pw.push(['onSubscribe', this.onSubscribeEvent]);
     this.pw.push(['onPermissionDenied', this.onPermissionDeniedEvent]);
     window.addEventListener('click', this.clickOutOfPopover);

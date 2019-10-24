@@ -2,17 +2,21 @@ import ApiClient from '../api/ApiClient';
 import Logger from '../../logger';
 import API from '../../API';
 import { keyValue } from '../../storage';
-import { EventBus } from '../EventBus/EventBus';
+import { CommandBus, TCommands } from '../CommandBus/CommandBus';
+import { Connector } from '../Connector/Connector';
 import { Modal } from '../Modal/Modal';
 import { RichMedia } from '../RichMedia/RichMedia';
-import { ExpanderPushManager, ExpanderPushwoosh } from './expanders/expanders';
+import { ExpanderPushManager, ExpanderPushwoosh, ExpanderPushwooshSendMessage } from './expanders/expanders';
+
+import { CHANNELS } from '../../constants';
 
 import { IInAppsOptions } from './InApps.types';
 
 
 export class InApps {
   private readonly options: IInAppsOptions;
-  private readonly eventBus: EventBus;
+  private commandBus: CommandBus;
+  private connector: Connector;
   private readonly api: ApiClient;
   private readonly store: typeof keyValue;
   private readonly PW: API;
@@ -23,11 +27,13 @@ export class InApps {
 
   constructor(options: IInAppsOptions, PW: API, api = new ApiClient(), store = keyValue) {
     this.options = options;
-    this.eventBus = EventBus.getInstance();
     this.api = api;
     this.store = store;
     this.PW = PW;
     this.modal = new Modal(this.options && this.options.modal ? this.options.modal : {});
+
+    this.connector = new Connector();
+    this.commandBus = CommandBus.getInstance();
 
     this.init()
       .then(() => {
@@ -43,16 +49,16 @@ export class InApps {
 
     // when we send postEvent in response
     // we can receive in-app code to be show
-    this.eventBus.on<'needShowInApp'>('needShowInApp', (options) => {
+    this.commandBus.on(TCommands.SHOW_IN_APP, ({ code }) => {
       // if is not loaded in app list
       // we delay the show
       if (!this.isLoadedInAppsList) {
-        this.delayInApps.push(options.code);
+        this.delayInApps.push(code);
 
         return;
       }
 
-      this.showInApp(options.code);
+      this.showInApp(code);
     });
 
     const { inApps } = await this.getList();
@@ -70,27 +76,92 @@ export class InApps {
 
   private subscribeToReceiveMessageFromIFrame() {
     window.addEventListener('message', (event) => {
-      const { data } = event;
+      try {
+        const data = JSON.parse(event.data);
 
-      this.onReceiveNewMessageFromIFrame(data);
+        if (data && typeof data === 'object') {
+          this.onReceiveNewMessageFromIFrame(data);
+        }
+      } catch (e) {
+        // nothing...
+      }
     });
   }
 
   private onReceiveNewMessageFromIFrame(message: any) {
-    if(message && (message.name === 'InAppPushwoosh' || message.name === 'InAppPushManager')) {
-      switch (message.method) {
-        case 'askSubscribe':
-          this.eventBus.emit('askSubscribe', null);
-          break;
-        case 'closeInApp':
-          this.eventBus.emit('needCloseInApp', null);
-          break;
-        case 'openNewLink':
-          this.eventBus.emit('openNewLink', message.options);
-          window.open(message.options.href, '_blank');
-          break;
-      }
+    switch (message.method) {
+      case 'subscribe':
+        this.connector.subscribe()
+          .then(() => {
+            this.commandBus.emit(TCommands.POST_MESSAGE_TO_IFRAME, {
+              code: message.code
+            })
+          });
+        break;
+      case 'unsubscribe':
+        this.connector.unsubscribe()
+          .then(() => {
+            this.commandBus.emit(TCommands.POST_MESSAGE_TO_IFRAME, {
+              code: message.code
+            })
+          });
+        break;
+      case 'getTags':
+        this.connector.getTags()
+          .then((tags) => {
+            this.commandBus.emit(TCommands.POST_MESSAGE_TO_IFRAME, {
+              code: message.code,
+              tags: {
+                ...tags,
+                PWChannels: ['Sport news']
+              },
+            })
+          });
+        break;
+      case 'setTags':
+        this.connector.setTags(message.options.tags)
+          .then(() => {
+            this.commandBus.emit(TCommands.POST_MESSAGE_TO_IFRAME, {
+              code: message.code
+            })
+          });
+        break;
+      case 'getChannels':
+        keyValue.get('CHANNELS')
+          .then((channels: unknown[]) => {
+            this.commandBus.emit(TCommands.POST_MESSAGE_TO_IFRAME, {
+              code: message.code,
+              channels
+            });
+          });
+
+        break;
+      case 'checkSubscription':
+        this.connector.checkIsSubscribed()
+          .then((state) => {
+            this.commandBus.emit(TCommands.POST_MESSAGE_TO_IFRAME, {
+              code: message.code,
+              state,
+            })
+          });
+        break;
+      case 'checkManualUnsubscribed':
+        this.connector.checkIsManualUnsubscribed()
+          .then((state) => {
+            this.commandBus.emit(TCommands.POST_MESSAGE_TO_IFRAME, {
+              code: message.code,
+              state,
+            })
+          });
+        break;
+      case 'openLink':
+        window.open(message.href, '_blank');
+        break;
+      case 'closeInApp':
+        this.commandBus.emit(TCommands.CLOSE_IN_APP);
+        break;
     }
+
   }
 
   public async showInApp(code: string) {
@@ -108,7 +179,7 @@ export class InApps {
     const inAppContent = await new RichMedia(
       currentRichMedia.url,
       this.PW,
-      [ExpanderPushwoosh, ExpanderPushManager]
+      [ExpanderPushwooshSendMessage, ExpanderPushwoosh, ExpanderPushManager]
     ).getContent();
 
     await this.modal.setContent(inAppContent);

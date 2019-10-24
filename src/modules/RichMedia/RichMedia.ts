@@ -34,14 +34,14 @@ export class RichMedia {
     // get content from index.html file
     let content = await jszip.file('index.html').async('text');
 
+    // load external resources
+    content = await new ExternalResources(content, jszip).getReplacedContent();
+
     // update dynamic content
     content = new DynamicContent(content, values, language).getReplacedContent();
 
     // add pushManager and pushwoosh to content
     content = new RichMediaExpander(content, this.expanders).uploadExpanders();
-
-    // load external resources
-    content = await new ExternalResources(content, jszip).getReplacedContent();
 
     return content;
   };
