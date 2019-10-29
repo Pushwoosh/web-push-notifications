@@ -1,21 +1,23 @@
 import ApiClient from '../api/ApiClient';
 import Logger from '../../logger';
 import API from '../../API';
-import { keyValue } from '../../storage';
-import { CommandBus, TCommands } from '../CommandBus/CommandBus';
-import { Connector } from '../Connector/Connector';
-import { Modal } from '../Modal/Modal';
-import { RichMedia } from '../RichMedia/RichMedia';
-import { ExpanderPushManager, ExpanderPushwoosh, ExpanderPushwooshSendMessage } from './expanders/expanders';
+import {keyValue} from '../../storage';
+import {CommandBus, TCommands} from '../CommandBus/CommandBus';
+import {EventBus, TEvents} from '../EventBus/EventBus';
+import {Connector} from '../Connector/Connector';
+import {Modal} from '../Modal/Modal';
+import {RichMedia} from '../RichMedia/RichMedia';
+import {ExpanderPushManager, ExpanderPushwoosh, ExpanderPushwooshSendMessage} from './expanders/expanders';
 
-import { CHANNELS } from '../../constants';
+import {CHANNELS} from '../../constants';
 
-import { IInAppsOptions } from './InApps.types';
+import {IInAppsOptions} from './InApps.types';
 
 
 export class InApps {
   private readonly options: IInAppsOptions;
   private commandBus: CommandBus;
+  private eventBus: EventBus;
   private connector: Connector;
   private readonly api: ApiClient;
   private readonly store: typeof keyValue;
@@ -34,10 +36,13 @@ export class InApps {
 
     this.connector = new Connector();
     this.commandBus = CommandBus.getInstance();
+    this.eventBus = EventBus.getInstance();
 
     this.init()
       .then(() => {
         Logger.write('info', 'InApps module has been initialized');
+
+        this.eventBus.emit(TEvents.INIT_IN_APPS_MODULE);
       })
       .catch((error) => {
         Logger.write('error', 'InApps module initialization has been failed', error);

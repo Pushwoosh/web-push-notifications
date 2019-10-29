@@ -7,7 +7,7 @@ import {
 } from '../constants';
 import Params from '../modules/data/Params';
 import {EventBus, TEvents} from '../modules/EventBus/EventBus';
-
+import { generateHwid } from '../functions'
 
 class SafariDriver implements IPWDriver {
   private readonly paramsModule: Params;
@@ -52,14 +52,13 @@ class SafariDriver implements IPWDriver {
         'https://cp.pushwoosh.com/json/1.3/safari',  // get push package url
         webSitePushID,
         {application: applicationCode},
-        (permission) => {
-
+        ({ permission }) => {
           // emit event when permission dialog hide with permission state
           this.params.eventEmitter.emit(EVENT_ON_HIDE_NOTIFICATION_PERMISSION_DIALOG, permission);
           this.eventBus.emit(TEvents.HIDE_NOTIFICATION_PERMISSION_DIALOG);
 
 
-          if (permission.permission === PERMISSION_GRANTED) {
+          if (permission === PERMISSION_GRANTED) {
             eventEmitter.emit(EVENT_ON_PERMISSION_GRANTED);
             resolve(true);
           }
@@ -77,8 +76,11 @@ class SafariDriver implements IPWDriver {
   }
 
   async getAPIParams() {
+    const {
+      applicationCode = '',
+    } = this.params || {};
     const {deviceToken = ''} = this.getPermissionObject() || {};
-    const hwid = deviceToken && deviceToken.toLowerCase() || '';
+    const hwid = generateHwid(applicationCode, '');
     const pushToken = deviceToken && deviceToken.toLowerCase() || '';
 
     await this.paramsModule.setHwid(hwid);

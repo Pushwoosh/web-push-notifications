@@ -10,7 +10,8 @@ import {
 
   KEY_SHOW_SUBSCRIBE_WIDGET,
   KEY_CLICK_SUBSCRIBE_WIDGET,
-  MANUAL_UNSUBSCRIBE, CHANNELS
+  MANUAL_UNSUBSCRIBE,
+  SUBSCRIPTION_SEGMENT_EVENT
 } from '../constants';
 
 import platformChecker from '../modules/PlatformChecker';
@@ -32,7 +33,7 @@ class SubscribeWidget {
   style: HTMLElement;
   pw: Pushwoosh;
   config: TBellConfig;
-  isUseChannels?: boolean;
+  isEnableChannels?: boolean;
 
   constructor(pw: Pushwoosh) {
     // Set Pushwoosh object
@@ -55,21 +56,22 @@ class SubscribeWidget {
 
     const arrActions = [];
 
-    // if use in channels
-    const channels = keyValue.get(CHANNELS);
-    arrActions.push(channels);
+    // if enabled channels
+    const isEnableChannels = this.pw.isEnableChannels();
 
     // Render if not subscribed
     const isSubscribed = this.pw.isSubscribed();
+
+    arrActions.push(isEnableChannels);
     arrActions.push(isSubscribed);
 
     Promise.all(arrActions)
-      .then(([channels, isSubscribed]) => {
-        if (channels) {
-          this.isUseChannels = true;
+      .then(([isEnableChannels, isSubscribed]) => {
+        if (isEnableChannels) {
+          this.isEnableChannels = true;
         }
 
-        if (!isSubscribed || channels) {
+        if (!isSubscribed || isEnableChannels) {
           this.render();
         }
       });
@@ -280,11 +282,19 @@ class SubscribeWidget {
     document.body.appendChild(this.widget);
 
     // Events
-    if (this.isUseChannels && <TPlatformSafari>platformChecker.platform !== 10) {
+    if (this.isEnableChannels) {
       this.widget.addEventListener('click', () => {
+        // if current platform safari - need ask subscribe to send push notifications
+        if (<TPlatformSafari>platformChecker.platform === 10) {
+          this.pw.subscribe();
+
+          return;
+        }
+
+        // need show subscription segment in-app
         this.pw.push((api) => {
-          api.postEvent('Subscription Segments', {});
-        })
+          api.postEvent(SUBSCRIPTION_SEGMENT_EVENT, {});
+        });
       });
 
       return;

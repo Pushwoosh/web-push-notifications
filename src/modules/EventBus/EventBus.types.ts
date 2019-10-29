@@ -7,7 +7,9 @@ export enum TEvents {
   CHECK_IS_SUBSCRIBED = 'CHECK_IS_SUBSCRIBED',
   CHECK_IS_MANUAL_UNSUBSCRIBED = 'CHECK_IS_MANUAL_UNSUBSCRIBED',
   SHOW_NOTIFICATION_PERMISSION_DIALOG = 'SHOW_NOTIFICATION_PERMISSION_DIALOG',
-  HIDE_NOTIFICATION_PERMISSION_DIALOG = 'HIDE_NOTIFICATION_PERMISSION_DIALOG'
+  HIDE_NOTIFICATION_PERMISSION_DIALOG = 'HIDE_NOTIFICATION_PERMISSION_DIALOG',
+
+  INIT_IN_APPS_MODULE = 'INIT_IN_APPS_MODULE'
 }
 
 interface IEventObserverSubscribe {
@@ -47,12 +49,17 @@ interface IEventObserverCheckIsManualUnsubscribe {
 
 interface IEventObserverShowNotificationPermissionDialog {
   event: TEvents.SHOW_NOTIFICATION_PERMISSION_DIALOG;
-  handler: (options: { eventId: string}) => void;
+  handler: (options: { eventId: string }) => void;
 }
 
 interface IEventObserverHideNotificationPermissionDialog {
   event: TEvents.HIDE_NOTIFICATION_PERMISSION_DIALOG;
-  handler: (options: { eventId: string}) => void;
+  handler: (options: { eventId: string }) => void;
+}
+
+interface IEventObserverInitInAppsModule {
+  event: TEvents.INIT_IN_APPS_MODULE;
+  handler: (options: { eventId: string }) => void;
 }
 
 export type TEventObserver =
@@ -65,4 +72,4 @@ export type TEventObserver =
   | IEventObserverCheckIsManualUnsubscribe
   | IEventObserverShowNotificationPermissionDialog
   | IEventObserverHideNotificationPermissionDialog
-
+  | IEventObserverInitInAppsModule

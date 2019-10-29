@@ -81,3 +81,5 @@ export const MANUAL_UNSUBSCRIBE = 'MANUAL_UNSUBSCRIBE';
 // Page visited
 export const PAGE_VISITED_URL = 'PAGE_VISITED_URL';
 export const CHANNELS = 'CHANNELS';
+
+export const SUBSCRIPTION_SEGMENT_EVENT = 'Subscription Segments';

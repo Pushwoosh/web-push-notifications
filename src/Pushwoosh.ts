@@ -1,73 +1,64 @@
 import {sendFatalLogToRemoteServer} from './helpers/logger';
 import EventEmitter from './EventEmitter';
 import API from './API';
-import {
-  getVersion,
-  patchPromise,
-  clearLocationHash,
-  validateParams
-} from './functions';
+import {clearLocationHash, getVersion, patchPromise, validateParams} from './functions';
 import {PlatformChecker} from './modules/PlatformChecker';
 
 import {
+  CHANNELS,
   DEFAULT_SERVICE_WORKER_URL,
+  DEVICE_REGISTRATION_STATUS_REGISTERED,
+  DEVICE_REGISTRATION_STATUS_UNREGISTERED,
+  EVENT_GDPR_CONSENT,
+  EVENT_GDPR_DELETE,
+  EVENT_ON_CHANGE_COMMUNICATION_ENABLED,
+  EVENT_ON_HIDE_NOTIFICATION_PERMISSION_DIALOG,
+  EVENT_ON_NOTIFICATION_CLICK,
+  EVENT_ON_NOTIFICATION_CLOSE,
+  EVENT_ON_PERMISSION_DENIED,
+  EVENT_ON_PERMISSION_GRANTED,
+  EVENT_ON_PERMISSION_PROMPT,
+  EVENT_ON_PUSH_DELIVERY,
+  EVENT_ON_PUT_NEW_MESSAGE_TO_INBOX_STORE,
+  EVENT_ON_READY,
+  EVENT_ON_REGISTER,
+  EVENT_ON_SHOW_NOTIFICATION_PERMISSION_DIALOG,
+  EVENT_ON_SUBSCRIBE,
+  EVENT_ON_SW_INIT_ERROR,
+  EVENT_ON_UNSUBSCRIBE,
+  EVENT_ON_UPDATE_INBOX_MESSAGES,
   KEY_API_PARAMS,
+  KEY_COMMUNICATION_ENABLED,
+  KEY_DELAYED_EVENT,
+  KEY_DEVICE_DATA_REMOVED,
+  KEY_DEVICE_REGISTRATION_STATUS,
   KEY_INIT_PARAMS,
-  KEY_SDK_VERSION,
   KEY_LAST_OPEN_MESSAGE,
   KEY_LAST_SENT_APP_OPEN,
-  PERIOD_SEND_APP_OPEN,
-  KEY_DEVICE_REGISTRATION_STATUS,
   KEY_SAFARI_PREVIOUS_PERMISSION,
-  MANUAL_SET_LOGGER_LEVEL,
-  KEY_COMMUNICATION_ENABLED,
-  KEY_DEVICE_DATA_REMOVED,
+  KEY_SDK_VERSION,
   KEY_UNSUBSCRIBED_DUE_TO_UNDEFINED_KEYS,
-
+  MANUAL_SET_LOGGER_LEVEL,
+  MANUAL_UNSUBSCRIBE,
+  PAGE_VISITED_URL,
+  PERIOD_SEND_APP_OPEN,
   PERMISSION_DENIED,
   PERMISSION_GRANTED,
   PERMISSION_PROMPT,
-
-  KEY_DELAYED_EVENT,
-
-  EVENT_GDPR_CONSENT,
-  EVENT_GDPR_DELETE,
-
-  DEVICE_REGISTRATION_STATUS_REGISTERED,
-  DEVICE_REGISTRATION_STATUS_UNREGISTERED,
-
-  EVENT_ON_READY,
-  EVENT_ON_SUBSCRIBE,
-  EVENT_ON_UNSUBSCRIBE,
-  EVENT_ON_REGISTER,
-  EVENT_ON_PERMISSION_PROMPT,
-  EVENT_ON_PERMISSION_DENIED,
-  EVENT_ON_PERMISSION_GRANTED,
-  EVENT_ON_SW_INIT_ERROR,
-  EVENT_ON_PUSH_DELIVERY,
-  EVENT_ON_NOTIFICATION_CLICK,
-  EVENT_ON_NOTIFICATION_CLOSE,
-  EVENT_ON_CHANGE_COMMUNICATION_ENABLED,
-  EVENT_ON_PUT_NEW_MESSAGE_TO_INBOX_STORE,
-  EVENT_ON_UPDATE_INBOX_MESSAGES,
-  MANUAL_UNSUBSCRIBE,
-  EVENT_ON_SHOW_NOTIFICATION_PERMISSION_DIALOG,
-  EVENT_ON_HIDE_NOTIFICATION_PERMISSION_DIALOG,
-  PAGE_VISITED_URL,
-  CHANNELS
+  SUBSCRIPTION_SEGMENT_EVENT
 } from './constants';
 import Logger from './logger'
 import WorkerDriver from './drivers/worker';
 import SafariDriver from './drivers/safari';
 import FacebookModule from './modules/FacebookModule';
-import { InApps } from './modules/InApps/InApps';
+import {InApps} from './modules/InApps/InApps';
 import {keyValue, log as logStorage, message as messageStorage} from './storage';
 
 import Params from './modules/data/Params';
 import InboxMessagesModel from './models/InboxMessages';
 import InboxMessagesPublic from './modules/InboxMessagesPublic';
-import { EventBus, TEvents } from './modules/EventBus/EventBus';
-import { CommandBus, TCommands } from './modules/CommandBus/CommandBus';
+import {EventBus, TEvents} from './modules/EventBus/EventBus';
+import {CommandBus, TCommands} from './modules/CommandBus/CommandBus';
 
 
 type ChainFunction = (param: any) => Promise<any> | any;
@@ -427,6 +418,15 @@ class Pushwoosh {
         pushwooshApiUrl: params.pushwooshApiUrl,
         webSitePushID: params.safariWebsitePushID,
       });
+
+      this.eventBus.on(TEvents.HIDE_NOTIFICATION_PERMISSION_DIALOG, async () => {
+        const isEnableChannels = await this.isEnableChannels();
+
+        if (isEnableChannels) {
+          await this.api.postEvent(SUBSCRIPTION_SEGMENT_EVENT, {});
+        }
+      });
+
       this._ee.on(EVENT_ON_READY, () => {
         const hashReg: any = /#P(.*)/;
         const hash = decodeURIComponent(document.location.hash);
@@ -740,8 +740,7 @@ class Pushwoosh {
     const val = await keyValue.get(KEY_LAST_SENT_APP_OPEN);
     const lastSentTime = isNaN(val) ? 0 : Number(val);
 
-    // Safari device not registered
-    if (this.platformChecker.isSafari && !apiParams.hwid) {
+    if (!apiParams.hwid) {
       return;
     }
 
@@ -836,7 +835,7 @@ class Pushwoosh {
 
 
     if (!this.platformChecker.isSafari || (this.platformChecker.isSafari && apiParams.hwid)) {
-      // await this.inboxModel.updateMessages(this._ee);
+      await this.inboxModel.updateMessages(this._ee);
     }
 
     if (this.driver.isNeedUnsubscribe) {
@@ -877,7 +876,15 @@ class Pushwoosh {
         localStorage.removeItem(KEY_DEVICE_REGISTRATION_STATUS);
 
         if (autoSubscribe && !this.platformChecker.isSafari) {
-          await this.subscribe();
+          const isEnableChannels = await this.isEnableChannels();
+
+          if (isEnableChannels) {
+            this.eventBus.on(TEvents.INIT_IN_APPS_MODULE, () => {
+              this.api.postEvent(SUBSCRIPTION_SEGMENT_EVENT, {});
+            });
+          } else {
+            await this.subscribe();
+          }
         } else {
           this._ee.emit(EVENT_ON_PERMISSION_PROMPT);
         }
@@ -1006,6 +1013,12 @@ class Pushwoosh {
         workerVersion: data['WORKER_VERSION']
       });
     }
+  }
+
+  public async isEnableChannels (): Promise<boolean> {
+    const channels: unknown = await keyValue.get(CHANNELS);
+
+    return Array.isArray(channels) && !!channels.length;
   }
 }
 
