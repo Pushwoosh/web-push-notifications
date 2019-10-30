@@ -5,9 +5,25 @@ import {
   getFcmKey,
   getPublicKey,
   getPushToken,
-  urlB64ToUint8Array
 } from '../functions'
 import platformChecker from '../modules/PlatformChecker';
+
+export function urlB64ToUint8Array(base64String: string) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding)
+    .replace(/\-/g, '+')
+    .replace(/_/g, '/');
+
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+
+  return outputArray;
+}
+
 
 import {
   DEFAULT_SERVICE_WORKER_URL,
@@ -120,14 +136,23 @@ class WorkerDriver implements IPWDriver {
       return;
     }
 
-    const options: any = {userVisibleOnly: true};
-    if (<TPlatformChrome>platformChecker.platform == 11 && this.params.applicationServerPublicKey) {
-      options.applicationServerKey = urlB64ToUint8Array(this.params.applicationServerPublicKey);
+    const options: any = { userVisibleOnly: true };
+
+    const VAPIDKey = await keyValue.get('VAPIDKey');
+    const needAddVAPIDKeyToSubscribeOptions = platformChecker.platform  === 11 && VAPIDKey;
+
+    if (needAddVAPIDKeyToSubscribeOptions) {
+      options.applicationServerKey = urlB64ToUint8Array(VAPIDKey);
     }
+
     const subscription = await registration.pushManager.subscribe(options);
+
     await keyValue.set(MANUAL_UNSUBSCRIBE, 0);
+
     this.emit(EVENT_ON_PERMISSION_GRANTED);
+
     await this.getFCMToken();
+
     return subscription;
   }
 
@@ -163,6 +188,7 @@ class WorkerDriver implements IPWDriver {
         throw new Error('No service worker registration');
       }
     }
+
     serviceWorkerRegistration = await navigator.serviceWorker.ready;
 
     const subscription = await serviceWorkerRegistration.pushManager.getSubscription();
@@ -202,11 +228,25 @@ class WorkerDriver implements IPWDriver {
       return;
     }
 
+    let p256dh = getPublicKey(subscription);
+    let auth = getAuthToken(subscription);
+
+    const VAPIDKey = await keyValue.get('VAPIDKey');
+
+    if (VAPIDKey) {
+      const _p256dn = (subscription as any).getKey('p256dh');
+      const _auth = (subscription as any).getKey('auth');
+
+      p256dh = btoa(String.fromCharCode.apply(String, new Uint8Array(_p256dn)));
+      auth = btoa(String.fromCharCode.apply(String, new Uint8Array(_auth)));
+    }
+
     const body = {
       endpoint: subscription ? subscription.endpoint : '',
-      encryption_key: getPublicKey(subscription), //p256
-      encryption_auth: getAuthToken(subscription), //auth
+      encryption_key: p256dh, //p256
+      encryption_auth: auth, //auth
       authorized_entity: senderID,
+      application_pub_key: VAPIDKey ? VAPIDKey : undefined
     };
     await fetch(fcmURL, {
       method: 'post',

@@ -811,14 +811,11 @@ class Pushwoosh {
     await this.initApi();
     await this.open();
     const apiParams = await this.api.getParams();
-    const {
-      hwid,
-      applicationCode
-    } = apiParams;
+    const { hwid } = apiParams;
 
     await this.healthCheck(hwid);
 
-    const features = await this.onGetConfig(['page_visit', 'channels']);
+    const features = await this.onGetConfig(['page_visit', 'channels', 'vapid_key']);
 
     if (features) {
       // page visited feature
@@ -830,6 +827,11 @@ class Pushwoosh {
       // channels
       if (features.channels) {
         await keyValue.set(CHANNELS, features.channels);
+      }
+
+      // vapid key
+      if (features.vapid_key) {
+        await keyValue.set('VAPIDKey', features.vapid_key);
       }
     }
 
