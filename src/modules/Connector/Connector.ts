@@ -1,6 +1,7 @@
 import * as uuid from 'uuid/v4';
 
 import { keyValue } from '../../storage';
+import { CHANNELS } from '../../constants';
 
 import { CommandBus, TCommands } from '../CommandBus/CommandBus';
 import { EventBus, TEvents } from '../EventBus/EventBus';
@@ -96,5 +97,9 @@ export class Connector {
 
       this.command.emit(TCommands.CHECK_IS_MANUAL_UNSUBSCRIBED, uid);
     });
+  }
+
+  public getChannels(): Promise<ISubscriptionSegment[] | undefined> {
+    return keyValue.get(CHANNELS);
   }
 }

@@ -284,13 +284,6 @@ class SubscribeWidget {
     // Events
     if (this.isEnableChannels) {
       this.widget.addEventListener('click', () => {
-        // if current platform safari - need ask subscribe to send push notifications
-        if (<TPlatformSafari>platformChecker.platform === 10) {
-          this.pw.subscribe();
-
-          return;
-        }
-
         // need show subscription segment in-app
         this.pw.push((api) => {
           api.postEvent(SUBSCRIPTION_SEGMENT_EVENT, {});

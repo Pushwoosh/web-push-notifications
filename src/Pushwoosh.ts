@@ -3,6 +3,7 @@ import EventEmitter from './EventEmitter';
 import API from './API';
 import {clearLocationHash, getVersion, patchPromise, validateParams} from './functions';
 import {PlatformChecker} from './modules/PlatformChecker';
+import {SafariSubscriptionSegments} from './features/SafariSubscriptionSegments/SafariSubscriptionSegments';
 
 import {
   CHANNELS,
@@ -419,14 +420,6 @@ class Pushwoosh {
         webSitePushID: params.safariWebsitePushID,
       });
 
-      this.eventBus.on(TEvents.HIDE_NOTIFICATION_PERMISSION_DIALOG, async () => {
-        const isEnableChannels = await this.isEnableChannels();
-
-        if (isEnableChannels) {
-          await this.api.postEvent(SUBSCRIPTION_SEGMENT_EVENT, {});
-        }
-      });
-
       this._ee.on(EVENT_ON_READY, () => {
         const hashReg: any = /#P(.*)/;
         const hash = decodeURIComponent(document.location.hash);
@@ -513,13 +506,6 @@ class Pushwoosh {
     try {
 
       const subscribed = await this.driver.isSubscribed();
-
-      const isManuallyUnsubscribed = await keyValue.get(MANUAL_UNSUBSCRIBE);
-      const isAutoSubscribe = this._initParams.autoSubscribe;
-
-      if (isManuallyUnsubscribed && isAutoSubscribe) {
-        return;
-      }
 
       await this.driver.askSubscribe(this.isDeviceRegistered());
 
@@ -877,15 +863,19 @@ class Pushwoosh {
         }
         localStorage.removeItem(KEY_DEVICE_REGISTRATION_STATUS);
 
-        if (autoSubscribe && !this.platformChecker.isSafari) {
+        if (autoSubscribe) {
           const isEnableChannels = await this.isEnableChannels();
 
-          if (isEnableChannels) {
-            this.eventBus.on(TEvents.INIT_IN_APPS_MODULE, () => {
-              this.api.postEvent(SUBSCRIPTION_SEGMENT_EVENT, {});
-            });
+          if (this.platformChecker.isSafari) {
+            new SafariSubscriptionSegments(this).init();
           } else {
-            await this.subscribe();
+            if (isEnableChannels) {
+              this.eventBus.on(TEvents.INIT_IN_APPS_MODULE, () => {
+                this.api.postEvent(SUBSCRIPTION_SEGMENT_EVENT, {});
+              });
+            } else {
+              await this.subscribe();
+            }
           }
         } else {
           this._ee.emit(EVENT_ON_PERMISSION_PROMPT);

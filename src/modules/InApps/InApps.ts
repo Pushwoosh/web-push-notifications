@@ -76,6 +76,8 @@ export class InApps {
 
     this.isLoadedInAppsList = true;
 
+    await keyValue.set('inApps', inApps);
+
     this.inApps = inApps;
   }
 

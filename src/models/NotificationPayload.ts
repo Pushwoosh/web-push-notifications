@@ -173,13 +173,12 @@ export default class NotificationPayload {
       return button;
     });
 
-    const requireInteraction = this.duration === 0 || this.duration >= MIN_NOTIFICATION_DURATION;
     return {
       renotify: true,
+      requireInteraction: false,
       ...this.rootParams,
       body: this.body,
       icon,
-      requireInteraction,
       tag: JSON.stringify({
         url: this.link,
         messageHash: this.messageHash,
