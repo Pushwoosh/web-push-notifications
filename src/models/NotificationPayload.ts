@@ -173,9 +173,10 @@ export default class NotificationPayload {
       return button;
     });
 
+    const requireInteraction = this.duration === 0 || this.duration >= MIN_NOTIFICATION_DURATION;
     return {
       renotify: true,
-      requireInteraction: false,
+      requireInteraction,
       ...this.rootParams,
       body: this.body,
       icon,
