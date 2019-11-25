@@ -101,11 +101,8 @@ export class SafariSubscriptionsSegmentsPopup {
 
   private createHTMLControls(): string {
     return `<div class="pushwoosh-safari-subscription-segments__controls">
-      <button id="pushwoosh-safari-subscription-segments-cancel">
-        ${this.dynamicContent.cancel}
-      </button>
       <button id="pushwoosh-safari-subscription-segments-accept">
-        ${this.dynamicContent.accept}
+        ${this.dynamicContent.controlsButtonText}
       </button>
     </div>`;
   }

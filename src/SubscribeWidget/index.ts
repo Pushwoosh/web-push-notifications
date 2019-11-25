@@ -48,6 +48,7 @@ class SubscribeWidget {
     this.onSubscribeEvent = this.onSubscribeEvent.bind(this);
     this.onPermissionDeniedEvent = this.onPermissionDeniedEvent.bind(this);
     this.clickOutOfPopover = this.clickOutOfPopover.bind(this);
+    this.onClickBellIfEnableChannels = this.onClickBellIfEnableChannels.bind(this);
 
     // Config
     const tooltipText = Object.assign(SUBSCRIBE_WIDGET_DEFAULT_CONFIG.tooltipText, this.pw.subscribeWidgetConfig.tooltipText);
@@ -281,21 +282,28 @@ class SubscribeWidget {
 
     document.body.appendChild(this.widget);
 
+    this.pw.push(['onSubscribe', this.onSubscribeEvent]);
+    this.pw.push(['onPermissionDenied', this.onPermissionDeniedEvent]);
+
     // Events
     if (this.isEnableChannels) {
-      this.widget.addEventListener('click', () => {
-        // need show subscription segment in-app
-        this.pw.push((api) => {
-          api.postEvent(SUBSCRIPTION_SEGMENT_EVENT, {});
-        });
-      });
+      this.widget.addEventListener('click', this.onClickBellIfEnableChannels);
 
       return;
     }
 
+    this.addEventListenersIfDisabledChannels();
+  }
+
+  onClickBellIfEnableChannels() {
+    // need show subscription segment in-app
+    this.pw.push((api) => {
+      api.postEvent(SUBSCRIPTION_SEGMENT_EVENT, {});
+    });
+  }
+
+  async addEventListenersIfDisabledChannels() {
     this.widget.addEventListener('click', this.clickBell);
-    this.pw.push(['onSubscribe', this.onSubscribeEvent]);
-    this.pw.push(['onPermissionDenied', this.onPermissionDeniedEvent]);
     window.addEventListener('click', this.clickOutOfPopover);
     await this.triggerPwEvent(EVENT_SHOW_SUBSCRIBE_BUTTON, KEY_SHOW_SUBSCRIBE_WIDGET);
   }
@@ -355,6 +363,17 @@ class SubscribeWidget {
    * @returns {Promise<void>}
    */
   private async onPermissionDeniedEvent() {
+    const isEnableChannels = await this.pw.isEnableChannels();
+
+    // if enabled channels -> hide bell
+    if (isEnableChannels) {
+      this.widget.removeEventListener('click', this.onClickBellIfEnableChannels);
+
+      this.addEventListenersIfDisabledChannels();
+
+      return;
+    }
+
     const tooltipContent = this.tooltip.querySelector('div');
     if (tooltipContent === null) return;
     tooltipContent.innerText = await this.tooltipTextFactory();
