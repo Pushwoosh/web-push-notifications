@@ -79,9 +79,10 @@ class SafariDriver implements IPWDriver {
     const {
       applicationCode = '',
     } = this.params || {};
+
     const {deviceToken = ''} = this.getPermissionObject() || {};
-    const hwid = generateHwid(applicationCode, '');
     const pushToken = deviceToken && deviceToken.toLowerCase() || '';
+    const hwid = pushToken || generateHwid(applicationCode, '');
 
     await this.paramsModule.setHwid(hwid);
 

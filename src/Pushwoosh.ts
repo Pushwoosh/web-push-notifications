@@ -867,7 +867,9 @@ class Pushwoosh {
           const isEnableChannels = await this.isEnableChannels();
 
           if (this.platformChecker.isSafari) {
-            new SafariSubscriptionSegments(this).init();
+            this.eventBus.on(TEvents.INIT_IN_APPS_MODULE, () => {
+              new SafariSubscriptionSegments(this).init();
+            });
           } else {
             if (isEnableChannels) {
               this.eventBus.on(TEvents.INIT_IN_APPS_MODULE, () => {
