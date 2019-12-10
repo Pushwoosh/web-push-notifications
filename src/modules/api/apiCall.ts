@@ -9,6 +9,12 @@ export default function doApiCall<M, Req, Res>(methodName: M, request: Req, cust
     const params = new Params();
     const pushwooshUrl = await params.apiUrl;
 
+    // user id must be string value
+    if ('userId' in request) {
+      // @ts-ignore
+      request.userId = `${request.userId}`;
+    }
+
     try {
       const url = customUrl || `${pushwooshUrl}${methodName}`;
 

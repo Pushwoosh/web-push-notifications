@@ -346,15 +346,24 @@ class SubscribeWidget {
    * @returns {Promise<void>}
    */
   private async onSubscribeEvent() {
+    const isEnableChannels = this.pw.isEnableChannels();
     const tooltipContent = this.tooltip.querySelector('div');
-    if (tooltipContent === null) return;
-    tooltipContent.innerText = this.config.tooltipText.successSubscribe;
 
+    if (tooltipContent === null) {
+      return;
+    }
+
+    tooltipContent.innerText = this.config.tooltipText.successSubscribe;
     this.tooltip.classList.add('pushwoosh-subscribe-widget__tooltip__visible');
+
     setTimeout(async () => {
       this.tooltip.classList.remove('pushwoosh-subscribe-widget__tooltip__visible');
       tooltipContent.innerText = await this.tooltipTextFactory();
-      this.widget.classList.add('pushwoosh-subscribe-widget__subscribed');
+
+      // if not enabled subscription segmentation need hide bell
+      if (!isEnableChannels) {
+        this.widget.classList.add('pushwoosh-subscribe-widget__subscribed');
+      }
     }, 2000);
   }
 

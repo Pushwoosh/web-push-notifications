@@ -304,10 +304,13 @@ class Pushwoosh {
    * @param {IInitParams} params
    * @return {Promise<void>}
    */
-  private initInApp(params: IInitParams) {
+  private async initInApp(params: IInitParams) {
+    const isEnabledByConfig = await keyValue.get('isEnableWebInApps');
+    const isEnabledByInitParams = params.inApps && params.inApps.enable;
+
     const inAppInitParams = {
-      enable: false,
-      ...params.inApps
+      ...params.inApps,
+      enable: isEnabledByConfig || isEnabledByInitParams
     };
 
     if (inAppInitParams.enable) {
@@ -801,7 +804,7 @@ class Pushwoosh {
 
     await this.healthCheck(hwid);
 
-    const features = await this.onGetConfig(['page_visit', 'channels', 'vapid_key']);
+    const features = await this.onGetConfig(['page_visit', 'channels', 'vapid_key', 'web_in_apps']);
 
     if (features) {
       // page visited feature
@@ -818,6 +821,11 @@ class Pushwoosh {
       // vapid key
       if (features.vapid_key) {
         await keyValue.set('VAPIDKey', features.vapid_key);
+      }
+
+      // init web in apps
+      if (features.web_in_apps) {
+        await keyValue.set('isEnableWebInApps', features.web_in_apps.enabled);
       }
     }
 
