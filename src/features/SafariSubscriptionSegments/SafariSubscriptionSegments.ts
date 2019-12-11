@@ -113,8 +113,13 @@ export class SafariSubscriptionSegments {
       'params.hwid': hwid,
       'params.userId': userId,
       'params.apiUrl': apiUrl,
-
+      'KEY_SDK_VERSION': version
     } = await keyValue.getAll();
+
+    const date = new Date();
+    const time = date.getTime();
+    const timestampUTC = Math.floor(time / 1000);
+    const timestampCurrent = timestampUTC - (date.getTimezoneOffset() / 60 * 3600);
 
     const response = await fetch(apiUrl + 'postEvent', {
       method: 'post',
@@ -124,12 +129,14 @@ export class SafariSubscriptionSegments {
       body: JSON.stringify({
         request: {
           event: 'Subscription Segments',
-          attributes: {
-
-          },
+          attributes: {},
           application,
           hwid,
-          userId: userId || hwid
+          userId: userId || hwid,
+          timestampUTC,
+          timestampCurrent,
+          device_type: 10,
+          v: version
         }
       })
     });
