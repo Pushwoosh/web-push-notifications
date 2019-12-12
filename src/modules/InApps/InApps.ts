@@ -162,7 +162,7 @@ export class InApps {
           });
         break;
       case 'openLink':
-        window.open(message.href, '_blank');
+        window.open(message.options.href, '_blank');
         break;
       case 'closeInApp':
         this.commandBus.emit(TCommands.CLOSE_IN_APP);
