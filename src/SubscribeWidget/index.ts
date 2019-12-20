@@ -46,6 +46,7 @@ class SubscribeWidget {
     // Bindings
     this.clickBell = this.clickBell.bind(this);
     this.onSubscribeEvent = this.onSubscribeEvent.bind(this);
+    this.onUnsubscribeEvent = this.onUnsubscribeEvent.bind(this);
     this.onPermissionDeniedEvent = this.onPermissionDeniedEvent.bind(this);
     this.clickOutOfPopover = this.clickOutOfPopover.bind(this);
     this.onClickBellIfEnableChannels = this.onClickBellIfEnableChannels.bind(this);
@@ -283,6 +284,7 @@ class SubscribeWidget {
     document.body.appendChild(this.widget);
 
     this.pw.push(['onSubscribe', this.onSubscribeEvent]);
+    this.pw.push(['onUnsubscribe', this.onUnsubscribeEvent]);
     this.pw.push(['onPermissionDenied', this.onPermissionDeniedEvent]);
 
     // Events
@@ -374,13 +376,11 @@ class SubscribeWidget {
   private async onPermissionDeniedEvent() {
     const isEnableChannels = await this.pw.isEnableChannels();
 
-    // if enabled channels -> hide bell
+    // if enabled channels -> show image for unblock permission
     if (isEnableChannels) {
       this.widget.removeEventListener('click', this.onClickBellIfEnableChannels);
 
       this.addEventListenersIfDisabledChannels();
-
-      return;
     }
 
     const tooltipContent = this.tooltip.querySelector('div');
@@ -418,6 +418,16 @@ class SubscribeWidget {
       event_id: event,
       application: applicationCode
     }, widget);
+  }
+
+  private async onUnsubscribeEvent() {
+    const tooltipContent = this.tooltip.querySelector('div');
+
+    if (tooltipContent === null) {
+      return;
+    }
+
+    tooltipContent.innerText = await this.tooltipTextFactory();
   }
 }
 

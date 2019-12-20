@@ -218,10 +218,7 @@ class Pushwoosh {
           if (this.platformChecker.isAvailableNotifications) {
             try {
               this.initFacebook(cmdFunc);
-              await this.init(cmdFunc)
-                .then(() => {
-                  return this.initInApp(cmdFunc);
-                });
+              await this.init(cmdFunc);
             } catch (e) {
               Logger.write('info', 'Pushwoosh init failed', e)
             }
@@ -316,6 +313,16 @@ class Pushwoosh {
     if (inAppInitParams.enable) {
       try {
         this.InApps = new InApps(inAppInitParams, this.api);
+
+        await this.InApps.init()
+          .then(() => {
+            Logger.write('info', 'InApps module has been initialized');
+
+            this.eventBus.emit(TEvents.INIT_IN_APPS_MODULE);
+          })
+          .catch((error) => {
+            Logger.write('error', 'InApps module initialization has been failed', error);
+          });
       } catch (error) {
         Logger.write('error', error,'InApp module initialization has been failed')
       }
@@ -439,7 +446,7 @@ class Pushwoosh {
 
     // Default actions on init
     try {
-      await this.defaultProcess();
+      await this.defaultProcess(initParams);
       if ('serviceWorker' in navigator) {
         // @ts-ignore
         navigator.serviceWorker.onmessage = this.onServiceWorkerMessage;
@@ -793,7 +800,7 @@ class Pushwoosh {
    * Emit delayed events.
    * @returns {Promise<void>}
    */
-  private async defaultProcess() {
+  private async defaultProcess(initParams: IInitParams) {
     const {autoSubscribe = false} = this.params || {};
     this.permissionOnInit = await this.driver.getPermission();
 
@@ -926,6 +933,8 @@ class Pushwoosh {
     if (force) {
       await this.open(true);
     }
+
+    await this.initInApp(initParams);
 
     this._ee.emit(EVENT_ON_READY);
     this.ready = true;

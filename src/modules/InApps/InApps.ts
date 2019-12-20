@@ -37,19 +37,9 @@ export class InApps {
     this.connector = new Connector();
     this.commandBus = CommandBus.getInstance();
     this.eventBus = EventBus.getInstance();
-
-    this.init()
-      .then(() => {
-        Logger.write('info', 'InApps module has been initialized');
-
-        this.eventBus.emit(TEvents.INIT_IN_APPS_MODULE);
-      })
-      .catch((error) => {
-        Logger.write('error', 'InApps module initialization has been failed', error);
-      });
   }
 
-  private async init(): Promise<void> {
+  public async init(): Promise<void> {
     this.subscribeToReceiveMessageFromIFrame();
 
     // when we send postEvent in response

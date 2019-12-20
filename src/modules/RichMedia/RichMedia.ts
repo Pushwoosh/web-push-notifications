@@ -35,6 +35,16 @@ export class RichMedia {
     // get content from index.html file
     let content = await jszip.file('index.html').async('text');
 
+    // need update dynamic content first because search patterns in external resources
+    // can't work with dynamic content.
+    // then update external resources, but in external resources may be dynamic content -> update dynamic content
+    // flow:
+    // update dynamic content -> update external resources -> update dynamic content
+
+
+    // update dynamic content
+    content = new DynamicContent(content, values, language).getReplacedContent();
+
     // load external resources
     content = await new ExternalResources(content, jszip).getReplacedContent();
 
