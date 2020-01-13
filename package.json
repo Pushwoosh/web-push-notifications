@@ -1,6 +1,6 @@
 {
   "name": "web-push-notifications",
-  "version": "3.13.3",
+  "version": "3.13.4",
   "description": "Pushwoosh web push notifications",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -51,6 +51,7 @@
     "copy-webpack-plugin": "5.0.4",
     "cross-env": "5.1.1",
     "css-loader": "0.28.7",
+    "detect-browser": "4.8.0",
     "fake-indexeddb": "2.0.4",
     "generate-json-webpack-plugin": "0.2.2",
     "html-webpack-plugin": "3.2.0",
