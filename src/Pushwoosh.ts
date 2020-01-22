@@ -28,6 +28,7 @@ import {
   EVENT_ON_SW_INIT_ERROR,
   EVENT_ON_UNSUBSCRIBE,
   EVENT_ON_UPDATE_INBOX_MESSAGES,
+  EVENT_PW_SITE_OPENED,
   KEY_API_PARAMS,
   KEY_COMMUNICATION_ENABLED,
   KEY_DELAYED_EVENT,
@@ -811,7 +812,7 @@ class Pushwoosh {
 
     await this.healthCheck(hwid);
 
-    const features = await this.onGetConfig(['page_visit', 'channels', 'vapid_key', 'web_in_apps']);
+    const features = await this.onGetConfig(['page_visit', 'channels', 'vapid_key', 'web_in_apps', 'events']);
 
     if (features) {
       // page visited feature
@@ -819,7 +820,17 @@ class Pushwoosh {
         await keyValue.set(PAGE_VISITED_URL, features.page_visit.entrypoint);
         this.sendStatisticsVisitedPage();
       }
-
+    
+      // send default event, page visited
+      if (features.events && features.events.length) {
+        const isPageVisitedEvent = features.events.some(
+          ((event: string): boolean => event  === EVENT_PW_SITE_OPENED)
+        );
+        if (isPageVisitedEvent) {
+          this.sendPostEventVisitedPage();
+        }
+      }
+  
       // channels
       if (features.channels) {
         await keyValue.set(CHANNELS, features.channels);
@@ -1005,6 +1016,19 @@ class Pushwoosh {
       title,
       url_path: `${origin}${pathname}`,
       url: href
+    });
+  }
+
+  public async sendPostEventVisitedPage() {
+    const {
+      document: { title },
+      location: { href }
+    } = window;
+
+    this.api.postEvent(EVENT_PW_SITE_OPENED, {
+      url: href,
+      title: title,
+      device_type: this.platformChecker.platform
     });
   }
 

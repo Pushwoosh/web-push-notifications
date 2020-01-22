@@ -74,6 +74,7 @@ export const EVENT_SHOW_SUBSCRIBE_BUTTON = 'showSubscribeButton';
 export const EVENT_CLICK_SUBSCRIBE_BUTTON = 'clickSubscribeButton';
 export const EVENT_GDPR_CONSENT = 'GDPRConsent';
 export const EVENT_GDPR_DELETE = 'GDPRDelete';
+export const EVENT_PW_SITE_OPENED = 'PW_SiteOpened'; // for default events
 
 // Manual unsubscription
 export const MANUAL_UNSUBSCRIBE = 'MANUAL_UNSUBSCRIBE';
