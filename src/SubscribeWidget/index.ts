@@ -298,8 +298,16 @@ class SubscribeWidget {
   }
 
   onClickBellIfEnableChannels() {
-    // need show subscription segment in-app
     this.pw.push((api) => {
+      // if permission default
+      // show subscription segment widget
+      if (this.pw.driver.checkIsPermissionDefault()) {
+        this.pw.subscriptionSegmentWidget.showPopup();
+
+        return;
+      }
+
+      // else need show subscription segment in-app for work width subscription segments
       api.postEvent(SUBSCRIPTION_SEGMENT_EVENT, {});
     });
   }
@@ -322,25 +330,26 @@ class SubscribeWidget {
    * @returns {Promise<void>}
    */
   private async clickBell() {
-    const permission = await this.pw.driver.getPermission();
-    const isManuallyUnsubscribed = await keyValue.get(MANUAL_UNSUBSCRIBE);
-    await this.triggerPwEvent(EVENT_CLICK_SUBSCRIBE_BUTTON, KEY_CLICK_SUBSCRIBE_WIDGET);
+    const permission = this.pw.driver.getPermission();
+
     switch (permission) {
       case PERMISSION_GRANTED:
-        if (isManuallyUnsubscribed) {
-          this.pw.forceSubscribe();
-        }
+        await this.pw.subscribe();
 
-        return;
+        break;
       case PERMISSION_PROMPT:
-        this.pw.subscribe();
-        return;
+        await this.pw.subscribe();
+
+        break;
       case PERMISSION_DENIED:
         this.toggleHelpPopover();
-        return;
+
+        break;
       default:
         console.warn('Unknown browser notification permission')
     }
+
+    await this.triggerPwEvent(EVENT_CLICK_SUBSCRIBE_BUTTON, KEY_CLICK_SUBSCRIBE_WIDGET);
   }
 
   /**
@@ -409,15 +418,9 @@ class SubscribeWidget {
    * @returns {Promise<void>}
    */
   async triggerPwEvent(event: string, widget: string) {
-    if (this.pw.api === undefined) {
-      return;
-    }
+    // no more aggregate statistics
 
-    const {applicationCode} = await this.pw.getParams();
-    this.pw.api.triggerEvent({
-      event_id: event,
-      application: applicationCode
-    }, widget);
+    return;
   }
 
   private async onUnsubscribeEvent() {

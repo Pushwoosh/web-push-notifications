@@ -1,6 +1,6 @@
 import { detect, BrowserInfo } from 'detect-browser';
 
-import API from '../../API';
+import { Api } from '../Api/Api';
 import { getZip } from '../../helpers/getZip';
 import { DynamicContent } from '../DynamicContent/DynamicContent';
 import { RichMediaExpander } from '../RichMediaExpander/RichMediaExpander';
@@ -8,18 +8,18 @@ import { ExternalResources } from '../ExternalResources/ExternalResources';
 
 
 export class RichMedia {
-  private readonly PW: API;
+  private readonly api: Api;
   private readonly url: string;
   private readonly expanders: string[];
 
-  constructor(url: string, PW: API, expanders: string[]) {
+  constructor(url: string, api: Api, expanders: string[]) {
     this.url = url;
-    this.PW = PW;
+    this.api = api;
     this.expanders = expanders;
   }
 
   public async getContent() {
-    const { result: { Language: language } } = await this.PW.getTags();
+    const { result: { Language: language } } = await this.api.getTags();
     const jszip = await getZip(this.url);
 
     if (!jszip.files['index.html']) {
