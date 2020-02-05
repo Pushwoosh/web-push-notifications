@@ -1,4 +1,4 @@
-export const DEFAULT_SERVICE_WORKER_URL = 'pushwoosh-service-worker.js';
+export const DEFAULT_SERVICE_WORKER_URL = '/pushwoosh-service-worker.js';
 export const DEFAULT_API_URL = 'https://cp.pushwoosh.com/json/1.3/';
 
 // @TODO: this ID should belong to PUSHWOOSH_APP (not abandoned cart)
