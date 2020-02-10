@@ -20,11 +20,14 @@ export const getStyles = (namespace: string): HTMLStyleElement => {
     .pushwoosh-${namespace}-popup__wrapper {
       width: 100%;
       height: 100%;
-      text-align: center;
       background: rgba(0, 0, 0, .2);
     }
     
-    .pushwoosh-${namespace}-popup__wrapper:after {
+    .pushwoosh-${namespace}-popup_position_center .pushwoosh-${namespace}-popup__wrapper {
+      text-align: center;
+    }
+    
+    .pushwoosh-${namespace}-popup_position_center .pushwoosh-${namespace}-popup__wrapper:after {
       content: '';
       display: inline-block;
       width: 1px;
@@ -33,10 +36,14 @@ export const getStyles = (namespace: string): HTMLStyleElement => {
     }
     
     .pushwoosh-${namespace}-popup__inner {
-      display: inline-block;
       min-width: 320px;
       max-width: 380px;
       width: 100%;
+      margin: 0 auto;
+    }
+    
+    .pushwoosh-${namespace}-popup_position_center .pushwoosh-${namespace}-popup__inner {
+      display: inline-block;
       vertical-align: middle;
     }
     

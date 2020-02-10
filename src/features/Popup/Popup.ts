@@ -1,8 +1,10 @@
 import { getStyles } from './Popup.helpers';
 
+import { IPopupConfig } from './Popup.types';
 
 export class Popup {
   private readonly namespace: string;
+  private readonly config: IPopupConfig;
 
   private readonly rootElement: HTMLElement;
   private readonly wrapperElement: HTMLElement;
@@ -10,8 +12,12 @@ export class Popup {
   private readonly bodyElement: HTMLElement;
   private readonly closeElement: HTMLElement;
 
-  constructor(namespace: string) {
+  constructor(namespace: string, config?: Partial<IPopupConfig>) {
     this.namespace = namespace;
+    this.config = {
+      position: 'center',
+      ...config
+    };
 
     // get root element
     const root = this.getRootElement();
@@ -33,6 +39,8 @@ export class Popup {
       // append styles to head
       document.head.appendChild(styles);
     }
+
+    this.rootElement.classList.add(`pushwoosh-${this.namespace}-popup_position_${this.config.position}`);
 
     // get dom elements
     this.wrapperElement = this.getElementWithCheckExist('wrapper');

@@ -32,10 +32,6 @@ export class SubscriptionPopupWidget {
     this.popup = popup;
 
     this.pw = pw;
-
-    const styles = getStyles();
-
-    document.head.appendChild(styles);
   }
 
   public async init(): Promise<void> {
@@ -65,6 +61,10 @@ export class SubscriptionPopupWidget {
     }
 
     const html = getHTML(content, segments);
+
+    const styles = getStyles(content);
+
+    document.head.appendChild(styles);
 
     this.popup.updateContent(html);
 

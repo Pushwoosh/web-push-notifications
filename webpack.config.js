@@ -36,7 +36,7 @@ module.exports = {
   mode: isProduction ? 'production' : 'development',
   devtool: 'source-map',
   entry: {
-    'web-notifications': './src/web-notifications.ts',
+    'web-notifications': ['./node_modules/core-js/es/promise/index.js', './src/web-notifications.ts'],
     'service-worker': './src/service-worker.ts',
   },
   output: {
@@ -53,6 +53,15 @@ module.exports = {
       {
         test: /\.ts$/,
         use: 'awesome-typescript-loader'
+      },
+      {
+        test: /\.js$/,
+        exclude: [],
+        include: [
+          path.resolve(__dirname, 'src'),
+          path.resolve(__dirname, 'node_modules/url-resolve-browser'),
+        ],
+        use: 'babel-loader'
       },
       {
         test: /\.css$/,

@@ -43,7 +43,7 @@ export const getHTML = (content: { [key: string]: string }, segments: { [key: st
   `;
 };
 
-export const getStyles = () => {
+export const getStyles = (content: { [key: string]: string }) => {
   const styles = document.createElement('style');
 
   styles.innerHTML = `
@@ -105,7 +105,7 @@ export const getStyles = () => {
     }
     
     .pushwoosh-subscription-segments__text {
-      color: rgba(0, 0, 0, 0.54)!important;
+      color: ${content.channelsTextColor}!important;
     }
     
     .pushwoosh-subscription-segments__controls {
@@ -114,7 +114,7 @@ export const getStyles = () => {
     }
     
     .pushwoosh-subscription-segments__field:checked + .pushwoosh-subscription-segments__icon {
-      background: #4186F3!important;
+      background: ${content.channelsToggleColor}!important;
       border: 1px solid transparent!important;
     }
     
@@ -134,14 +134,17 @@ export const getStyles = () => {
     }
     
     .pushwoosh-subscription-segments__control.pushwoosh-subscription-segments__control_deny {
-      border: 1px solid #ddd!important;
-      color: #4186F3!important;
+      border: none!important;
+      color: ${content.controlsDenyButtonTextColor}!important;
+      background-color: ${content.controlsDenyButtonBackgroundColor}!important;
+      border-radius: ${content.controlsDenyButtonRound}!important;
     }
     
     .pushwoosh-subscription-segments__control.pushwoosh-subscription-segments__control_accept {
       border: none!important;
-      background: #4186F3!important;
-      color: #fff!important;
+      color: ${content.controlsButtonTextColor}!important;
+      background-color: ${content.controlsButtonBackgroundColor}!important;
+      border-radius: ${content.controlsButtonRound}!important;
     }
   `;
 

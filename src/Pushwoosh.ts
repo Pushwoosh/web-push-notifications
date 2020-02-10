@@ -10,7 +10,7 @@ import { SubscriptionPopupWidget } from './features/SubscriptionSegmentsWidget/S
 import * as CONSTANTS from './constants';
 
 import EventEmitter from './EventEmitter';
-import {clearLocationHash, patchPromise} from './functions';
+import {clearLocationHash} from './functions';
 import {PlatformChecker} from './modules/PlatformChecker';
 
 import { Logger } from './logger'
@@ -26,8 +26,6 @@ import {CommandBus, TCommands} from './modules/CommandBus/CommandBus';
 import { IPushService } from './services/PushService/PushService.types';
 
 type ChainFunction = (param: any) => Promise<any> | any;
-
-patchPromise();
 
 export default class Pushwoosh {
   private readonly data: Data;
@@ -119,7 +117,7 @@ export default class Pushwoosh {
         });
     });
 
-    const popup = new Popup('subscription-segments');
+    const popup = new Popup('subscription-segments', { position: 'top' });
     // need inject this because need call subscribe method
     // can't use command bus, because need call synchronically
     this.subscriptionSegmentWidget = new SubscriptionPopupWidget(this.data, this.apiClient, this.api, popup, this);
@@ -436,9 +434,14 @@ export default class Pushwoosh {
   }
 
   private async initialize(params: IInitParams) {
-    // step 0: set logger configuration
+    // step 0: base logger configuration
     const manualDebug = localStorage.getItem(CONSTANTS.MANUAL_SET_LOGGER_LEVEL);
     Logger.setLevel(manualDebug || params.logLevel || 'error');
+
+    // step 0: if not available push notifications -> exit
+    if (!this.platformChecker.isAvailableNotifications) {
+      return;
+    }
 
     // step 1: check application code
     const applicationCode = await this.data.getApplicationCode();
@@ -571,7 +574,8 @@ export default class Pushwoosh {
     const isCommunicationDisabled = await this.data.getStatusCommunicationDisabled();
     const isDropAllData = await this.data.getStatusDropAllData();
     const isNeedResubscribe = await this.driver.checkIsNeedResubscribe();
-    const isAvailableSubscriptionSegments = await this.isEnableChannels();
+    const isInitWebInApps = initParams.inApps && initParams.inApps.enable;
+    const isAvailableSubscriptionSegments = await this.isEnableChannels() && isInitWebInApps;
 
     if (isCommunicationDisabled || isDropAllData) {
       await this.unsubscribe();
@@ -712,17 +716,9 @@ export default class Pushwoosh {
    * @return {Promise<void>}
    */
   private async initInApp(params: IInitParams) {
-    const isEnabledByConfig = await keyValue.get('isEnableWebInApps');
-    const isEnabledByInitParams = params.inApps && params.inApps.enable;
-
-    const inAppInitParams = {
-      ...params.inApps,
-      enable: isEnabledByConfig || isEnabledByInitParams
-    };
-
-    if (inAppInitParams.enable) {
+    if (params.inApps && params.inApps.enable) {
       try {
-        this.InApps = new InApps(inAppInitParams, this.api);
+        this.InApps = new InApps(params.inApps, this.api);
 
         await this.InApps.init()
           .then(() => {
@@ -826,8 +822,15 @@ export default class Pushwoosh {
       }
 
       // init web in apps
-      if (features.web_in_apps) {
-        await keyValue.set('isEnableWebInApps', features.web_in_apps.enabled);
+      // init web in apps if web_in_apps feature is enable
+      // and not init already by config
+      if (features.web_in_apps && !(params.inApps && params.inApps.enable)) {
+        params.inApps = {
+          ...params.inApps,
+          enable: true
+        };
+
+        await this.initInApp(params);
       }
     }
 

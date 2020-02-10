@@ -36,6 +36,18 @@ module.exports = {
   module: {
     rules: [
       {
+        test: /\.js$/,
+        use: {
+          loader: 'babel-loader',
+          options: {
+            babelrc: false,
+            presets: [
+              ['@babel/preset-env', { targets: "last 2 versions, ie 11", modules: false }]
+            ]
+          }
+        }
+      },
+      {
         test: /\.ts$/,
         use: 'awesome-typescript-loader'
       },

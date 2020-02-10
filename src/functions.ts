@@ -163,15 +163,6 @@ export function patchConsole() {
   }
 }
 
-export function patchPromise() {
-  if (!platformChecker.isAvailablePromise && platformChecker.isAvailableNotifications) {
-    (window as any).Promise = () => ({
-      then: () => {},
-      catch: () => {}
-    });
-  }
-}
-
 export function clearLocationHash() {
   const global = getGlobal();
   if ('history' in global && history.pushState) {
