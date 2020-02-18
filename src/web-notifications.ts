@@ -1,6 +1,6 @@
 import PushwooshSingleton from './Pushwoosh';
 import {getGlobal} from './functions';
-import 'SubscribeWidget';
+import './SubscribeWidget';
 import './inboxWidget';
 import './subscribePopup';
 

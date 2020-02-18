@@ -20,7 +20,7 @@ module.exports = {
   mode: 'production',
   devtool: 'source-map',
   entry: {
-    index: './src/index.ts',
+    'web-notifications': ['core-js/features/promise', 'whatwg-fetch', './src/index.ts'],
     'service-worker': './src/service-worker.ts',
   },
   output: {
@@ -31,25 +31,17 @@ module.exports = {
   },
   resolve: {
     extensions: ['.ts', '.js'],
-    modules: ['src', 'node_modules']
   },
   module: {
     rules: [
       {
-        test: /\.js$/,
-        use: {
-          loader: 'babel-loader',
-          options: {
-            babelrc: false,
-            presets: [
-              ['@babel/preset-env', { targets: "last 2 versions, ie 11", modules: false }]
-            ]
-          }
-        }
-      },
-      {
         test: /\.ts$/,
         use: 'awesome-typescript-loader'
+      },
+      {
+        test: /\.js$/,
+        use: 'babel-loader',
+        exclude: /node_modules\/(?!(url-resolve-browser)\/).*/,
       },
       {
         test: /\.css$/,

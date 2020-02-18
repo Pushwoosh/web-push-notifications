@@ -1,6 +1,6 @@
 {
   "name": "web-push-notifications",
-  "version": "3.14.2",
+  "version": "3.15.0",
   "description": "Pushwoosh web push notifications",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -35,8 +35,9 @@
   },
   "homepage": "https://github.com/Pushwoosh/web-push-notifications#readme",
   "devDependencies": {
-    "@babel/core": "7.8.4",
-    "@babel/preset-env": "7.8.4",
+    "@babel/core": "7.7.7",
+    "@babel/plugin-transform-runtime": "7.8.3",
+    "@babel/preset-env": "7.7.7",
     "@types/chai": "4.1.6",
     "@types/jsdom": "12.2.0",
     "@types/jszip": "3.1.6",
@@ -79,6 +80,7 @@
     "webpack-dev-server": "3.1.10"
   },
   "dependencies": {
+    "@babel/runtime": "7.7.7",
     "@pushwoosh/logger": "1.0.4",
     "@pushwoosh/web-push-inbox-widget": "1.0.4",
     "@pushwoosh/web-push-subscribe-popup": "1.0.4",

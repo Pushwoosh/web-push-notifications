@@ -6,6 +6,7 @@ import { ApiClient } from './modules/ApiClient/ApiClient';
 import { PushServiceDefault, PushServiceSafari } from './services/PushService/PushService';
 import { Popup } from './features/Popup/Popup';
 import { SubscriptionPopupWidget } from './features/SubscriptionSegmentsWidget/SubscriptionSegmentsWidget';
+import { SubscriptionPromptWidget } from './features/SubscriptionPromptWidget/SubscriptionPromptWidget';
 
 import * as CONSTANTS from './constants';
 
@@ -35,6 +36,7 @@ export default class Pushwoosh {
 
   public readonly api: Api;
   public readonly subscriptionSegmentWidget: SubscriptionPopupWidget;
+  public readonly subscriptionPromptWidget: SubscriptionPromptWidget;
 
   public driver: IPushService;
 
@@ -121,6 +123,9 @@ export default class Pushwoosh {
     // need inject this because need call subscribe method
     // can't use command bus, because need call synchronically
     this.subscriptionSegmentWidget = new SubscriptionPopupWidget(this.data, this.apiClient, this.api, popup, this);
+
+    // create subscription prompt widget
+    this.subscriptionPromptWidget = new SubscriptionPromptWidget(this);
   }
 
   /**
@@ -428,10 +433,21 @@ export default class Pushwoosh {
   }
 
   public async isEnableChannels(): Promise<boolean> {
-    const channels: unknown = await keyValue.get(CONSTANTS.CHANNELS);
+    const features = await this.data.getFeatures();
+    const channels = features && features['channels'];
 
     return Array.isArray(channels) && !!channels.length;
   }
+
+  private async getSubscriptionPromptWidgetParams(): Promise<{ [key: string]: string } | undefined> {
+    const features = await this.data.getFeatures();
+
+    return features && features['subscription_prompt_widget'] && features['subscription_prompt_widget'].params;
+  };
+
+  private async checkIsEnabledSubscriptionPromptWidget(params: { [key: string]: string } | undefined): Promise<boolean> {
+    return !!params;
+  };
 
   private async initialize(params: IInitParams) {
     // step 0: base logger configuration
@@ -576,6 +592,8 @@ export default class Pushwoosh {
     const isNeedResubscribe = await this.driver.checkIsNeedResubscribe();
     const isInitWebInApps = initParams.inApps && initParams.inApps.enable;
     const isAvailableSubscriptionSegments = await this.isEnableChannels() && isInitWebInApps;
+    const subscriptionPromptWidgetParams = await this.getSubscriptionPromptWidgetParams();
+    const isEnabledSubscriptionPromptWidget = await this.checkIsEnabledSubscriptionPromptWidget(subscriptionPromptWidgetParams);
 
     if (isCommunicationDisabled || isDropAllData) {
       await this.unsubscribe();
@@ -604,17 +622,20 @@ export default class Pushwoosh {
         }
 
         // method subscribe need user click
-        if (autoSubscribe && !isAvailableSubscriptionSegments) {
+        if (autoSubscribe && !isAvailableSubscriptionSegments && !isEnabledSubscriptionPromptWidget) {
           console.warn('Option autoSubscribe have been deprecated. Please use "Push Subscription Button" or "Custom Subscription Popup"');
-
-          this.subscribe();
         }
 
         // show subscription segment widget
         if (autoSubscribe && isAvailableSubscriptionSegments) {
           await this.subscriptionSegmentWidget.init();
+        }
 
-          this.subscriptionSegmentWidget.showPopup();
+        // show subscription prompt widget
+        if (autoSubscribe && isEnabledSubscriptionPromptWidget) {
+          this.subscriptionPromptWidget.init(subscriptionPromptWidgetParams as any);
+
+          this.subscriptionPromptWidget.show();
         }
 
         break;
@@ -792,7 +813,14 @@ export default class Pushwoosh {
 
     await this.initDriver();
 
-    const features = await this.onGetConfig(['page_visit', 'channels', 'vapid_key', 'web_in_apps', 'events']);
+    const features = await this.onGetConfig([
+      'page_visit',
+      'vapid_key',
+      'web_in_apps',
+      'events',
+      'channels',
+      'subscription_prompt_widget'
+    ]);
 
     if (features) {
       // page visited feature
@@ -809,11 +837,6 @@ export default class Pushwoosh {
         if (isPageVisitedEvent) {
           this.sendPostEventVisitedPage();
         }
-      }
-
-      // channels
-      if (features.channels) {
-        await keyValue.set(CONSTANTS.CHANNELS, features.channels);
       }
 
       // vapid key

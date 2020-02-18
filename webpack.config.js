@@ -36,7 +36,7 @@ module.exports = {
   mode: isProduction ? 'production' : 'development',
   devtool: 'source-map',
   entry: {
-    'web-notifications': ['./node_modules/core-js/es/promise/index.js', './src/web-notifications.ts'],
+    'web-notifications': ['core-js/features/promise', 'whatwg-fetch', './src/web-notifications.ts'],
     'service-worker': './src/service-worker.ts',
   },
   output: {
@@ -46,7 +46,6 @@ module.exports = {
   },
   resolve: {
     extensions: ['.ts', '.js', '.json', '.html'],
-    modules: [path.resolve(__dirname, 'src'), 'node_modules']
   },
   module: {
     rules: [
@@ -56,12 +55,8 @@ module.exports = {
       },
       {
         test: /\.js$/,
-        exclude: [],
-        include: [
-          path.resolve(__dirname, 'src'),
-          path.resolve(__dirname, 'node_modules/url-resolve-browser'),
-        ],
-        use: 'babel-loader'
+        use: 'babel-loader',
+        exclude: /node_modules\/(?!(url-resolve-browser)\/).*/,
       },
       {
         test: /\.css$/,
