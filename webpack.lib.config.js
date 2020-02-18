@@ -20,7 +20,7 @@ module.exports = {
   mode: 'production',
   devtool: 'source-map',
   entry: {
-    'web-notifications': ['core-js/features/promise', 'whatwg-fetch', './src/index.ts'],
+    'index': ['core-js/features/promise', 'whatwg-fetch', './src/index.ts'],
     'service-worker': './src/service-worker.ts',
   },
   output: {
