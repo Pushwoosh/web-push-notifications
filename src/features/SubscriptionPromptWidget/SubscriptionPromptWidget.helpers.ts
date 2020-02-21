@@ -42,6 +42,8 @@ export const getStyles = (params: ISubscriptionPromptWidgetParams) => {
       margin: 0 auto;
       width: 320px;
       display: none;
+      z-index: 2147483648;
+      opacity: 0.99;
     }
     
     .${ SUBSCRIPTION_PROMPT_WIDGET_NAMESPACE }_show {

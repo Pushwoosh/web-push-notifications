@@ -9,7 +9,7 @@ export const getStyles = (namespace: string): HTMLStyleElement => {
       width: 100%;
       height: 100%;
       display: none;
-      z-index: 999999999;
+      z-index: 2147483648;
       opacity: 0.99;
     }
     

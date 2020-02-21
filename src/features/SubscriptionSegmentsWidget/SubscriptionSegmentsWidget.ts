@@ -60,7 +60,11 @@ export class SubscriptionPopupWidget {
       return;
     }
 
-    const html = getHTML(content, segments);
+    const sortedSegments = segments.sort((segment1, segment2) => {
+      return segment1.position - segment2.position;
+    });
+
+    const html = getHTML(content, sortedSegments);
 
     const styles = getStyles(content);
 
