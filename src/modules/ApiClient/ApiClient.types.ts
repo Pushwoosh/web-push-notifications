@@ -104,6 +104,9 @@ interface IResponseGetConfig {
       enabled: boolean;
     };
     events?: string[];
+    subscription_prompt?: {
+      useCase: 'not-set' | 'default' | 'not-used' | 'topic-based';
+    }
   }
 }
 

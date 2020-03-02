@@ -8,9 +8,16 @@ export interface ISubscriptionPromptWidgetParams {
   buttonAcceptTextColor: string;
   buttonAcceptRound: string;
   buttonAcceptBackgroundColor: string;
+  buttonAcceptBorderColor: string;
 
   buttonCancelText: string;
   buttonCancelTextColor: string;
   buttonCancelRound: string;
   buttonCancelBackgroundColor: string;
+  buttonCancelBorderColor: string;
+
+  cappingCount: number;
+  cappingDelay: number;
+
+  backgroundColor: string;
 }

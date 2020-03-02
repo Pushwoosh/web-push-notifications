@@ -368,4 +368,18 @@ export class Data {
   public async getInApps(): Promise<any> {
     return this.store.get('params.inApps');
   }
+
+  public async setPromptDisplayCount(count: number): Promise<void> {
+    await this.store.set('params.promptDisplayCount', count);
+  }
+  public async getPromptDisplayCount(): Promise<number> {
+    return this.store.get('params.promptDisplayCount', 0);
+  }
+
+  public async setPromptLastSeenTime(time: number): Promise<void> {
+    await this.store.set('params.promptLastSeenTime', time);
+  }
+  public async getPromptLastSeenTime(): Promise<number> {
+    return this.store.get('params.promptLastSeenTime', 0);
+  }
 }

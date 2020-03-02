@@ -52,7 +52,7 @@ export const getStyles = (params: ISubscriptionPromptWidgetParams) => {
     
     .${ SUBSCRIPTION_PROMPT_WIDGET_NAMESPACE }__body {
       width: 320px;
-      background-color: #fff;
+      background-color: ${ params.backgroundColor ? params.backgroundColor : '#FFFFFF' };
       box-shadow: 0 9px 15px rgba(0, 0, 0, 0.1), 0 0 6px rgba(0, 0, 0, 0.06);
       border-radius: 4px;
       padding: 20px 20px 12px;
@@ -84,7 +84,7 @@ export const getStyles = (params: ISubscriptionPromptWidgetParams) => {
     
     .${ SUBSCRIPTION_PROMPT_WIDGET_NAMESPACE }__control {
       -webkit-appearance: none;
-      border: none;
+      border: 1px solid transparent;
       font-size: 12px;
       font-weight: bold;
       padding: 0 20px;
@@ -96,12 +96,14 @@ export const getStyles = (params: ISubscriptionPromptWidgetParams) => {
       color: ${params.buttonCancelTextColor};
       background-color: ${params.buttonCancelBackgroundColor};
       border-radius: ${params.buttonCancelRound};
+      border-color: ${params.buttonCancelBorderColor};
     }
     
     .${ SUBSCRIPTION_PROMPT_WIDGET_NAMESPACE }__control_accept {
       color: ${params.buttonAcceptTextColor};
       background-color: ${params.buttonAcceptBackgroundColor};
       border-radius: ${params.buttonAcceptRound};
+      border-color: ${params.buttonAcceptBorderColor};
       margin: 0 0 0 12px;
     }
   `;

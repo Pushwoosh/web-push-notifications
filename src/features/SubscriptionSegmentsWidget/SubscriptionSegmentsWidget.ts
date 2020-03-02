@@ -11,7 +11,7 @@ import { getHTML, getStyles } from './SubscriptionSegmentsWidget.helpers';
 import { IMapResponse } from '../../modules/ApiClient/ApiClient.types';
 
 
-export class SubscriptionPopupWidget {
+export class SubscriptionSegmentsWidget {
   private readonly data: Data;
   private readonly apiClient: ApiClient;
   private readonly api: Api;

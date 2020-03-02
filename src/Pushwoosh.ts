@@ -5,10 +5,13 @@ import { Data } from './modules/Data/Data';
 import { ApiClient } from './modules/ApiClient/ApiClient';
 import { PushServiceDefault, PushServiceSafari } from './services/PushService/PushService';
 import { Popup } from './features/Popup/Popup';
-import { SubscriptionPopupWidget } from './features/SubscriptionSegmentsWidget/SubscriptionSegmentsWidget';
+import { SubscriptionSegmentsWidget } from './features/SubscriptionSegmentsWidget/SubscriptionSegmentsWidget';
 import { SubscriptionPromptWidget } from './features/SubscriptionPromptWidget/SubscriptionPromptWidget';
+import { ISubscriptionPromptWidgetParams } from './features/SubscriptionPromptWidget/SubscriptionPromptWidget.types';
 
 import * as CONSTANTS from './constants';
+
+import { IMapResponse } from './modules/ApiClient/ApiClient.types';
 
 import EventEmitter from './EventEmitter';
 import {clearLocationHash} from './functions';
@@ -35,7 +38,7 @@ export default class Pushwoosh {
   private isCommunicationDisabled?: boolean;
 
   public readonly api: Api;
-  public readonly subscriptionSegmentWidget: SubscriptionPopupWidget;
+  public readonly subscriptionSegmentWidget: SubscriptionSegmentsWidget;
   public readonly subscriptionPromptWidget: SubscriptionPromptWidget;
 
   public driver: IPushService;
@@ -122,7 +125,7 @@ export default class Pushwoosh {
     const popup = new Popup('subscription-segments', { position: 'top' });
     // need inject this because need call subscribe method
     // can't use command bus, because need call synchronically
-    this.subscriptionSegmentWidget = new SubscriptionPopupWidget(this.data, this.apiClient, this.api, popup, this);
+    this.subscriptionSegmentWidget = new SubscriptionSegmentsWidget(this.data, this.apiClient, this.api, popup, this);
 
     // create subscription prompt widget
     this.subscriptionPromptWidget = new SubscriptionPromptWidget(this);
@@ -439,16 +442,6 @@ export default class Pushwoosh {
     return Array.isArray(channels) && !!channels.length;
   }
 
-  private async getSubscriptionPromptWidgetParams(): Promise<{ [key: string]: string } | undefined> {
-    const features = await this.data.getFeatures();
-
-    return features && features['subscription_prompt_widget'] && features['subscription_prompt_widget'].params;
-  };
-
-  private async checkIsEnabledSubscriptionPromptWidget(params: { [key: string]: string } | undefined): Promise<boolean> {
-    return !!params;
-  };
-
   private async initialize(params: IInitParams) {
     // step 0: base logger configuration
     const manualDebug = localStorage.getItem(CONSTANTS.MANUAL_SET_LOGGER_LEVEL);
@@ -505,6 +498,18 @@ export default class Pushwoosh {
 
     await this.data.setSdkVersion(__VERSION__);
 
+    // step 6: get remote config
+    const config = await this.api.getConfig([
+      'page_visit',
+      'vapid_key',
+      'web_in_apps',
+      'events',
+      'subscription_prompt'
+    ]);
+
+    this.onGetConfig(config && config.features);
+
+    // set default configs
     this.subscribeWidgetConfig = {
       enable: false,
       ...params.subscribeWidget
@@ -520,24 +525,29 @@ export default class Pushwoosh {
       ...params.subscribePopup
     };
 
-    // step 6: check communication disabled
+    // step 7: check communication disabled
     this.isCommunicationDisabled = await this.data.getStatusCommunicationDisabled();
 
     await this.open();
 
-    // step 7: init submodules module in app (need before push notification because in apps use in subscription segments widget)
-    await this.initInApp(params);
+    // step 8: init submodules module in app (need before push notification because in apps use in subscription segments widget)
+    const inAppsConfig: IInitParams['inApps'] = {
+      enable: config.features.web_in_apps && config.features.web_in_apps.enabled,
+      ...params.inApps,
+    };
 
-    // step 8: init push notification
+    await this.initInApp(inAppsConfig);
+
+    // step 9: init push notification
     if (this.platformChecker.isAvailableNotifications) {
       await this.initPushNotifications(params);
     }
 
-    // step 9: init submodules (inbox, facebook)
+    // step 10: init submodules (inbox, facebook)
     await this.inboxModel.updateMessages(this._ee);
     await this.initFacebook(params);
 
-    // step 10: ready
+    // step 11: ready
     this._ee.emit(CONSTANTS.EVENT_ON_READY);
     this.ready = true;
 
@@ -590,10 +600,8 @@ export default class Pushwoosh {
     const isCommunicationDisabled = await this.data.getStatusCommunicationDisabled();
     const isDropAllData = await this.data.getStatusDropAllData();
     const isNeedResubscribe = await this.driver.checkIsNeedResubscribe();
-    const isInitWebInApps = initParams.inApps && initParams.inApps.enable;
-    const isAvailableSubscriptionSegments = await this.isEnableChannels() && isInitWebInApps;
-    const subscriptionPromptWidgetParams = await this.getSubscriptionPromptWidgetParams();
-    const isEnabledSubscriptionPromptWidget = await this.checkIsEnabledSubscriptionPromptWidget(subscriptionPromptWidgetParams);
+    const features = await this.data.getFeatures();
+    const currentPromptUseCase = features['subscription_prompt'] && features['subscription_prompt']['use_case'];
 
     if (isCommunicationDisabled || isDropAllData) {
       await this.unsubscribe();
@@ -621,21 +629,54 @@ export default class Pushwoosh {
           await this.unsubscribe();
         }
 
-        // method subscribe need user click
-        if (autoSubscribe && !isAvailableSubscriptionSegments && !isEnabledSubscriptionPromptWidget) {
-          console.warn('Option autoSubscribe have been deprecated. Please use "Push Subscription Button" or "Custom Subscription Popup"');
-        }
-
         // show subscription segment widget
-        if (autoSubscribe && isAvailableSubscriptionSegments) {
+        if (currentPromptUseCase === CONSTANTS.SUBSCRIPTION_WIDGET_USE_CASE_TOPIC_BASE) {
           await this.subscriptionSegmentWidget.init();
+
+          break;
         }
 
         // show subscription prompt widget
-        if (autoSubscribe && isEnabledSubscriptionPromptWidget) {
-          this.subscriptionPromptWidget.init(subscriptionPromptWidgetParams as any);
+        const isTopicBasedUseCase = currentPromptUseCase === CONSTANTS.SUBSCRIPTION_WIDGET_USE_CASE_DEFAULT;
+        const isNotSetUseCase = currentPromptUseCase === CONSTANTS.SUBSCRIPTION_WIDGET_USE_CASE_NOT_SET && autoSubscribe;
 
-          this.subscriptionPromptWidget.show();
+        // show subscription prompt widget
+        if (isTopicBasedUseCase || isNotSetUseCase) {
+          // get config by features from get config method
+          const currentConfig = features['subscription_prompt_widget'] && features['subscription_prompt_widget'].params;
+
+          // merge current config with capping defaults
+          const configWithDefaultCapping: ISubscriptionPromptWidgetParams = {
+            cappingCount: CONSTANTS.SUBSCRIPTION_PROMPT_WIDGET_DEFAULT_CONFIG.cappingCount,
+            cappingDelay: CONSTANTS.SUBSCRIPTION_PROMPT_WIDGET_DEFAULT_CONFIG.cappingDelay,
+            ...currentConfig
+          };
+
+          // if current config is not exist show with default values
+          const widgetParams: ISubscriptionPromptWidgetParams = currentConfig
+            ? configWithDefaultCapping
+            : CONSTANTS.SUBSCRIPTION_PROMPT_WIDGET_DEFAULT_CONFIG;
+
+          const currentTime = new Date().getTime();
+          const displayCount = await this.data.getPromptDisplayCount();
+          const lastSeenTime = await this.data.getPromptLastSeenTime();
+
+          // can show by max display count
+          const canShowByCapping = widgetParams.cappingCount > displayCount;
+
+          // can show last seen time
+          const canShowByLastTime = currentTime - lastSeenTime > widgetParams.cappingDelay;
+
+          // if all conditions are met show subscription prompt widget
+          if (canShowByCapping && canShowByLastTime) {
+            this.subscriptionPromptWidget.init(widgetParams);
+            this.subscriptionPromptWidget.show();
+
+            await this.data.setPromptDisplayCount(displayCount + 1);
+            await this.data.setPromptLastSeenTime(currentTime);
+          }
+
+          break;
         }
 
         break;
@@ -736,10 +777,10 @@ export default class Pushwoosh {
    * @param {IInitParams} params
    * @return {Promise<void>}
    */
-  private async initInApp(params: IInitParams) {
-    if (params.inApps && params.inApps.enable) {
+  private async initInApp(params: IInitParams['inApps']) {
+    if (params && params.enable) {
       try {
-        this.InApps = new InApps(params.inApps, this.api);
+        this.InApps = new InApps(params, this.api);
 
         await this.InApps.init()
           .then(() => {
@@ -792,35 +833,8 @@ export default class Pushwoosh {
     await this.api.applicationOpen();
   }
 
-  private async onGetConfig(features: string[]) {
-    const response = await this.api.getConfig(features);
-
-    await this.data.setFeatures(response && response.features);
-
-    return response && response.features;
-  }
-
-  private async initPushNotifications(params: IInitParams): Promise<void> {
-    await this.data.setDefaultNotificationImage(params.defaultNotificationImage);
-    await this.data.setDefaultNotificationTitle(params.defaultNotificationTitle);
-    await this.data.setServiceWorkerUrl(params.serviceWorkerUrl);
-    await this.data.setServiceWorkerScope(params.scope);
-
-    await this.data.setInitParams({
-      autoSubscribe: true,
-      ...params,
-    });
-
-    await this.initDriver();
-
-    const features = await this.onGetConfig([
-      'page_visit',
-      'vapid_key',
-      'web_in_apps',
-      'events',
-      'channels',
-      'subscription_prompt_widget'
-    ]);
+  private async onGetConfig(features: IMapResponse['getConfig']['features']) {
+    await this.data.setFeatures(features);
 
     if (features) {
       // page visited feature
@@ -843,19 +857,21 @@ export default class Pushwoosh {
       if (features.vapid_key) {
         await this.data.setApplicationServerKey(features.vapid_key)
       }
-
-      // init web in apps
-      // init web in apps if web_in_apps feature is enable
-      // and not init already by config
-      if (features.web_in_apps && !(params.inApps && params.inApps.enable)) {
-        params.inApps = {
-          ...params.inApps,
-          enable: true
-        };
-
-        await this.initInApp(params);
-      }
     }
+  }
+
+  private async initPushNotifications(params: IInitParams): Promise<void> {
+    await this.data.setDefaultNotificationImage(params.defaultNotificationImage);
+    await this.data.setDefaultNotificationTitle(params.defaultNotificationTitle);
+    await this.data.setServiceWorkerUrl(params.serviceWorkerUrl);
+    await this.data.setServiceWorkerScope(params.scope);
+
+    await this.data.setInitParams({
+      autoSubscribe: true,
+      ...params,
+    });
+
+    await this.initDriver();
 
     // Default actions on init
     try {

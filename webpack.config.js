@@ -36,7 +36,7 @@ module.exports = {
   mode: isProduction ? 'production' : 'development',
   devtool: 'source-map',
   entry: {
-    'web-notifications': ['core-js/features/promise', 'whatwg-fetch', './src/web-notifications.ts'],
+    'web-notifications': ['promise-polyfill', 'whatwg-fetch', './src/web-notifications.ts'],
     'service-worker': './src/service-worker.ts',
   },
   output: {

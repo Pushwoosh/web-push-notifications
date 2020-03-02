@@ -20,7 +20,7 @@ module.exports = {
   mode: 'production',
   devtool: 'source-map',
   entry: {
-    'index': ['core-js/features/promise', 'whatwg-fetch', './src/index.ts'],
+    'index': './src/index.ts',
     'service-worker': './src/service-worker.ts',
   },
   output: {
