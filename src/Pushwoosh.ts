@@ -630,18 +630,20 @@ export default class Pushwoosh {
         }
 
         // show subscription segment widget
-        if (currentPromptUseCase === CONSTANTS.SUBSCRIPTION_WIDGET_USE_CASE_TOPIC_BASE) {
+        const isTopicBasedUseCase = currentPromptUseCase === CONSTANTS.SUBSCRIPTION_WIDGET_USE_CASE_TOPIC_BASED;
+
+        if (isTopicBasedUseCase) {
           await this.subscriptionSegmentWidget.init();
 
           break;
         }
 
         // show subscription prompt widget
-        const isTopicBasedUseCase = currentPromptUseCase === CONSTANTS.SUBSCRIPTION_WIDGET_USE_CASE_DEFAULT;
+        const isDefaultUseCase = currentPromptUseCase === CONSTANTS.SUBSCRIPTION_WIDGET_USE_CASE_DEFAULT;
         const isNotSetUseCase = currentPromptUseCase === CONSTANTS.SUBSCRIPTION_WIDGET_USE_CASE_NOT_SET && autoSubscribe;
 
         // show subscription prompt widget
-        if (isTopicBasedUseCase || isNotSetUseCase) {
+        if (isDefaultUseCase || isNotSetUseCase) {
           // get config by features from get config method
           const currentConfig = features['subscription_prompt_widget'] && features['subscription_prompt_widget'].params;
 

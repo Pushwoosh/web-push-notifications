@@ -88,7 +88,7 @@ export const SUBSCRIPTION_SEGMENT_EVENT = 'Subscription Segments';
 export const SUBSCRIPTION_WIDGET_USE_CASE_NOT_SET = 'not-set';
 export const SUBSCRIPTION_WIDGET_USE_CASE_NOT_USED = 'not-used';
 export const SUBSCRIPTION_WIDGET_USE_CASE_DEFAULT = 'default';
-export const SUBSCRIPTION_WIDGET_USE_CASE_TOPIC_BASE = 'topic-base';
+export const SUBSCRIPTION_WIDGET_USE_CASE_TOPIC_BASED = 'topic-based';
 
 export const SUBSCRIPTION_PROMPT_WIDGET_DEFAULT_CONFIG = {
   headerText: 'Subscribe to our news',
