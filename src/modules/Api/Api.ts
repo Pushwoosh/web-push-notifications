@@ -194,20 +194,27 @@ export class Api {
     return this.apiClient.getTags(params);
   }
 
-  public async registerUser(userId: string): Promise<IMapResponse['registerUser']> {
+  public async registerUser(userId: string | number): Promise<IMapResponse['registerUser']> {
     const params = await this.getRequestParams();
+    const deviceType = await this.data.getDeviceType();
 
-    // set  user id to database
-    await this.data.setUserId(userId);
+    const id = `${userId}`;
+
+    // register user in pushwoosh
+    const response = await this.apiClient.registerUser({
+      ...params,
+      userId: id,
+      ts_offset: -(new Date).getTimezoneOffset() * 60,
+      device_type: deviceType
+    });
+
+    // set user id to database
+    await this.data.setUserId(`${userId}`);
 
     // set info to database that user id was change
     await this.data.setStatusUserIdWasChanged(true);
 
-    // register user in pushwoosh
-    return this.apiClient.registerUser({
-      ...params,
-      ts_offset: -(new Date).getTimezoneOffset() * 60,
-    });
+    return response;
   }
 
   public async postEvent(event: string, attributes: { [key:string]: any }): Promise<IMapResponse['postEvent']> {

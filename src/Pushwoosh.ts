@@ -479,26 +479,19 @@ export default class Pushwoosh {
       await this.api.checkDevice();
     }
 
-    // step 3: check user id
-    const userIdWasChange = await this.data.getStatusUserIdWasChanged();
-
-    if (!userIdWasChange) {
-      await this.data.setUserId(params.userId);
-    }
-
-    // step 4: add info about platform
+    // step 3: add info about platform
     await this.data.setDeviceType(this.platformChecker.getPlatformType());
     await this.data.setDeviceModel(this.platformChecker.getBrowserVersion());
     await this.data.setLanguage(params.tags && params.tags.Language || navigator.language);
 
-    // step 5: set configuration info
+    // step 4: set configuration info
     if (params.pushwooshUrl) {
       await this.data.setApiEntrypoint(params.pushwooshUrl);
     }
 
     await this.data.setSdkVersion(__VERSION__);
 
-    // step 6: get remote config
+    // step 5: get remote config
     const config = await this.api.getConfig([
       'page_visit',
       'vapid_key',
@@ -525,10 +518,17 @@ export default class Pushwoosh {
       ...params.subscribePopup
     };
 
-    // step 7: check communication disabled
+    // step 6: check communication disabled
     this.isCommunicationDisabled = await this.data.getStatusCommunicationDisabled();
 
     await this.open();
+
+    // step 7: check user id
+    const userIdWasChange = await this.data.getStatusUserIdWasChanged();
+
+    if (params.userId && params.userId !== 'user_id' && !userIdWasChange) {
+      await this.api.registerUser(params.userId);
+    }
 
     // step 8: init submodules module in app (need before push notification because in apps use in subscription segments widget)
     const inAppsConfig: IInitParams['inApps'] = {
@@ -536,18 +536,28 @@ export default class Pushwoosh {
       ...params.inApps,
     };
 
+    // step 9: init submodules module in app (need before push notification because in apps use in subscription segments widget)
     await this.initInApp(inAppsConfig);
 
-    // step 9: init push notification
+    // step 10: init push notification
     if (this.platformChecker.isAvailableNotifications) {
       await this.initPushNotifications(params);
     }
 
-    // step 10: init submodules (inbox, facebook)
-    await this.inboxModel.updateMessages(this._ee);
-    await this.initFacebook(params);
+    // step 11: init submodules (inbox, facebook)
+    try {
+      await this.inboxModel.updateMessages(this._ee);
+    } catch (error) {
+      Logger.write('error', error);
+    }
 
-    // step 11: ready
+    try {
+      await this.initFacebook(params);
+    } catch (error) {
+      Logger.write('error', error);
+    }
+
+    // step 12: ready
     this._ee.emit(CONSTANTS.EVENT_ON_READY);
     this.ready = true;
 

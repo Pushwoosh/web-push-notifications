@@ -174,7 +174,7 @@ export class Data {
     await this.store.set('params.userIdWasChanged', status);
   }
   public async getStatusUserIdWasChanged(): Promise<boolean> {
-    return await this.store.set('params.userIdWasChanged', false);
+    return await this.store.get('params.userIdWasChanged', false);
   }
 
   public async setStatusManualUnsubscribed(status: boolean): Promise<void> {
