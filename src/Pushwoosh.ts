@@ -586,16 +586,14 @@ export default class Pushwoosh {
     // send push stat only in safari, because safari haven't service worker
     // in other browsers stat will be send in service worker
     if (this.platformChecker.isSafari) {
-      this._ee.on(CONSTANTS.EVENT_ON_READY, () => {
-        const hashReg: any = /#P(.*)/;
-        const hash = decodeURIComponent(document.location.hash);
+      const hashReg: any = /#P(.*)/;
+      const hash = decodeURIComponent(document.location.hash);
 
-        if (hashReg.test(hash)) {
-          this.api
-            .pushStat(hashReg.exec(hash)[1])
-            .then(clearLocationHash);
-        }
-      });
+      if (hashReg.test(hash)) {
+        this.api
+          .pushStat(hashReg.exec(hash)[1])
+          .then(clearLocationHash);
+      }
     }
   }
 
