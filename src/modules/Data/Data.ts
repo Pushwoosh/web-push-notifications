@@ -24,6 +24,7 @@ export class Data {
     await this.store.set('params.userId', undefined);
     await this.store.set('params.userIdWasChanged', undefined);
 
+    await this.store.set('params.isLastPermissionStatus', undefined);
     await this.store.set('params.isManualUnsubscribed', undefined);
     await this.store.set('params.isCommunicationDisabled', undefined);
     await this.store.set('params.isDropAllData', undefined);
@@ -175,6 +176,13 @@ export class Data {
   }
   public async getStatusUserIdWasChanged(): Promise<boolean> {
     return await this.store.get('params.userIdWasChanged', false);
+  }
+
+  public async setLastPermissionStatus(status: NotificationPermission): Promise<void> {
+    await this.store.set('params.isLastPermissionStatus', status);
+  }
+  public async getLastPermissionStatus(): Promise<NotificationPermission | undefined> {
+    return await this.store.get('params.isLastPermissionStatus');
   }
 
   public async setStatusManualUnsubscribed(status: boolean): Promise<void> {

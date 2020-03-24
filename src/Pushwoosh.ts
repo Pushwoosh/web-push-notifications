@@ -604,7 +604,13 @@ export default class Pushwoosh {
    * @returns {Promise<void>}
    */
   private async defaultProcess(initParams: IInitParams) {
-    const isRegister = await this.api.checkDeviceSubscribeForPushNotifications();
+    let isRegister = await this.api.checkDeviceSubscribeForPushNotifications();
+    const permission = this.driver.getPermission();
+
+    if (permission === 'granted') {
+      await this.data.setLastPermissionStatus(permission);
+    }
+
     const isCommunicationDisabled = await this.data.getStatusCommunicationDisabled();
     const isDropAllData = await this.data.getStatusDropAllData();
     const isNeedResubscribe = await this.driver.checkIsNeedResubscribe();
@@ -623,8 +629,10 @@ export default class Pushwoosh {
     }
 
     const { autoSubscribe } = initParams;
-    const permission = this.driver.getPermission();
     const isManualUnsubscribed = await this.data.getStatusManualUnsubscribed();
+
+    // update status is register
+    isRegister = await this.api.checkDeviceSubscribeForPushNotifications(false);
 
     // Actions depending of the permissions
     switch (permission) {

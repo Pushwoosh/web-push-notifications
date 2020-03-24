@@ -100,11 +100,22 @@ export class PushServiceSafari implements IPushService {
   }
 
   public async checkIsNeedResubscribe(): Promise<boolean> {
+    // check web site id
     const savedWebSitePushId = await this.data.getWebSitePushId();
     const isExistSavedWebSitePushId = typeof savedWebSitePushId !== 'undefined';
     const isChangeWebSitePushId = isExistSavedWebSitePushId  && this.config.webSitePushId !== savedWebSitePushId;
 
     await this.data.setWebSitePushId(this.config.webSitePushId);
+
+    // check change permission status
+    const lastPermission = await this.data.getLastPermissionStatus();
+    const permission = this.getPermission();
+
+    if (lastPermission !== permission) {
+      await this.data.setLastPermissionStatus(permission);
+
+      return true;
+    }
 
     return isChangeWebSitePushId;
   }

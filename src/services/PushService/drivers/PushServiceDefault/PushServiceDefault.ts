@@ -146,12 +146,23 @@ export class PushServiceDefault implements IPushService {
   }
 
   public async checkIsNeedResubscribe(): Promise<boolean> {
+    // check sender id
     const savedSenderId = await this.data.getSenderId();
     const isExistSavedSenderId = typeof savedSenderId !== 'undefined';
     const manifestSenderId = await this.getSenderIdFromManifest();
     const isChangeSenderID = isExistSavedSenderId  && manifestSenderId !== savedSenderId;
 
     await this.data.setSenderId(manifestSenderId);
+
+    // check change permission status
+    const lastPermission = await this.data.getLastPermissionStatus();
+    const permission = this.getPermission();
+
+    if (lastPermission !== permission) {
+      await this.data.setLastPermissionStatus(permission);
+
+      return true;
+    }
 
     return isChangeSenderID;
   }
