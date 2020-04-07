@@ -645,13 +645,19 @@ export default class Pushwoosh {
           await this.unsubscribe();
         }
 
+        // topic based widget have not capping params, get defaults
+        const widgetConfig = await this.getWidgetConfig();
+        const canShowByCapping = await this.checkCanShowByCapping(widgetConfig);
+
+        if (!canShowByCapping) {
+          break;
+        }
+
         // show subscription segment widget
         const isTopicBasedUseCase = currentPromptUseCase === CONSTANTS.SUBSCRIPTION_WIDGET_USE_CASE_TOPIC_BASED;
 
         if (isTopicBasedUseCase) {
           await this.subscriptionSegmentWidget.init();
-
-          break;
         }
 
         // show subscription prompt widget
@@ -660,42 +666,11 @@ export default class Pushwoosh {
 
         // show subscription prompt widget
         if (isDefaultUseCase || isNotSetUseCase) {
-          // get config by features from get config method
-          const currentConfig = features['subscription_prompt_widget'] && features['subscription_prompt_widget'].params;
-
-          // merge current config with capping defaults
-          const configWithDefaultCapping: ISubscriptionPromptWidgetParams = {
-            cappingCount: CONSTANTS.SUBSCRIPTION_PROMPT_WIDGET_DEFAULT_CONFIG.cappingCount,
-            cappingDelay: CONSTANTS.SUBSCRIPTION_PROMPT_WIDGET_DEFAULT_CONFIG.cappingDelay,
-            ...currentConfig
-          };
-
-          // if current config is not exist show with default values
-          const widgetParams: ISubscriptionPromptWidgetParams = currentConfig
-            ? configWithDefaultCapping
-            : CONSTANTS.SUBSCRIPTION_PROMPT_WIDGET_DEFAULT_CONFIG;
-
-          const currentTime = new Date().getTime();
-          const displayCount = await this.data.getPromptDisplayCount();
-          const lastSeenTime = await this.data.getPromptLastSeenTime();
-
-          // can show by max display count
-          const canShowByCapping = widgetParams.cappingCount > displayCount;
-
-          // can show last seen time
-          const canShowByLastTime = currentTime - lastSeenTime > widgetParams.cappingDelay;
-
-          // if all conditions are met show subscription prompt widget
-          if (canShowByCapping && canShowByLastTime) {
-            this.subscriptionPromptWidget.init(widgetParams);
-            this.subscriptionPromptWidget.show();
-
-            await this.data.setPromptDisplayCount(displayCount + 1);
-            await this.data.setPromptLastSeenTime(currentTime);
-          }
-
-          break;
+          this.subscriptionPromptWidget.init(widgetConfig);
+          this.subscriptionPromptWidget.show();
         }
+
+        await this.updateCappingParams();
 
         break;
 
@@ -722,10 +697,63 @@ export default class Pushwoosh {
         // or if change configuration -> resubscribe device for get new push token
         if (!isRegister && !isManualUnsubscribed || isNeedResubscribe) {
           await this.subscribe();
+
+          // show subscription segment widget
+          const isTopicBasedUseCase = currentPromptUseCase === CONSTANTS.SUBSCRIPTION_WIDGET_USE_CASE_TOPIC_BASED;
+
+          // if topic based widget need set default channels
+          if (isTopicBasedUseCase) {
+            const result = features.channels.map((channel: { code: string }) => channel.code);
+
+            await this.api.setTags({
+              'Subscription Segments': result
+            })
+          }
         }
 
         break;
     }
+  }
+
+  private async getWidgetConfig(): Promise<ISubscriptionPromptWidgetParams> {
+    const features = await this.data.getFeatures();
+
+    // get config by features from get config method
+    const currentConfig = features['subscription_prompt_widget'] && features['subscription_prompt_widget'].params;
+
+    // merge current config with capping defaults
+    const configWithDefaultCapping: ISubscriptionPromptWidgetParams = {
+      cappingCount: CONSTANTS.SUBSCRIPTION_PROMPT_WIDGET_DEFAULT_CONFIG.cappingCount,
+      cappingDelay: CONSTANTS.SUBSCRIPTION_PROMPT_WIDGET_DEFAULT_CONFIG.cappingDelay,
+      ...currentConfig
+    };
+
+    // if current config is not exist show with default values
+    return currentConfig
+      ? configWithDefaultCapping
+      : CONSTANTS.SUBSCRIPTION_PROMPT_WIDGET_DEFAULT_CONFIG;
+  }
+
+  private async checkCanShowByCapping(widgetConfig: ISubscriptionPromptWidgetParams): Promise<boolean> {
+    const currentTime = new Date().getTime();
+    const displayCount = await this.data.getPromptDisplayCount();
+    const lastSeenTime = await this.data.getPromptLastSeenTime();
+
+    // can show by max display count
+    const canShowByCapping = widgetConfig.cappingCount > displayCount;
+
+    // can show last seen time
+    const canShowByLastTime = currentTime - lastSeenTime > widgetConfig.cappingDelay;
+
+    return canShowByCapping && canShowByLastTime;
+  }
+
+  private async updateCappingParams(): Promise<void> {
+    const displayCount = await this.data.getPromptDisplayCount();
+    const currentTime = new Date().getTime();
+
+    await this.data.setPromptDisplayCount(displayCount + 1);
+    await this.data.setPromptLastSeenTime(currentTime);
   }
 
   /**

@@ -302,7 +302,7 @@ class SubscribeWidget {
       // if permission default
       // show subscription segment widget
       if (this.pw.driver.checkIsPermissionDefault()) {
-        this.pw.subscriptionSegmentWidget.showPopup();
+        this.pw.subscriptionSegmentWidget.init();
 
         return;
       }

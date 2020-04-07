@@ -53,7 +53,7 @@ export class Popup {
   }
 
   public updateContent(html: string): void {
-    this.bodyElement.insertAdjacentHTML('beforeend', html);
+    this.bodyElement.innerHTML = html;
   }
 
   public removeContent(): void {
