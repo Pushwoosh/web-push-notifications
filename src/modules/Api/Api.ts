@@ -61,9 +61,11 @@ export class Api {
 
     // check need force update
     if (typeof status === 'undefined' || !useCache) {
-      await this.checkDevice();
-
-      status = localStorage.getItem(CONSTANTS.KEY_DEVICE_REGISTRATION_STATUS);
+      const { exist, push_token_exist } = await this.checkDevice();
+      localStorage.setItem(CONSTANTS.KEY_DEVICE_REGISTRATION_STATUS, exist && push_token_exist
+        ? CONSTANTS.DEVICE_REGISTRATION_STATUS_REGISTERED
+        : CONSTANTS.DEVICE_REGISTRATION_STATUS_UNREGISTERED
+      );
     }
 
     return status === CONSTANTS.DEVICE_REGISTRATION_STATUS_REGISTERED;

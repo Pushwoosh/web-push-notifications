@@ -255,7 +255,7 @@ export default class Pushwoosh {
 
     const permission = this.driver.getPermission();
     const isManualUnsubscribed = await this.data.getStatusManualUnsubscribed();
-    const isDeviceRegister = await this.driver.checkIsRegister();
+    const isDeviceRegister = await this.api.checkDeviceSubscribeForPushNotifications(false);
 
     // if permission granted emit event and register device into pushwoosh
     if (permission === CONSTANTS.PERMISSION_GRANTED) {
@@ -604,7 +604,6 @@ export default class Pushwoosh {
    * @returns {Promise<void>}
    */
   private async defaultProcess(initParams: IInitParams) {
-    let isRegister = await this.api.checkDeviceSubscribeForPushNotifications();
     const permission = this.driver.getPermission();
 
     if (permission === 'granted') {
@@ -632,7 +631,7 @@ export default class Pushwoosh {
     const isManualUnsubscribed = await this.data.getStatusManualUnsubscribed();
 
     // update status is register
-    isRegister = await this.api.checkDeviceSubscribeForPushNotifications(false);
+    const isRegister = await this.api.checkDeviceSubscribeForPushNotifications(false);
 
     // Actions depending of the permissions
     switch (permission) {
@@ -696,7 +695,7 @@ export default class Pushwoosh {
         // device must be register if not manual unsubscribed
         // or if change configuration -> resubscribe device for get new push token
         if (!isRegister && !isManualUnsubscribed || isNeedResubscribe) {
-          await this.subscribe();
+          await this.subscribe(true);
 
           // show subscription segment widget
           const isTopicBasedUseCase = currentPromptUseCase === CONSTANTS.SUBSCRIPTION_WIDGET_USE_CASE_TOPIC_BASED;
