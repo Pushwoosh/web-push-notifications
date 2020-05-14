@@ -530,6 +530,11 @@ export default class Pushwoosh {
       await this.api.registerUser(params.userId);
     }
 
+    // set tags
+    if (params.tags) {
+      this.api.setTags(params.tags);
+    }
+
     // step 8: init submodules module in app (need before push notification because in apps use in subscription segments widget)
     const inAppsConfig: IInitParams['inApps'] = {
       enable: config.features.web_in_apps && config.features.web_in_apps.enabled,
