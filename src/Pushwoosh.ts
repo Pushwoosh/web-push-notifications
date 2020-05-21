@@ -262,11 +262,11 @@ export default class Pushwoosh {
       this._ee.emit(CONSTANTS.EVENT_ON_PERMISSION_GRANTED);
       const needSubscribe = isForceSubscribe || !isManualUnsubscribed;
 
-      this._ee.emit(CONSTANTS.EVENT_ON_SUBSCRIBE);
-
       if (needSubscribe && !isDeviceRegister) {
         await this.driver.subscribe();
       }
+
+      this._ee.emit(CONSTANTS.EVENT_ON_SUBSCRIBE);
 
       return;
     }
