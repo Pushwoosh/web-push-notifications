@@ -571,7 +571,7 @@ export default class Pushwoosh {
     if (delayedEvent) {
       const { type, payload } = delayedEvent;
       await this._ee.emit(type, payload);
-      await keyValue.set(CONSTANTS.KEY_DELAYED_EVENT, null);
+      await this.data.setDelayedEvent(null);
     }
 
     if ('serviceWorker' in navigator) {
