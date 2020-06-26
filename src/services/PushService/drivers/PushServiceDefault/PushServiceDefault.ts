@@ -158,7 +158,7 @@ export class PushServiceDefault implements IPushService {
     const lastPermission = await this.data.getLastPermissionStatus();
     const permission = this.getPermission();
 
-    if (lastPermission !== permission) {
+    if (isExistSavedSenderId && lastPermission !== permission) {
       await this.data.setLastPermissionStatus(permission);
 
       return true;

@@ -103,7 +103,7 @@ export class PushServiceSafari implements IPushService {
     // check web site id
     const savedWebSitePushId = await this.data.getWebSitePushId();
     const isExistSavedWebSitePushId = typeof savedWebSitePushId !== 'undefined';
-    const isChangeWebSitePushId = isExistSavedWebSitePushId  && this.config.webSitePushId !== savedWebSitePushId;
+    const isChangeWebSitePushId = isExistSavedWebSitePushId && this.config.webSitePushId !== savedWebSitePushId;
 
     await this.data.setWebSitePushId(this.config.webSitePushId);
 
