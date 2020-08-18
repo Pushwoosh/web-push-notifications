@@ -224,6 +224,14 @@
         console.log('EVENT: onShowNotificationPermissionDialog');
       }]);
 
+      Pushwoosh.push(['onShowSubscriptionWidget', function(api) {
+        console.log('EVENT: onShowSubscriptionWidget');
+      }]);
+
+      Pushwoosh.push(['onHideSubscriptionWidget', function(api) {
+        console.log('EVENT: onHideSubscriptionWidget');
+      }]);
+
       Pushwoosh.push(['onHideNotificationPermissionDialog', function(api, permission) {
         console.log('EVENT: onHideNotificationPermissionDialog', permission);
         checkSubscription();

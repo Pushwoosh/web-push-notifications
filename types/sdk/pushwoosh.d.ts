@@ -300,6 +300,8 @@ type PWEvent = 'onReady'
   | 'onPutNewMessageToInboxStore'
   | 'onUpdateInboxMessages'
   | 'onShowNotificationPermissionDialog'
-  | 'onHideNotificationPermissionDialog';
+  | 'onHideNotificationPermissionDialog'
+  | 'onShowSubscriptionWidget'
+  | 'onHideSubscriptionWidget';
 
 declare const __VERSION__: string;

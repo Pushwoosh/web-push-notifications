@@ -5,6 +5,7 @@ import { IPopupConfig } from './Popup.types';
 export class Popup {
   private readonly namespace: string;
   private readonly config: IPopupConfig;
+  private readonly onClickClose: () => void;
 
   private readonly rootElement: HTMLElement;
   private readonly wrapperElement: HTMLElement;
@@ -12,8 +13,9 @@ export class Popup {
   private readonly bodyElement: HTMLElement;
   private readonly closeElement: HTMLElement;
 
-  constructor(namespace: string, config?: Partial<IPopupConfig>) {
+  constructor(namespace: string, onClickClose: () => void, config?: Partial<IPopupConfig>) {
     this.namespace = namespace;
+    this.onClickClose = onClickClose;
     this.config = {
       position: 'center',
       ...config
@@ -68,6 +70,7 @@ export class Popup {
   public hide() {
     document.body.style.overflow = 'auto';
     this.rootElement.classList.remove(`pushwoosh-${this.namespace}-popup_show`);
+    this.onClickClose();
   }
 
   private getRootElement(): HTMLElement | null {

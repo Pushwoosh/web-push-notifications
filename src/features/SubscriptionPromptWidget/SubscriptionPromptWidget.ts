@@ -1,8 +1,9 @@
+import { EVENT_ON_SHOW_SUBSCRIPTION_WIDGET, EVENT_ON_HIDE_SUBSCRIPTION_WIDGET } from '../../constants';
+
 import { getHTML, getStyles } from './SubscriptionPromptWidget.helpers';
 import { SUBSCRIPTION_PROMPT_WIDGET_NAMESPACE } from './SubscriptionPromptWidget.constants';
 
 import { ISubscriptionPromptWidgetParams } from './SubscriptionPromptWidget.types';
-
 
 export class SubscriptionPromptWidget {
   private readonly pw: any;
@@ -32,6 +33,7 @@ export class SubscriptionPromptWidget {
 
   public show(): void {
     const rootElement = this.getRootElementWithCheckExist();
+    this.pw._ee.emit(EVENT_ON_SHOW_SUBSCRIPTION_WIDGET);
 
     rootElement.classList.add(`${ SUBSCRIPTION_PROMPT_WIDGET_NAMESPACE }_show`);
   }
@@ -39,7 +41,10 @@ export class SubscriptionPromptWidget {
   public hide(): void {
     const rootElement = this.getRootElementWithCheckExist();
 
-    rootElement.classList.remove(`${ SUBSCRIPTION_PROMPT_WIDGET_NAMESPACE }_show`);
+    if (rootElement.classList.contains(`${ SUBSCRIPTION_PROMPT_WIDGET_NAMESPACE }_show`)) {
+      this.pw._ee.emit(EVENT_ON_HIDE_SUBSCRIPTION_WIDGET);
+      rootElement.classList.remove(`${ SUBSCRIPTION_PROMPT_WIDGET_NAMESPACE }_show`);
+    }
   }
 
   private getRootElement(): HTMLElement | null {

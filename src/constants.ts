@@ -69,6 +69,9 @@ export const EVENT_ON_UPDATE_INBOX_MESSAGES = 'onUpdateInboxMessages';
 export const EVENT_ON_SHOW_NOTIFICATION_PERMISSION_DIALOG = 'onShowNotificationPermissionDialog';
 export const EVENT_ON_HIDE_NOTIFICATION_PERMISSION_DIALOG = 'onHideNotificationPermissionDialog';
 
+export const EVENT_ON_SHOW_SUBSCRIPTION_WIDGET = 'onShowSubscriptionWidget';
+export const EVENT_ON_HIDE_SUBSCRIPTION_WIDGET = 'onHideSubscriptionWidget';
+
 // Post Events
 export const EVENT_SHOW_SUBSCRIBE_BUTTON = 'showSubscribeButton';
 export const EVENT_CLICK_SUBSCRIBE_BUTTON = 'clickSubscribeButton';

@@ -4,6 +4,8 @@ import { Api } from '../../modules/Api/Api';
 import { Popup } from '../Popup/Popup';
 import { getZip } from '../../helpers/getZip';
 
+import { EVENT_ON_SHOW_SUBSCRIPTION_WIDGET } from '../../constants';
+
 import { Logger } from '../../logger';
 
 import { getHTML, getStyles } from './SubscriptionSegmentsWidget.helpers';
@@ -108,10 +110,12 @@ export class SubscriptionSegmentsWidget {
       })
     }
 
-    this.popup.show();
+    this.showPopup();
   }
 
   public showPopup(): void {
+    this.pw._ee.emit(EVENT_ON_SHOW_SUBSCRIPTION_WIDGET);
+
     this.popup.show();
   }
 

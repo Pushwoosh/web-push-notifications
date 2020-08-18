@@ -122,7 +122,13 @@ export default class Pushwoosh {
         });
     });
 
-    const popup = new Popup('subscription-segments', { position: 'top' });
+    const popup = new Popup(
+      'subscription-segments',
+      () => {
+        this._ee.emit(CONSTANTS.EVENT_ON_HIDE_SUBSCRIPTION_WIDGET);
+      },
+      { position: 'top' }
+    );
     // need inject this because need call subscribe method
     // can't use command bus, because need call synchronically
     this.subscriptionSegmentWidget = new SubscriptionSegmentsWidget(this.data, this.apiClient, this.api, popup, this);
@@ -207,6 +213,8 @@ export default class Pushwoosh {
       case CONSTANTS.EVENT_ON_UPDATE_INBOX_MESSAGES:
       case CONSTANTS.EVENT_ON_SHOW_NOTIFICATION_PERMISSION_DIALOG:
       case CONSTANTS.EVENT_ON_HIDE_NOTIFICATION_PERMISSION_DIALOG:
+      case CONSTANTS.EVENT_ON_SHOW_SUBSCRIPTION_WIDGET:
+      case CONSTANTS.EVENT_ON_HIDE_SUBSCRIPTION_WIDGET:
         this.handleEventCallback(command[0], command[1]);
 
         break;
