@@ -134,9 +134,6 @@ export class Api {
     const params = await this.getRequestParams();
     const response = this.apiClient.unregisterDevice(params);
 
-    // set info to database, that the device IS manual unsubscribed
-    await this.data.setStatusManualUnsubscribed(true);
-
     // set info to local storage, that device is unsubscribed
     localStorage.setItem(CONSTANTS.KEY_DEVICE_REGISTRATION_STATUS, CONSTANTS.DEVICE_REGISTRATION_STATUS_UNREGISTERED);
 

@@ -130,6 +130,9 @@ export class PushServiceDefault implements IPushService {
     // remove tokens
     await this.data.setTokens({});
 
+    // set info to database, that the device IS manual unsubscribed
+    await this.data.setStatusManualUnsubscribed(true);
+
     // unregister device in pushwoosh
     await this.api.unregisterDevice();
 
