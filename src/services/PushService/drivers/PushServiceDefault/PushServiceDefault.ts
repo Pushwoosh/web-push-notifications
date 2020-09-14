@@ -167,7 +167,12 @@ export class PushServiceDefault implements IPushService {
       return true;
     }
 
-    return isChangeSenderID;
+    const subscription = await this.getCredentials();
+    const pushTokenFromSubscription = await this.getPushToken(subscription);
+    const pushTokenFromStore = await this.data.getTokens();
+    const isEqualPushTokens = pushTokenFromSubscription === pushTokenFromStore.pushToken;
+
+    return isChangeSenderID || !isEqualPushTokens;
   }
 
   private async getServiceWorkerRegistration(): Promise<ServiceWorkerRegistration> {
