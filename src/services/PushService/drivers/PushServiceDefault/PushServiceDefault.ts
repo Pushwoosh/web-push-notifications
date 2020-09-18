@@ -65,7 +65,7 @@ export class PushServiceDefault implements IPushService {
     }
 
     // get browser subscription
-    const subscription = await this.getCredentials();
+    const subscription = await this.subscribePushManager();
 
     const applicationServerKey = await this.getApplicationServerKey();
 
@@ -166,7 +166,14 @@ export class PushServiceDefault implements IPushService {
 
       return true;
     }
-    return isChangeSenderID;
+
+    // check if pushTokens not equal from pushSubscription and store
+    const credentials = await this.getCredentials();
+    const pushTokenFromSubscription = await this.getPushToken(credentials);
+    const pushTokenFromStore = await this.data.getTokens();
+    const isEqualPushTokens = pushTokenFromSubscription === (pushTokenFromStore && pushTokenFromStore.pushToken);
+
+    return isChangeSenderID || !isEqualPushTokens;
   }
 
   private async getServiceWorkerRegistration(): Promise<ServiceWorkerRegistration> {
@@ -206,7 +213,7 @@ export class PushServiceDefault implements IPushService {
       });
   }
 
-  private async getCredentials(): Promise<PushSubscription> {
+  private async subscribePushManager(): Promise<PushSubscription> {
     // get service worker registration
     const registration = await this.getServiceWorkerRegistration();
     const applicationServerKey = await this.getApplicationServerKey();
@@ -216,6 +223,12 @@ export class PushServiceDefault implements IPushService {
       applicationServerKey: applicationServerKey,
     });
   }
+
+  private async getCredentials(): Promise<PushSubscription | null> {
+    const registration = await this.getServiceWorkerRegistration();
+    return await registration.pushManager.getSubscription();
+  }
+
 
   private async getFcmKeys(config: IPushServiceFcmRequest): Promise<IPushServiceFcmResponse> {
     const response = await fetch(this.config.entrypoint || 'https://fcm.googleapis.com/fcm/connect/subscribe', {
@@ -233,8 +246,12 @@ export class PushServiceDefault implements IPushService {
     throw new Error('Internal error: Can\'t register device in fcm. Status: ' + response.status + '. Message: ' + response.statusText);
   }
 
-  private async getPushToken(subscription: PushSubscription): Promise<string> {
+  private async getPushToken(subscription: PushSubscription | null): Promise<string> {
     const deviceType = await this.data.getDeviceType();
+
+    if (!subscription) {
+      return '';
+    }
 
     // if firefox
     if (deviceType === 12) {
