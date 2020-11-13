@@ -73,14 +73,20 @@ export class InApps {
 
   private subscribeToReceiveMessageFromIFrame() {
     window.addEventListener('message', (event) => {
-      try {
-        const data = JSON.parse(event.data);
+      if (!event.source) {
+        return;
+      }
 
-        if (data && typeof data === 'object') {
-          this.onReceiveNewMessageFromIFrame(data);
+      if (event.source === window || 'parent' in event.source && event.source.parent === window) {
+        try {
+          const data = JSON.parse(event.data);
+
+          if (data && typeof data === 'object') {
+            this.onReceiveNewMessageFromIFrame(data);
+          }
+        } catch (e) {
+          // nothing...
         }
-      } catch (e) {
-        // nothing...
       }
     });
   }

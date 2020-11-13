@@ -4,14 +4,20 @@
 
     if (success) {
       window.addEventListener('message', function (event) {
-        try {
-          const data = JSON.parse(event.data);
+        if (!event.source) {
+          return;
+        }
 
-          if (data && data.code === code) {
-            success && success(data);
+        if (event.source === window || 'parent' in event.source && event.source.parent === window) {
+          try {
+            const data = JSON.parse(event.data);
+
+            if (data && data.code === code) {
+              success && success(data);
+            }
+          } catch (error) {
+            failure && failure(error);
           }
-        } catch (error) {
-          failure && failure(error);
         }
       });
     }
