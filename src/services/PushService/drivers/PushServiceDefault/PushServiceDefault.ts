@@ -65,7 +65,7 @@ export class PushServiceDefault implements IPushService {
     }
 
     // get browser subscription
-    const subscription = await this.subscribePushManager();
+    const subscription = await this.trySubscribe();
 
     const applicationServerKey = await this.getApplicationServerKey();
 
@@ -211,6 +211,19 @@ export class PushServiceDefault implements IPushService {
       .register(`${ url }${ cleanCache }`, {
         scope
       });
+  }
+
+  private async trySubscribe(): Promise<PushSubscription> {
+    try {
+      return await this.subscribePushManager()
+    } catch (error) {
+      console.error(error);
+      // if get subscription filed
+      // try unsubscribe and resubscribe again
+      // it may be if changed vapid or sender id
+      await this.unsubscribe();
+      return this.subscribePushManager();
+    }
   }
 
   private async subscribePushManager(): Promise<PushSubscription> {
