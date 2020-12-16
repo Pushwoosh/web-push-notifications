@@ -128,7 +128,7 @@ function onPushEventHandler(event: PushEvent): void {
     // Send delivery statistic
     if (messageHash) {
       onPushActions.push(
-        Pushwoosh.initApi().then(() => Pushwoosh.api.messageDeliveryEvent(messageHash))
+        Pushwoosh.initApi().then(() => Pushwoosh.api.messageDeliveryEvent(messageHash, true))
       );
     }
 
@@ -198,7 +198,7 @@ function onClickNotificationEventHandler(event: NotificationEvent): void {
     }
 
     return Promise.all([
-      Pushwoosh.initApi().then(() => Pushwoosh.api.pushStat(messageHash)),
+      Pushwoosh.initApi().then(() => Pushwoosh.api.pushStat(messageHash, true)),
       Pushwoosh.data.setLastOpenMessage({
         url,
         messageHash,

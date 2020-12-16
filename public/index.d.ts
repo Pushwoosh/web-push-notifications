@@ -122,9 +122,10 @@ declare namespace PW {
      * Calls API method messageDeliveryEvent.
      * Registers push delivery event for the device.
      * @param {string} hash
+     * @param {boolean} isTrackingLogOnFailure
      * @returns {Promise<void>}
      */
-    messageDeliveryEvent(hash: string): Promise<void>;
+    messageDeliveryEvent(hash: string, isTrackingLogOnFailure: boolean): Promise<void>;
 
     /**
      * Calls API method postEvent.
@@ -140,9 +141,10 @@ declare namespace PW {
      * Calls API method pushStat.
      * Registers a push open event
      * @param {string} hash
+     * @param {boolean} isTrackingLogOnFailure
      * @returns {Promise<void>}
      */
-    pushStat(hash: string): Promise<void>;
+    pushStat(hash: string, isTrackingLogOnFailure: boolean): Promise<void>;
 
     /**
      * Calls API method registerDevice with device parameters.

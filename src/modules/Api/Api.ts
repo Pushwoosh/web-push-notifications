@@ -7,7 +7,7 @@ import EventEmitter from '../../EventEmitter';
 
 import { TCommands } from '../CommandBus/CommandBus.types';
 import { TEvents } from '../EventBus/EventBus.types';
-import { IMapResponse, IRequest } from '../ApiClient/ApiClient.types';
+import { IMapRequest, IMapResponse, IRequest, TMethod } from '../ApiClient/ApiClient.types';
 
 import * as CONSTANTS from '../../constants';
 
@@ -44,7 +44,7 @@ export class Api {
     this.commandBus.on(TCommands.SET_TAGS, ({ commandId, tags }) => {
       this.setTags(tags)
         .then(() => {
-          this.eventBus.emit(TEvents.SET_TAGS , commandId);
+          this.eventBus.emit(TEvents.SET_TAGS, commandId);
         });
     });
   }
@@ -162,22 +162,48 @@ export class Api {
     return response;
   }
 
-  public async messageDeliveryEvent(hash: string): Promise<IMapResponse['messageDeliveryEvent']> {
+  public async messageDeliveryEvent(hash: string, isTrackingLogOnFailure?: boolean): Promise<IMapResponse['messageDeliveryEvent']> {
+    const startTime = Math.round(+new Date());
     const params = await this.getRequestParams();
 
-    return this.apiClient.messageDeliveryEvent({
-      ...params,
-      hash: hash,
-    });
+    try {
+      return await this.apiClient.messageDeliveryEvent({
+        ...params,
+        hash: hash,
+      });
+    } catch (error) {
+      if (isTrackingLogOnFailure) {
+        this.trackLog(
+          'messageDeliveryEvent',
+          { ...params, hash },
+          { startTime, error }
+        );
+      }
+
+      throw error;
+    }
   }
 
-  public async pushStat(hash: string): Promise<IMapResponse['pushStat']> {
+  public async pushStat(hash: string, isTrackingLogOnFailure?: boolean): Promise<IMapResponse['pushStat']> {
+    const startTime = Math.round(+new Date());
     const params = await this.getRequestParams();
 
-    return this.apiClient.pushStat({
-      ...params,
-      hash: hash,
-    });
+    try {
+      return await this.apiClient.pushStat({
+        ...params,
+        hash: hash,
+      });
+    } catch (error) {
+      if (isTrackingLogOnFailure) {
+        this.trackLog(
+          'pushStat',
+          { ...params, hash },
+          { startTime, error }
+        );
+      }
+
+      throw error;
+    }
   }
 
   public async setTags(tags: { [key: string]: any }): Promise<IMapResponse['setTags']> {
@@ -218,7 +244,7 @@ export class Api {
     return response;
   }
 
-  public async postEvent(event: string, attributes: { [key:string]: any }): Promise<IMapResponse['postEvent']> {
+  public async postEvent(event: string, attributes: { [key: string]: any }): Promise<IMapResponse['postEvent']> {
     const params = await this.getRequestParams();
 
     const date = new Date();
@@ -336,7 +362,6 @@ export class Api {
     throw new Error('Property "Pushwoosh.api.params" have been deprecated. Use the async method "Pushwoosh.api.getParams()"');
   }
 
-
   private async getRequestParams(): Promise<IRequest> {
     const applicationCode = await this.data.getApplicationCode();
     const hwid = await this.data.getHwid();
@@ -361,4 +386,34 @@ export class Api {
       v: version,
     };
   };
+
+  private async trackLog<Method extends TMethod>(method: Method, payload: IMapRequest[Method], others: { [key: string]: any }): Promise<void> {
+    const endTime = Math.round(+new Date());
+    const entrypoint = await this.data.getApiEntrypoint();
+
+    fetch('https://post-log.pushwoosh.com/websdk', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain;charset=UTF-8'
+      },
+      body: JSON.stringify({
+        payload,
+        startTime: others.startTime,
+        endTime,
+        executionTime: endTime - others.startTime,
+        error: {
+          code: others.error.code,
+          message: others.error.message,
+        },
+        method,
+        entrypoint,
+        location: {
+          hostname: self.location.hostname,
+          origin: self.location.origin,
+          pathname: self.location.pathname,
+        },
+        type: 'websdk',
+      }),
+    });
+  }
 }
