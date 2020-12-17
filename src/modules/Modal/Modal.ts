@@ -76,7 +76,7 @@ export class Modal {
           left: 0;
           width: 100%;
           height: 100%;
-          z-index: 99999999;
+          z-index: 2147483648;
           opacity: 0.999;
           display:none;
         }
@@ -93,7 +93,7 @@ export class Modal {
         .${MODAL_INNER_NAMESPACE}_state-loading {
           background-color: ${this.option.backgroundColor};
         }
-        
+
         .${MODAL_CLOSE_BUTTON_NAMESPACE} {
           appearance: none;
           border: none;
@@ -106,7 +106,7 @@ export class Modal {
           height: 40px;
           cursor: pointer;
         }
-        
+
         .${MODAL_CLOSE_BUTTON_NAMESPACE}:after {
           content: '';
           position: absolute;
@@ -117,7 +117,7 @@ export class Modal {
           background-color: ${this.option.closeButtonColor};
           transform: translateX(-50%) translateY(-50%) rotate(-45deg);
         }
-        
+
         .${MODAL_CLOSE_BUTTON_NAMESPACE}:before {
           content: '';
           position: absolute;

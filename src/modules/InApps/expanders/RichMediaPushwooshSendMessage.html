@@ -8,7 +8,7 @@
           return;
         }
 
-        if (event.source === window || 'parent' in event.source && event.source.parent === window) {
+        if (window.top === event.source.parent) {
           try {
             const data = JSON.parse(event.data);
 
