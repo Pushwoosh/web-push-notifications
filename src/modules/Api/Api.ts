@@ -10,6 +10,7 @@ import { TEvents } from '../EventBus/EventBus.types';
 import { IMapRequest, IMapResponse, IRequest, TMethod } from '../ApiClient/ApiClient.types';
 
 import * as CONSTANTS from '../../constants';
+import { SetPurchaseAttributes } from './Api.types';
 
 
 export class Api {
@@ -342,6 +343,15 @@ export class Api {
     const params = await this.getRequestParams();
 
     return this.apiClient.getInApps(params);
+  }
+
+  public async setPurchase(attributes: SetPurchaseAttributes): Promise<IMapResponse['setPurchase']> {
+    const params = await this.getRequestParams();
+
+    return this.apiClient.setPurchase({
+      ...params,
+      ...attributes,
+    });
   }
 
   public async getParams() {

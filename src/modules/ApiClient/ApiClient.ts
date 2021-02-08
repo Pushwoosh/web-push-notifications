@@ -80,6 +80,10 @@ export class ApiClient {
     return this.createRequest('getInApps', options);
   }
 
+  public setPurchase(options: IMapRequest['setPurchase']): Promise<IMapResponse['setPurchase']> {
+    return this.createRequest('setPurchase', options);
+  }
+
 
   private async createRequest<T extends TMethod>(methodName: T, request: IMapRequest[T], customUrl?: string): Promise<IMapResponse[T]> {
     const entrypoint = await this.data.getApiEntrypoint();

@@ -14,6 +14,7 @@ type TMethodGetInboxMessages = 'getInboxMessages';
 type TMethodInboxStatus = 'inboxStatus';
 type TMethodPageVisit = 'pageVisit';
 type TMethodGetInApps = 'getInApps';
+type TMethodSetPurchase = 'setPurchase';
 
 export interface IRequest {
   application: string; // Pushwoosh application code.
@@ -83,6 +84,14 @@ interface IRequestPageVisit extends IRequest {
   title: string;
   url_path: string;
   url: string;
+}
+
+interface IRequestSetPurchase extends IRequest {
+  transactionDate: string;
+  quantity: number;
+  currency: string;
+  productIdentifier: string;
+  price: number;
 }
 
 type IResponse = void;
@@ -157,7 +166,8 @@ export type TMethod =
   | TMethodGetInboxMessages
   | TMethodInboxStatus
   | TMethodPageVisit
-  | TMethodGetInApps;
+  | TMethodGetInApps
+  | TMethodSetPurchase;
 
 export interface IMapRequest {
   'checkDevice': IRequest;
@@ -176,6 +186,7 @@ export interface IMapRequest {
   'inboxStatus': IRequestInboxStatus;
   'pageVisit': IRequestPageVisit;
   'getInApps': IRequest;
+  'setPurchase': IRequestSetPurchase;
 }
 
 export interface IMapResponse {
@@ -195,4 +206,5 @@ export interface IMapResponse {
   'inboxStatus': IResponse;
   'pageVisit': IResponse;
   'getInApps': IResponseGetInApps;
+  'setPurchase': IResponse;
 }
