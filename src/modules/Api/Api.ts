@@ -1,12 +1,8 @@
+import { EventBus } from '../../core/modules/EventBus';
+
 import { Data } from '../Data/Data';
 import { ApiClient } from '../ApiClient/ApiClient';
-import { CommandBus } from '../CommandBus/CommandBus';
-import { EventBus } from '../EventBus/EventBus';
 
-import EventEmitter from '../../EventEmitter';
-
-import { TCommands } from '../CommandBus/CommandBus.types';
-import { TEvents } from '../EventBus/EventBus.types';
 import { IMapRequest, IMapResponse, IRequest, TMethod } from '../ApiClient/ApiClient.types';
 
 import * as CONSTANTS from '../../constants';
@@ -14,40 +10,18 @@ import { SetPurchaseAttributes } from './Api.types';
 
 
 export class Api {
-  private readonly eventEmitter?: EventEmitter;
   private readonly data: Data;
   private readonly apiClient: ApiClient;
-  private readonly commandBus: CommandBus;
   private readonly eventBus: EventBus;
 
   constructor(
+    eventBus: EventBus,
     data: Data = new Data(),
     apiClient: ApiClient = new ApiClient(),
-    commandBus: CommandBus = CommandBus.getInstance(),
-    eventBus: EventBus = EventBus.getInstance(),
-    eventEmitter?: EventEmitter,
   ) {
-    this.eventEmitter = eventEmitter;
     this.eventBus = eventBus;
     this.data = data;
     this.apiClient = apiClient;
-    this.commandBus = commandBus;
-
-    // get tags by connector
-    this.commandBus.on(TCommands.GET_TAGS, ({ commandId }) => {
-      this.getTags()
-        .then(({ result }) => {
-          this.eventBus.emit(TEvents.GET_TAGS, { tags: result }, commandId);
-        });
-    });
-
-    // set tags by connector
-    this.commandBus.on(TCommands.SET_TAGS, ({ commandId, tags }) => {
-      this.setTags(tags)
-        .then(() => {
-          this.eventBus.emit(TEvents.SET_TAGS, commandId);
-        });
-    });
   }
 
   public async checkDevice(): Promise<IMapResponse['checkDevice']> {
@@ -128,7 +102,7 @@ export class Api {
     localStorage.setItem(CONSTANTS.KEY_DEVICE_REGISTRATION_STATUS, CONSTANTS.DEVICE_REGISTRATION_STATUS_REGISTERED);
 
     // emit event
-    this.eventEmitter && this.eventEmitter.emit(CONSTANTS.EVENT_ON_REGISTER);
+    this.eventBus.dispatchEvent('register', {});
 
     return response;
   }
@@ -141,7 +115,7 @@ export class Api {
     localStorage.setItem(CONSTANTS.KEY_DEVICE_REGISTRATION_STATUS, CONSTANTS.DEVICE_REGISTRATION_STATUS_UNREGISTERED);
 
     // emit event
-    this.eventEmitter && this.eventEmitter.emit(CONSTANTS.EVENT_ON_UNSUBSCRIBE);
+    this.eventBus.dispatchEvent('unsubscribe', {});
 
     return response;
   }
@@ -158,7 +132,7 @@ export class Api {
     localStorage.setItem(CONSTANTS.KEY_DEVICE_REGISTRATION_STATUS, CONSTANTS.DEVICE_REGISTRATION_STATUS_UNREGISTERED);
 
     // emit event
-    this.eventEmitter && this.eventEmitter.emit(CONSTANTS.EVENT_ON_UNSUBSCRIBE);
+    this.eventBus.dispatchEvent('unsubscribe', {});
 
     return response;
   }
@@ -282,7 +256,7 @@ export class Api {
     });
 
     if (response && response.code) {
-      this.commandBus.emit(TCommands.SHOW_IN_APP, {
+      this.eventBus.dispatchEvent('receive-in-app-code', {
         code: response.code
       });
     }

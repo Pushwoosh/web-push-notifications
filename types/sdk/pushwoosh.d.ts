@@ -229,6 +229,7 @@ type TPWCanWaitCallback = (f: any) => Promise<any> | any;
 interface IWorkerPushwooshGlobal {
   push(listener: ['onPush', TPWCanWaitCallback]): void;
   getListeners(eventName: string): TPWCanWaitCallback[];
+  eventBus: any;
   api: any;
   initApi: any;
 }

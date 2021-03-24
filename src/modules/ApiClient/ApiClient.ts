@@ -3,12 +3,12 @@ import { Logger } from '../../logger';
 
 import { TMethod, IMapRequest, IMapResponse } from './ApiClient.types';
 
-
 export class ApiClient {
   private readonly data: Data;
   private readonly logger: typeof Logger;
 
   constructor(
+
     data: Data = new Data(),
     logger: typeof Logger = Logger,
   ) {

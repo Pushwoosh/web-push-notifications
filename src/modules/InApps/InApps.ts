@@ -1,8 +1,6 @@
-import { ApiClient } from '../ApiClient/ApiClient';
+import { EventBus } from '../../core/modules/EventBus';
+
 import { Api } from '../Api/Api';
-import {CommandBus, TCommands} from '../CommandBus/CommandBus';
-import {EventBus} from '../EventBus/EventBus';
-import {Connector} from '../Connector/Connector';
 import {Modal} from '../Modal/Modal';
 import {RichMedia} from '../RichMedia/RichMedia';
 import {ExpanderPushManager, ExpanderPushwoosh, ExpanderPushwooshSendMessage} from './expanders/expanders';
@@ -13,11 +11,9 @@ import {IInAppsOptions} from './InApps.types';
 
 
 export class InApps {
+  private readonly pw: any;
   private readonly options: IInAppsOptions;
-  private commandBus: CommandBus;
   private eventBus: EventBus;
-  private connector: Connector;
-  private readonly apiClient: ApiClient;
   private readonly api: Api;
   private readonly data: Data;
   private delayInApps: string[] = [];
@@ -26,15 +22,12 @@ export class InApps {
   public modal: Modal;
 
 
-  constructor(options: IInAppsOptions, api: Api, apiClient = new ApiClient()) {
+  constructor(options: IInAppsOptions, pw: any, eventBus: EventBus, api: Api) {
+    this.pw = pw;
     this.options = options;
-    this.apiClient = apiClient;
+    this.eventBus = eventBus;
     this.api = api;
     this.modal = new Modal(this.options && this.options.modal ? this.options.modal : {});
-
-    this.connector = new Connector();
-    this.commandBus = CommandBus.getInstance();
-    this.eventBus = EventBus.getInstance();
 
     this.data = new Data();
   }
@@ -44,7 +37,7 @@ export class InApps {
 
     // when we send postEvent in response
     // we can receive in-app code to be show
-    this.commandBus.on(TCommands.SHOW_IN_APP, ({ code }) => {
+    this.eventBus.addEventHandler('receive-in-app-code', ({ code }) => {
       // if is not loaded in app list
       // we delay the show
       if (!this.isLoadedInAppsList) {
@@ -94,74 +87,71 @@ export class InApps {
   private onReceiveNewMessageFromIFrame(message: any) {
     switch (message.method) {
       case 'subscribe':
-        this.connector.subscribe()
+        this.pw.subscribe()
           .then(() => {
-            this.commandBus.emit(TCommands.POST_MESSAGE_TO_IFRAME, {
-              code: message.code
+            this.modal.postMessage({
+              code: message.code,
             })
           });
         break;
       case 'unsubscribe':
-        this.connector.unsubscribe()
+        this.pw.unsubscribe()
           .then(() => {
-            this.commandBus.emit(TCommands.POST_MESSAGE_TO_IFRAME, {
-              code: message.code
+            this.modal.postMessage({
+              code: message.code,
             })
           });
         break;
       case 'getTags':
-        this.connector.getTags()
-          .then((tags) => {
-            this.commandBus.emit(TCommands.POST_MESSAGE_TO_IFRAME, {
+        this.pw.api.getTags()
+          .then(({ result }: any) => {
+            this.modal.postMessage({
               code: message.code,
-              tags: {
-                ...tags,
-                PWChannels: ['Sport news']
-              },
+              tags: result,
             })
           });
         break;
       case 'setTags':
-        this.connector.setTags(message.options.tags)
+        this.pw.api.setTags(message.options.tags)
           .then(() => {
-            this.commandBus.emit(TCommands.POST_MESSAGE_TO_IFRAME, {
-              code: message.code
+            this.modal.postMessage({
+              code: message.code,
             })
           });
         break;
       case 'getChannels':
         this.data.getFeatures()
           .then(({ channels }: { channels: unknown[] }) => {
-            this.commandBus.emit(TCommands.POST_MESSAGE_TO_IFRAME, {
+            this.modal.postMessage({
               code: message.code,
               channels
-            });
+            })
           });
 
         break;
       case 'checkSubscription':
-        this.connector.checkIsSubscribed()
+        this.api.checkDeviceSubscribeForPushNotifications()
           .then((state) => {
-            this.commandBus.emit(TCommands.POST_MESSAGE_TO_IFRAME, {
+            this.modal.postMessage({
               code: message.code,
-              state,
+              state
             })
           });
         break;
       case 'checkManualUnsubscribed':
-        this.connector.checkIsManualUnsubscribed()
+        this.data.getStatusManualUnsubscribed()
           .then((state) => {
-            this.commandBus.emit(TCommands.POST_MESSAGE_TO_IFRAME, {
+            this.modal.postMessage({
               code: message.code,
-              state,
+              state
             })
           });
         break;
+      case 'closeInApp':
+        this.modal.hide();
+        break;
       case 'openLink':
         window.open(message.options.href, '_blank');
-        break;
-      case 'closeInApp':
-        this.commandBus.emit(TCommands.CLOSE_IN_APP);
         break;
     }
 

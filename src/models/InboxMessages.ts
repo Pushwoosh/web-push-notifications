@@ -1,3 +1,5 @@
+import { EventBus } from '../core/modules/EventBus';
+
 import Storage from '../modules/storage/Storage';
 import DateModule from '../modules/DateModule';
 
@@ -6,11 +8,11 @@ import { Api } from '../modules/Api/Api';
 
 import InboxMessagesPublic from '../modules/InboxMessagesPublic';
 
-import EventEmitter from '../EventEmitter';
 import {EVENT_ON_UPDATE_INBOX_MESSAGES} from '../constants';
 
 
 export default class InboxMessages {
+  eventBus: EventBus;
   data: Data;
   api: Api;
   storage: Storage;
@@ -18,11 +20,13 @@ export default class InboxMessages {
   dateModule: DateModule;
 
   constructor(
+    eventBus: EventBus,
     data: Data,
     api: Api,
     storage: Storage = new Storage(),
     dateModule: DateModule = new DateModule(),
   ) {
+    this.eventBus = eventBus;
     this.data = data;
     this.api = api;
 
@@ -179,20 +183,20 @@ export default class InboxMessages {
   /**
    * Load messages and sync with locally
    */
-  async updateMessages(eventEmitter?: EventEmitter): Promise<void> {
+  async updateMessages(): Promise<void> {
     const response = await this.getInboxMessages();
 
     await this.deleteExpiredMessages();
     await this.deleteMessages(response.deleted);  // deleted from cp
     await this.putServerMessages(response.messages);
 
-    if (eventEmitter) {
-      eventEmitter.emit(EVENT_ON_UPDATE_INBOX_MESSAGES, new InboxMessagesPublic(
+    this.eventBus.dispatchEvent('update-inbox-messages', {
+      messages: new InboxMessagesPublic(
         this.data,
         this.api,
         this
-      ));
-    }
+      )
+    });
   }
 }
 

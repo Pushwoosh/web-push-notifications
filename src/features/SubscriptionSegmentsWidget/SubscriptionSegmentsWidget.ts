@@ -1,3 +1,5 @@
+import { EventBus } from '../../core/modules/EventBus';
+
 import { Data } from '../../modules/Data/Data';
 import { ApiClient } from '../../modules/ApiClient/ApiClient';
 import { Api } from '../../modules/Api/Api';
@@ -14,6 +16,7 @@ import { IMapResponse } from '../../modules/ApiClient/ApiClient.types';
 
 
 export class SubscriptionSegmentsWidget {
+  private readonly eventBus: EventBus;
   private readonly data: Data;
   private readonly apiClient: ApiClient;
   private readonly api: Api;
@@ -22,12 +25,14 @@ export class SubscriptionSegmentsWidget {
   private readonly pw: any;
 
   constructor(
+    eventBus: EventBus,
     data: Data,
     apiClient: ApiClient,
     api: Api,
     popup: Popup,
     pw: any
   ) {
+    this.eventBus = eventBus;
     this.data = data;
     this.apiClient = apiClient;
     this.api = api;
@@ -114,7 +119,7 @@ export class SubscriptionSegmentsWidget {
   }
 
   public showPopup(): void {
-    this.pw._ee.emit(EVENT_ON_SHOW_SUBSCRIPTION_WIDGET);
+    this.eventBus.dispatchEvent('show-subscription-widget', {});
 
     this.popup.show();
   }

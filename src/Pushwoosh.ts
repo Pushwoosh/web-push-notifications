@@ -1,5 +1,7 @@
 import { v4 } from 'uuid';
 
+import { EventBus } from './core/modules/EventBus';
+
 import { Api } from './modules/Api/Api';
 import { Data } from './modules/Data/Data';
 import { ApiClient } from './modules/ApiClient/ApiClient';
@@ -13,7 +15,6 @@ import * as CONSTANTS from './constants';
 
 import { IMapResponse } from './modules/ApiClient/ApiClient.types';
 
-import EventEmitter from './EventEmitter';
 import {clearLocationHash} from './functions';
 import {PlatformChecker} from './modules/PlatformChecker';
 
@@ -24,33 +25,22 @@ import {keyValue, log as logStorage, message as messageStorage} from './storage'
 
 import InboxMessagesModel from './models/InboxMessages';
 import InboxMessagesPublic from './modules/InboxMessagesPublic';
-import {EventBus, TEvents} from './modules/EventBus/EventBus';
-import {CommandBus, TCommands} from './modules/CommandBus/CommandBus';
 
 import { IPushService } from './services/PushService/PushService.types';
 
-type ChainFunction = (param: any) => Promise<any> | any;
-
 export default class Pushwoosh {
+  public ready: boolean = false;
+
+  private readonly eventBus: EventBus;
+
   private readonly data: Data;
   private readonly apiClient: ApiClient;
-
   private isCommunicationDisabled?: boolean;
-
   public readonly api: Api;
   public readonly subscriptionSegmentWidget: SubscriptionSegmentsWidget;
   public readonly subscriptionPromptWidget: SubscriptionPromptWidget;
-
   public driver: IPushService;
-
-
   private platformChecker: PlatformChecker;
-  private _ee: EventEmitter = new EventEmitter();
-  private readonly _onPromises: { [key: string]: Promise<ChainFunction> };
-  private readonly eventBus: EventBus;
-  private readonly commandBus: CommandBus;
-
-  public ready: boolean = false;
   public subscribeWidgetConfig: ISubscribeWidget;
   public inboxWidgetConfig: IInboxWidget;
   public subscribePopupConfig: any;
@@ -60,82 +50,91 @@ export default class Pushwoosh {
   public pwinbox: InboxMessagesPublic;
   private inboxModel: InboxMessagesModel;
 
-  constructor(
-    platformChecker: PlatformChecker = new PlatformChecker()
-  ) {
+  constructor() {
+    this.eventBus = new EventBus();
+
     this.data = new Data();
-
-    this.commandBus = CommandBus.getInstance();
-    this.eventBus = EventBus.getInstance();
-
     this.apiClient = new ApiClient(this.data);
-    this.api = new Api(this.data, this.apiClient, this.commandBus, this.eventBus, this._ee);
 
+    this.api = new Api(this.eventBus, this.data, this.apiClient);
 
-    this.inboxModel = new InboxMessagesModel(this.data, this.api);
+    this.platformChecker = new PlatformChecker()
+    this.inboxModel = new InboxMessagesModel(this.eventBus, this.data, this.api);
     this.pwinbox = new InboxMessagesPublic(this.data, this.api, this.inboxModel);
-
-    this.platformChecker = platformChecker;
-    this._onPromises = {};
-
-    if (this.platformChecker.isAvailablePromise) {
-      this._onPromises = {
-        [CONSTANTS.EVENT_ON_PERMISSION_DENIED]: new Promise(resolve => this._ee.once(CONSTANTS.EVENT_ON_PERMISSION_DENIED, resolve)),
-        [CONSTANTS.EVENT_ON_PERMISSION_PROMPT]: new Promise(resolve => this._ee.once(CONSTANTS.EVENT_ON_PERMISSION_PROMPT, resolve)),
-        [CONSTANTS.EVENT_ON_PERMISSION_GRANTED]: new Promise(resolve => this._ee.once(CONSTANTS.EVENT_ON_PERMISSION_GRANTED, resolve)),
-      };
-    }
 
     // Bindings
     this.onServiceWorkerMessage = this.onServiceWorkerMessage.bind(this);
 
-
-    // subscribe by connector
-    this.commandBus.on(TCommands.SUBSCRIBE, ({ commandId }) => {
-      this.subscribe()
-        .then(() => {
-          this.eventBus.emit(TEvents.SUBSCRIBE, commandId);
-        });
-    });
-
-    // unsubscribe by connector
-    this.commandBus.on(TCommands.UNSUBSCRIBE, ({ commandId }) => {
-      this.unsubscribe()
-        .then(() => {
-          this.eventBus.emit(TEvents.UNSUBSCRIBE, commandId);
-        });
-    });
-
-    // check subscribe status by connector
-    this.commandBus.on(TCommands.CHECK_IS_SUBSCRIBED, ({ commandId }) => {
-      this.api.checkDeviceSubscribeForPushNotifications(false)
-        .then((state) => {
-          this.eventBus.emit(TEvents.CHECK_IS_SUBSCRIBED, { state: state }, commandId);
-        });
-    });
-
-    // check subscribe status by connector
-    this.commandBus.on(TCommands.CHECK_IS_MANUAL_UNSUBSCRIBED, ({ commandId }) => {
-      this.data.getStatusManualUnsubscribed()
-        .then((state: boolean) => {
-          this.eventBus.emit(TEvents.CHECK_IS_MANUAL_UNSUBSCRIBED, { state: state }, commandId);
-        });
-    });
-
     const popup = new Popup(
       'subscription-segments',
-      () => {
-        this._ee.emit(CONSTANTS.EVENT_ON_HIDE_SUBSCRIPTION_WIDGET);
-      },
+      () => this.eventBus.dispatchEvent('hide-subscription-widget', {}),
       { position: 'top' }
     );
     // need inject this because need call subscribe method
     // can't use command bus, because need call synchronically
-    this.subscriptionSegmentWidget = new SubscriptionSegmentsWidget(this.data, this.apiClient, this.api, popup, this);
+    this.subscriptionSegmentWidget = new SubscriptionSegmentsWidget(
+      this.eventBus,
+      this.data,
+      this.apiClient,
+      this.api,
+      popup,
+      this
+    );
 
     // create subscription prompt widget
-    this.subscriptionPromptWidget = new SubscriptionPromptWidget(this);
+    this.subscriptionPromptWidget = new SubscriptionPromptWidget(this.eventBus, this);
   }
+
+  /**
+   * Add Web SDK Event Handler.
+   * Alias to addEventHandler method of EventBus module.
+   *
+   * @public
+   * @readonly
+   *
+   * @param {string} name - name of Web SDK event.
+   * @param {function} handler - handler of Web SDK event.
+   *
+   * @returns {void}
+   */
+  public addEventHandler = <Name extends EventName>(
+    name: Name,
+    handler: EventHandlerMap[Name],
+  ): void => this.eventBus.addEventHandler(name, handler);
+
+  /**
+   * Remove Web SDK Event Handler.
+   * Alias to removeEventHandler method of EventBus module.
+   *
+   * @public
+   * @readonly
+   *
+   * @param {string} name - name of Web SDK event.
+   * @param {function} handler - handler of Web SDK event.
+   *
+   * @returns {void}
+   */
+  public removeEventHandler = <Name extends EventName>(
+    name: Name,
+    handler: EventHandlerMap[Name],
+  ): void => this.eventBus.removeEventHandler(name, handler);
+
+  /**
+   * Dispatch Web SDK Event.
+   * Alias to dispatchEvent method of EventBus module.
+   *
+   * @public
+   * @readonly
+   *
+   * @param {string} name - name of Web SDK event.
+   * @param {object} payload - event payload.
+   *
+   * @returns {string} - event id.
+   */
+  public dispatchEvent = <Name extends EventName>(
+    name: Name,
+    payload: Omit<Parameters<EventHandlerMap[Name]>[0], 'eventId'> & { eventId?: string },
+  ): string => this.eventBus.dispatchEvent(name, payload);
 
   /**
    * Method that puts the stored error/info messages to browser console.
@@ -182,8 +181,7 @@ export default class Pushwoosh {
    */
   public push(command: PWInput) {
     if (typeof command === 'function') {
-      this.handleOnReadyCallback(command);
-
+      this.subscribeToLegacyEvents('onReady', command);
       return;
     }
 
@@ -196,11 +194,7 @@ export default class Pushwoosh {
         this.initialize(command[1]);
 
         break;
-
       case CONSTANTS.EVENT_ON_READY:
-        this.handleOnReadyCallback(command[1]);
-        break;
-
       case CONSTANTS.EVENT_ON_REGISTER:
       case CONSTANTS.EVENT_ON_SUBSCRIBE:
       case CONSTANTS.EVENT_ON_UNSUBSCRIBE:
@@ -215,14 +209,10 @@ export default class Pushwoosh {
       case CONSTANTS.EVENT_ON_HIDE_NOTIFICATION_PERMISSION_DIALOG:
       case CONSTANTS.EVENT_ON_SHOW_SUBSCRIPTION_WIDGET:
       case CONSTANTS.EVENT_ON_HIDE_SUBSCRIPTION_WIDGET:
-        this.handleEventCallback(command[0], command[1]);
-
-        break;
-
       case CONSTANTS.EVENT_ON_PERMISSION_DENIED:
       case CONSTANTS.EVENT_ON_PERMISSION_PROMPT:
       case CONSTANTS.EVENT_ON_PERMISSION_GRANTED:
-        this.handleOnChangePermissionCallback(command[0], command[1]);
+        this.subscribeToLegacyEvents(command[0], command[1]);
         break;
 
       default:
@@ -245,9 +235,7 @@ export default class Pushwoosh {
     // if permission granted need ask permission for send notifications
     if (isPermissionDefault) {
       // emit event when permission dialog show
-      this._ee.emit(CONSTANTS.EVENT_ON_SHOW_NOTIFICATION_PERMISSION_DIALOG);
-      this.eventBus.emit(TEvents.SHOW_NOTIFICATION_PERMISSION_DIALOG);
-
+      this.eventBus.dispatchEvent('show-notification-permission-dialog', {});
       // all action before this MUST be a synchrony because
       // in new release in ff 72 we must call this event by user
       // ask permission
@@ -257,8 +245,7 @@ export default class Pushwoosh {
       const permission = this.driver.getPermission();
 
       // emit event when permission dialog hide with permission state
-      this._ee.emit(CONSTANTS.EVENT_ON_HIDE_NOTIFICATION_PERMISSION_DIALOG, permission);
-      this.eventBus.emit(TEvents.HIDE_NOTIFICATION_PERMISSION_DIALOG);
+      this.eventBus.dispatchEvent('hide-notification-permission-dialog', { permission });
     }
 
     const permission = this.driver.getPermission();
@@ -267,21 +254,21 @@ export default class Pushwoosh {
 
     // if permission granted emit event and register device into pushwoosh
     if (permission === CONSTANTS.PERMISSION_GRANTED) {
-      this._ee.emit(CONSTANTS.EVENT_ON_PERMISSION_GRANTED);
+      this.eventBus.dispatchEvent('permission-granted', {});
       const needSubscribe = isForceSubscribe || !isManualUnsubscribed;
 
       if (needSubscribe && !isDeviceRegister) {
         await this.driver.subscribe();
       }
 
-      this._ee.emit(CONSTANTS.EVENT_ON_SUBSCRIBE);
+      this.eventBus.dispatchEvent('subscribe', {});
 
       return;
     }
 
     // if permission denied emit event
     if (permission === CONSTANTS.PERMISSION_DENIED) {
-      this._ee.emit(CONSTANTS.EVENT_ON_PERMISSION_DENIED);
+      this.eventBus.dispatchEvent('permission-denied', {});
 
       if (isDeviceRegister) {
         await this.driver.unsubscribe();
@@ -362,7 +349,7 @@ export default class Pushwoosh {
       await this.api.unregisterDevice();
     }
 
-    this._ee.emit(CONSTANTS.EVENT_ON_CHANGE_COMMUNICATION_ENABLED, isEnabled);
+    this.eventBus.dispatchEvent('change-enabled-communication', { isEnabled });
 
     await this.api.postEvent(CONSTANTS.EVENT_GDPR_CONSENT, {
       channel: isEnabled,
@@ -559,7 +546,7 @@ export default class Pushwoosh {
 
     // step 11: init submodules (inbox, facebook)
     try {
-      await this.inboxModel.updateMessages(this._ee);
+      await this.inboxModel.updateMessages();
     } catch (error) {
       Logger.write('error', error);
     }
@@ -571,14 +558,14 @@ export default class Pushwoosh {
     }
 
     // step 12: ready
-    this._ee.emit(CONSTANTS.EVENT_ON_READY);
     this.ready = true;
+    this.eventBus.dispatchEvent('ready', {});
 
     const delayedEvent = await this.data.getDelayedEvent();
 
     if (delayedEvent) {
       const { type, payload } = delayedEvent;
-      await this._ee.emit(type, payload);
+      await this.emitLegacyEventsFromServiceWorker(type, payload);
       await this.data.setDelayedEvent(null);
     }
 
@@ -650,7 +637,7 @@ export default class Pushwoosh {
     switch (permission) {
       case CONSTANTS.PERMISSION_PROMPT:
         // emit event permission default
-        this._ee.emit(CONSTANTS.EVENT_ON_PERMISSION_PROMPT);
+        this.eventBus.dispatchEvent('permission-default', {});
 
         // device can't be register if permission default
         if (isRegister) {
@@ -688,7 +675,7 @@ export default class Pushwoosh {
 
       case CONSTANTS.PERMISSION_DENIED:
         // emit event permission denied
-        this._ee.emit(CONSTANTS.EVENT_ON_PERMISSION_DENIED);
+        this.eventBus.dispatchEvent('permission-denied', {});
 
         // device can't be register if permission default
         if (isRegister) {
@@ -698,7 +685,7 @@ export default class Pushwoosh {
         break;
       case CONSTANTS.PERMISSION_GRANTED:
         // emit event permission granted
-        this._ee.emit(CONSTANTS.EVENT_ON_PERMISSION_GRANTED);
+        this.eventBus.dispatchEvent('permission-granted', {});
 
         // device can't be register if manual unsubscribed
         if (isManualUnsubscribed && isRegister) {
@@ -769,41 +756,6 @@ export default class Pushwoosh {
   }
 
   /**
-   * Method invoking the transmitted callback when the API is ready
-   * @param cmd
-   */
-  private onReadyHandler(cmd: HandlerFn) {
-    if (this.ready) {
-      cmd(this.api);
-    } else {
-      this._ee.on(CONSTANTS.EVENT_ON_READY, (params) => cmd(this.api, params));
-    }
-  }
-
-  private handleOnReadyCallback(callback: PushOnReadyCallback) {
-    this.onReadyHandler(callback);
-  }
-
-  private handleOnChangePermissionCallback(name: PWEvent, callback: HandlerFn) {
-    const currentPromise = this._onPromises[name];
-
-    if (!currentPromise) {
-      return;
-    }
-
-    currentPromise
-      .then(() => {
-        return callback(this.api);
-      });
-  }
-
-  private handleEventCallback(name: PWEvent, callback: HandlerFn) {
-    this._ee.on(name, (params: any) => {
-      return callback(this.api, params);
-    });
-  }
-
-  /**
    * Method initiates Facebook
    * @param {IInitParams} initParams
    * @returns {Promise<void>}
@@ -838,13 +790,13 @@ export default class Pushwoosh {
   private async initInApp(params: IInitParams['inApps']) {
     if (params && params.enable) {
       try {
-        this.InApps = new InApps(params, this.api);
+        this.InApps = new InApps(params, this, this.eventBus, this.api);
 
         await this.InApps.init()
           .then(() => {
             Logger.info('InApps module has been initialized');
 
-            this.eventBus.emit(TEvents.INIT_IN_APPS_MODULE);
+            this.eventBus.dispatchEvent('initialize-in-apps-module', {});
           })
           .catch((error) => {
             Logger.error(error, 'InApps module initialization has been failed');
@@ -862,7 +814,7 @@ export default class Pushwoosh {
   private onServiceWorkerMessage(event: ServiceWorkerMessageEvent) {
     const {data = {}} = event || {};
     const {type = '', payload = {}} = data || {};
-    this._ee.emit(type, payload);
+    this.emitLegacyEventsFromServiceWorker(type, payload);
   }
 
   /**
@@ -970,5 +922,166 @@ export default class Pushwoosh {
       title: title,
       device_type: this.platformChecker.platform
     });
+  }
+
+  /**
+   * @private
+   *
+   * @param {string} type - legacy event type
+   * @param {function} handler - legacy handler
+   */
+  private subscribeToLegacyEvents(type: string, handler: (api: Api, payload?: any) => void): void {
+    switch (type) {
+      case CONSTANTS.EVENT_ON_READY:
+        if (this.ready) {
+          handler(this.api);
+          break;
+        }
+
+        this.eventBus.addEventHandler(
+          'ready',
+          () => handler(this.api),
+        );
+        break;
+
+      case CONSTANTS.EVENT_ON_REGISTER:
+        this.eventBus.addEventHandler(
+          'register',
+          () => handler(this.api),
+        );
+        break;
+
+      case CONSTANTS.EVENT_ON_SUBSCRIBE:
+        this.eventBus.addEventHandler(
+          'subscribe',
+          () => handler(this.api),
+        );
+        break;
+
+      case CONSTANTS.EVENT_ON_UNSUBSCRIBE:
+        this.eventBus.addEventHandler(
+          'unsubscribe',
+          () => handler(this.api),
+        );
+        break;
+
+      case CONSTANTS.EVENT_ON_SW_INIT_ERROR:
+        this.eventBus.addEventHandler(
+          'initialize-service-worker-error',
+          ({ error }) => handler(this.api, error),
+        );
+        break;
+
+      case CONSTANTS.EVENT_ON_PUSH_DELIVERY:
+        this.eventBus.addEventHandler(
+          'receive-push',
+          ({ notification }) => handler(this.api, notification),
+        );
+        break;
+
+      case CONSTANTS.EVENT_ON_NOTIFICATION_CLICK:
+        this.eventBus.addEventHandler(
+          'open-notification',
+          ({ notification }) => handler(this.api, notification),
+        );
+        break;
+
+      case CONSTANTS.EVENT_ON_NOTIFICATION_CLOSE:
+        this.eventBus.addEventHandler(
+          'hide-notification',
+          ({ notification }) => handler(this.api, notification),
+        );
+        break;
+
+      case CONSTANTS.EVENT_ON_CHANGE_COMMUNICATION_ENABLED:
+        this.eventBus.addEventHandler(
+          'change-enabled-communication',
+          ({ isEnabled }) => handler(this.api, isEnabled),
+        );
+        break;
+
+      case CONSTANTS.EVENT_ON_PUT_NEW_MESSAGE_TO_INBOX_STORE:
+        this.eventBus.addEventHandler(
+          'receive-inbox-message',
+          ({ message }) => handler(this.api, message),
+        );
+        break;
+
+      case CONSTANTS.EVENT_ON_UPDATE_INBOX_MESSAGES:
+        this.eventBus.addEventHandler(
+          'update-inbox-messages',
+          ({ messages }) => handler(this.api, messages),
+        );
+        break;
+
+      case CONSTANTS.EVENT_ON_SHOW_NOTIFICATION_PERMISSION_DIALOG:
+        this.eventBus.addEventHandler(
+          'show-notification-permission-dialog',
+          () => handler(this.api),
+        );
+        break;
+
+      case CONSTANTS.EVENT_ON_HIDE_NOTIFICATION_PERMISSION_DIALOG:
+        this.eventBus.addEventHandler(
+          'hide-notification-permission-dialog',
+          ({ permission }) => handler(this.api, permission),
+        );
+        break;
+
+      case CONSTANTS.EVENT_ON_SHOW_SUBSCRIPTION_WIDGET:
+        this.eventBus.addEventHandler(
+          'show-subscription-widget',
+          () => handler(this.api),
+        );
+        break;
+
+      case CONSTANTS.EVENT_ON_HIDE_SUBSCRIPTION_WIDGET:
+        this.eventBus.addEventHandler(
+          'hide-subscription-widget',
+          () => handler(this.api),
+        );
+        break;
+
+      case CONSTANTS.EVENT_ON_PERMISSION_DENIED:
+        this.eventBus.addEventHandler(
+          'permission-denied',
+          () => handler(this.api),
+        );
+        break;
+
+      case CONSTANTS.EVENT_ON_PERMISSION_PROMPT:
+        this.eventBus.addEventHandler(
+          'permission-default',
+          () => handler(this.api),
+        );
+        break;
+
+      case CONSTANTS.EVENT_ON_PERMISSION_GRANTED:
+        this.eventBus.addEventHandler(
+          'permission-granted',
+          () => handler(this.api),
+        );
+        break;
+    }
+  }
+
+  private emitLegacyEventsFromServiceWorker(type: string, payload?: any): void {
+    switch (type) {
+      case CONSTANTS.EVENT_ON_PUSH_DELIVERY:
+        this.eventBus.dispatchEvent('receive-push', { notification: payload });
+        break;
+
+      case CONSTANTS.EVENT_ON_NOTIFICATION_CLICK:
+        this.eventBus.dispatchEvent('open-notification', { notification: payload });
+        break;
+
+      case CONSTANTS.EVENT_ON_NOTIFICATION_CLOSE:
+        this.eventBus.dispatchEvent('hide-notification', { notification: payload });
+        break;
+
+      case CONSTANTS.EVENT_ON_PUT_NEW_MESSAGE_TO_INBOX_STORE:
+        this.eventBus.dispatchEvent('receive-inbox-message', { message: payload });
+        break;
+    }
   }
 }

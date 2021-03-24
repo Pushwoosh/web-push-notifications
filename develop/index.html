@@ -43,9 +43,13 @@
       #prompt {color: blue;}
 
       .page {
-          max-width: 1000px;
+          font-size: 14px;
           padding: 0 20px;
           margin: auto;
+      }
+
+      pre {
+        font-size: 12px;
       }
     </style>
 </head>
@@ -138,6 +142,13 @@
     </fieldset>
 
     <script>
+      Pushwoosh.push(function () {
+        const callback = () => console.log('SUBSCRIBE!');
+
+        Pushwoosh.addEventHandler('subscribe', callback);
+        Pushwoosh.removeEventHandler('subscribe', callback);
+      });
+
       Pushwoosh.push(function(api) {
         console.log('EVENT: onReady', api);
 

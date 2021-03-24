@@ -134,7 +134,7 @@ function onPushEventHandler(event: PushEvent): void {
 
     // Inbox message actions
     if (notificationPayload.inboxId !== '') {
-      const inboxMessages = new InboxMessages(Pushwoosh.data, Pushwoosh.api);
+      const inboxMessages = new InboxMessages(Pushwoosh.eventBus, Pushwoosh.data, Pushwoosh.api);
       const inboxMessagesPublic = new InboxMessagesPublic(Pushwoosh.data, Pushwoosh.api, inboxMessages);
       const inboxMessagePayload = await notificationPayload.getInboxMessage();
 
@@ -181,7 +181,7 @@ function onClickNotificationEventHandler(event: NotificationEvent): void {
     }
 
     if (inboxId !== '') {
-      const inboxMessages = new InboxMessages(Pushwoosh.data, Pushwoosh.api);
+      const inboxMessages = new InboxMessages(Pushwoosh.eventBus, Pushwoosh.data, Pushwoosh.api);
 
       const message = await inboxMessages.getMessage(inboxId);
       (<TInboxMessageStatusOpen>message.status) = 3;

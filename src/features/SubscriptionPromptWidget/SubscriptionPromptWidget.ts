@@ -1,3 +1,5 @@
+import { EventBus } from '../../core/modules/EventBus';
+
 import { EVENT_ON_SHOW_SUBSCRIPTION_WIDGET, EVENT_ON_HIDE_SUBSCRIPTION_WIDGET } from '../../constants';
 
 import { getHTML, getStyles } from './SubscriptionPromptWidget.helpers';
@@ -6,9 +8,11 @@ import { SUBSCRIPTION_PROMPT_WIDGET_NAMESPACE } from './SubscriptionPromptWidget
 import { ISubscriptionPromptWidgetParams } from './SubscriptionPromptWidget.types';
 
 export class SubscriptionPromptWidget {
+  private readonly eventBus: EventBus;
   private readonly pw: any;
 
-  constructor(pw: any) {
+  constructor(eventBus: EventBus, pw: any) {
+    this.eventBus = eventBus;
     this.pw = pw;
   };
 
@@ -33,7 +37,7 @@ export class SubscriptionPromptWidget {
 
   public show(): void {
     const rootElement = this.getRootElementWithCheckExist();
-    this.pw._ee.emit(EVENT_ON_SHOW_SUBSCRIPTION_WIDGET);
+    this.eventBus.dispatchEvent('show-subscription-widget', {});
 
     rootElement.classList.add(`${ SUBSCRIPTION_PROMPT_WIDGET_NAMESPACE }_show`);
   }
@@ -42,7 +46,7 @@ export class SubscriptionPromptWidget {
     const rootElement = this.getRootElementWithCheckExist();
 
     if (rootElement.classList.contains(`${ SUBSCRIPTION_PROMPT_WIDGET_NAMESPACE }_show`)) {
-      this.pw._ee.emit(EVENT_ON_HIDE_SUBSCRIPTION_WIDGET);
+      this.eventBus.dispatchEvent('hide-subscription-widget', {});
       rootElement.classList.remove(`${ SUBSCRIPTION_PROMPT_WIDGET_NAMESPACE }_show`);
     }
   }

@@ -1,6 +1,3 @@
-import { CommandBus, TCommands } from '../CommandBus/CommandBus';
-import { EventBus, TEvents } from '../EventBus/EventBus';
-
 import {
   MODAL_CLOSE_BUTTON_NAMESPACE,
   MODAL_DEFAILT_OPTIONS,
@@ -225,23 +222,11 @@ export class Modal {
     close.addEventListener('click', () => {
       this.hide();
     });
+  }
 
-    const commandBus = CommandBus.getInstance();
-    const eventBus = EventBus.getInstance();
-
-    commandBus.on(TCommands.CLOSE_IN_APP, () => {
-      this.hide();
-    });
-
-    commandBus.on(TCommands.POST_MESSAGE_TO_IFRAME, (data) => {
-      // @ts-ignore
-      this.iframe.contentWindow.postMessage(JSON.stringify(data), '*');
-    });
-
-    eventBus.on(TEvents.HIDE_NOTIFICATION_PERMISSION_DIALOG, () => {
-      // @ts-ignore
-      this.iframe.contentWindow.postMessage(JSON.stringify({ method: 'onHidePermissionDialog' }), '*');
-    })
+  postMessage(data: any) {
+    // @ts-ignore
+    this.iframe.contentWindow.postMessage(JSON.stringify(data), '*');
   }
 
   show() {

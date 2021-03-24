@@ -1,14 +1,18 @@
+import { EventBus } from '../core/modules/EventBus';
+
 import { Data } from '../modules/Data/Data';
 import { Api } from '../modules/Api/Api';
 
 
 export default class WorkerPushwooshGlobal {
+  public readonly eventBus: EventBus;
   public readonly api: Api;
   public readonly data: Data;
 
   constructor() {
-    this.api = new Api();
+    this.eventBus = new EventBus();
     this.data = new Data();
+    this.api = new Api(this.eventBus, this.data);
   }
 
   _listeners: {[key: string]: TPWCanWaitCallback[]} = {};
