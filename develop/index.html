@@ -142,12 +142,95 @@
     </fieldset>
 
     <script>
-      Pushwoosh.push(function () {
-        const callback = () => console.log('SUBSCRIBE!');
+      // On Load Event
+      Pushwoosh.push(['onLoad', function () {
+        console.log('Pushwoosh load!');
+      }]);
 
-        Pushwoosh.addEventHandler('subscribe', callback);
-        Pushwoosh.removeEventHandler('subscribe', callback);
+      // Ready Event
+      Pushwoosh.push(function (api) {
+        console.log('Pushwoosh ready!');
       });
+
+      // Subscribe Event
+      Pushwoosh.push(['onLoad', function (api) {
+        Pushwoosh.addEventHandler('subscribe', function (payload) {
+          console.log('Triggered event: subscribe');
+        });
+      }]);
+
+      // Unsubscribe Event
+      Pushwoosh.push(['onLoad', function (api) {
+        Pushwoosh.addEventHandler('unsubscribe', function (payload) {
+          console.log('Triggered event: unsubscribe');
+        });
+      }]);
+
+      // Subscription Widget Events
+      Pushwoosh.push(['onLoad', function (api) {
+        Pushwoosh.addEventHandler('show-subscription-widget', function (payload) {
+          console.log('Triggered event: show-subscription-widget');
+        });
+
+        Pushwoosh.addEventHandler('hide-subscription-widget', function (payload) {
+          console.log('Triggered event: hide-subscription-widget');
+        });
+      }]);
+
+      // Notification Permission Dialog Events
+      Pushwoosh.push(['onLoad', function (api) {
+        Pushwoosh.addEventHandler('show-notification-permission-dialog', function (payload) {
+          console.log('Triggered event: show-notification-permission-dialog');
+        });
+
+        Pushwoosh.addEventHandler('hide-notification-permission-dialog', function (payload) {
+          console.log('Triggered event: hide-notification-permission-dialog', payload.permission);
+        });
+      }]);
+
+      // Permission Events
+      Pushwoosh.push(['onLoad', function (api) {
+        Pushwoosh.addEventHandler('permission-default', function () {
+          console.log('Triggered event: permission-default');
+        });
+
+        Pushwoosh.addEventHandler('permission-denied', function () {
+          console.log('Triggered event: permission-denied');
+        });
+
+        Pushwoosh.addEventHandler('permission-granted', function () {
+          console.log('Triggered event: permission-granted');
+        });
+      }]);
+
+      // Receive Push Event
+      Pushwoosh.push(['onLoad', function (api) {
+        Pushwoosh.addEventHandler('receive-push', function (payload) {
+          console.log('Triggered event: receive-push', payload.notification);
+        });
+      }]);
+
+      // Notification Events
+      Pushwoosh.push(['onLoad', function (api) {
+        Pushwoosh.addEventHandler('open-notification', function (payload) {
+          console.log('Triggered event: open-notification', payload.notification);
+        });
+
+        Pushwoosh.addEventHandler('hide-notification', function (payload) {
+          console.log('Triggered event: hide-notification', payload.notification);
+        });
+      }]);
+
+      // In-Box Events
+      Pushwoosh.push(['onLoad', function (api) {
+        Pushwoosh.addEventHandler('receive-inbox-message', function (payload) {
+          console.log('Triggered event: receive-inbox-message', payload.message);
+        });
+
+        Pushwoosh.addEventHandler('update-inbox-messages', function (payload) {
+          console.log('Triggered event: receive-inbox-message', payload.messages);
+        });
+      }]);
 
       Pushwoosh.push(function(api) {
         console.log('EVENT: onReady', api);

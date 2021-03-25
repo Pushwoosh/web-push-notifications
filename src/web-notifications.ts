@@ -6,20 +6,11 @@ import './subscribePopup';
 
 function main() {
   const global = getGlobal();
+  const PW = new PushwooshSingleton();
+  const commands = Array.isArray(global.Pushwoosh) ? [...global.Pushwoosh] : [];
 
-  let {Pushwoosh} = global;
-  let predefinedCommands;
-
-  if (Pushwoosh) {
-    predefinedCommands = Pushwoosh;
-  }
-
-  Pushwoosh = new PushwooshSingleton();
-  if (Array.isArray(predefinedCommands)) {
-    predefinedCommands.forEach(c => Pushwoosh.push(c));
-  }
-
-  global.Pushwoosh = Pushwoosh;
+  global.Pushwoosh = PW;
+  commands.forEach((command) => PW.push(command));
 }
 
 if (document.readyState === 'complete') {

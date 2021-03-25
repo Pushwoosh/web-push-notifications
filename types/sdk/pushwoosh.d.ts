@@ -286,7 +286,9 @@ type PWInput = PushOnReadyCallback | PushInitCallback | PushEventCallback;
 type PushOnReadyCallback = HandlerFn;
 type PushInitCallback = ['init', IInitParams];
 type PushEventCallback = [PWEvent, HandlerFn];
-type PWEvent = 'onReady'
+type PWEvent =
+  | 'onLoad'
+  | 'onReady'
   | 'onSubscribe'
   | 'onUnsubscribe'
   | 'onRegister'

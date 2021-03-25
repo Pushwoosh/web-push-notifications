@@ -52,6 +52,7 @@ export const PERMISSION_GRANTED = 'granted';
 export const PERMISSION_PROMPT = 'default';
 
 // Events
+export const EVENT_ON_LOAD = 'onLoad';
 export const EVENT_ON_READY = 'onReady';
 export const EVENT_ON_SUBSCRIBE = 'onSubscribe';
 export const EVENT_ON_UNSUBSCRIBE = 'onUnsubscribe';

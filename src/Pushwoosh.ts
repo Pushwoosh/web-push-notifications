@@ -192,8 +192,9 @@ export default class Pushwoosh {
     switch (command[0]) {
       case 'init':
         this.initialize(command[1]);
-
         break;
+
+      case CONSTANTS.EVENT_ON_LOAD:
       case CONSTANTS.EVENT_ON_READY:
       case CONSTANTS.EVENT_ON_REGISTER:
       case CONSTANTS.EVENT_ON_SUBSCRIBE:
@@ -930,8 +931,12 @@ export default class Pushwoosh {
    * @param {string} type - legacy event type
    * @param {function} handler - legacy handler
    */
-  private subscribeToLegacyEvents(type: string, handler: (api: Api, payload?: any) => void): void {
+  private subscribeToLegacyEvents(type: string, handler: (api?: Api, payload?: any) => void): void {
     switch (type) {
+      case CONSTANTS.EVENT_ON_LOAD:
+        handler();
+        break;
+
       case CONSTANTS.EVENT_ON_READY:
         if (this.ready) {
           handler(this.api);
