@@ -59,6 +59,12 @@ export default class NotificationPayload {
     return this.payload.p || '';
   }
 
+  get metaData(): {[key: string]: any} {
+    return this.payload.md
+      ? parseSerializedNotificationParams(this.payload.md)
+      : {};
+  }
+
   get image(): string {
     return this.payload.image || '';
   }
@@ -158,6 +164,7 @@ export default class NotificationPayload {
       image: this.image,
       buttons: this.buttons,
       customData: this.customData,
+      metaData: this.metaData,
       campaignCode: this.campaignCode,
       duration: this.duration,
       openUrl: this.link,
@@ -183,7 +190,8 @@ export default class NotificationPayload {
       tag: JSON.stringify({
         url: this.link,
         messageHash: this.messageHash,
-        customData: this.customData
+        customData: this.customData,
+        metaData: this.metaData,
       }),
       data: {
         code: this.code,

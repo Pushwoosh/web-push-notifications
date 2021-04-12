@@ -221,6 +221,7 @@ interface INotificationOptions extends ServiceWorkerNotificationOptions {
   code?: string,
   buttons?: INotificationButton[],
   customData?: {[key: string]: any},
+  metaData?: {[key: string]: any},
   campaignCode?: string
 }
 

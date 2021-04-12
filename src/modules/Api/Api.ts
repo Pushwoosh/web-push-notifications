@@ -159,20 +159,21 @@ export class Api {
     }
   }
 
-  public async pushStat(hash: string, isTrackingLogOnFailure?: boolean): Promise<IMapResponse['pushStat']> {
+  public async pushStat(hash: string, isTrackingLogOnFailure?: boolean, metaData: {[key: string]: any} = {}): Promise<IMapResponse['pushStat']> {
     const startTime = Math.round(+new Date());
     const params = await this.getRequestParams();
 
     try {
       return await this.apiClient.pushStat({
         ...params,
-        hash: hash,
+        hash,
+        metaData,
       });
     } catch (error) {
       if (isTrackingLogOnFailure) {
         this.trackLog(
           'pushStat',
-          { ...params, hash },
+          { ...params, hash, metaData },
           { startTime, error }
         );
       }

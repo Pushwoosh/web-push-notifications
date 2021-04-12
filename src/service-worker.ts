@@ -171,6 +171,7 @@ function onClickNotificationEventHandler(event: NotificationEvent): void {
 
     const {
       messageHash,
+      metaData,
       url,
       code,
       inboxId
@@ -198,7 +199,7 @@ function onClickNotificationEventHandler(event: NotificationEvent): void {
     }
 
     return Promise.all([
-      Pushwoosh.initApi().then(() => Pushwoosh.api.pushStat(messageHash, true)),
+      Pushwoosh.initApi().then(() => Pushwoosh.api.pushStat(messageHash, true, metaData)),
       Pushwoosh.data.setLastOpenMessage({
         url,
         messageHash,
@@ -309,6 +310,7 @@ async function parseNotificationEvent(event: NotificationEvent): Promise<INotifi
 
     messageHash: notificationTag.messageHash,
     customData: notificationTag.customData,
+    metaData: notificationTag.metaData,
     openUrl: notificationTag.url,
 
     tag: notification.tag,

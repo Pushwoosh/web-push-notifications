@@ -56,6 +56,7 @@ interface IRequestMessageDeliveryEvent extends IRequest {
 
 interface IRequestPushStat extends IRequest {
   hash: string; // message hash
+  metaData: { [key: string]: any }; // meta data
 }
 
 interface IRequestSetTags extends IRequest {

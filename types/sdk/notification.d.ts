@@ -11,6 +11,7 @@ interface INotificationPayload {
   duration?: string;  // required for chrome/opera
   i?: string;  // icon
   u?: string;  // custom data json string
+  md?: string;  // meta data json string
   l?: string;  // deep link or URL
   pwcid?: string;  // campaign id
   image?: string;  // chrome big image
@@ -38,6 +39,7 @@ interface INotificationOptionsPayload {
   image: string;
   buttons: Array<INotificationButton>;
   customData: {[key: string]: any};
+  metaData: {[key: string]: any};
   campaignCode: string;
   duration: number;
   openUrl: string;
