@@ -30,16 +30,10 @@ export default class InboxMessages implements IInboxMessages {
    */
   private messageTypeFactory(actionParams: IInboxMessageActionParams): TInboxMessageType {
     let messageType: TInboxMessageTypePlain = 0;
-    // 'h', 'rm', 'r' - Richmedia params
-    if ('h' in actionParams
-      || 'rm' in actionParams
-      || 'r' in actionParams) {
+    if ('h' in actionParams || 'rm' in actionParams || 'r' in actionParams) { // 'h', 'rm', 'r' - Richmedia params
       (<TInboxMessageTypeRichmedia>messageType) = 1;
-    }
-    // 'l' - URL and deeplink parameter
-    else if ('l' in actionParams && actionParams.l !== undefined) {
-      // Deeplink parameter - relative URL; URL parameter - full URL
-      if (actionParams.l.startsWith('http')) {
+    } else if ('l' in actionParams && actionParams.l != null) { // 'l' - URL and deeplink parameter
+      if (actionParams.l.startsWith('http')) { // Deeplink parameter - relative URL; URL parameter - full URL
         (<TInboxMessageTypeURL>messageType) = 2;
       }
       else {
@@ -164,10 +158,10 @@ export default class InboxMessages implements IInboxMessages {
     const actionParams = JSON.parse(message.action_params);
     const messageType = this.messageTypeFactory(actionParams);
 
-    if (<TInboxMessageTypeURL>messageType === 2 && actionParams.l !== undefined) {
+    if (<TInboxMessageTypeURL>messageType === 2 && actionParams.l != null) {
       document.location.href = actionParams.l;
     }
-    else if (<TInboxMessageTypeDeeplink>messageType === 3 && actionParams.l !== undefined) {
+    else if (<TInboxMessageTypeDeeplink>messageType === 3 && actionParams.l != null) {
       window.history.go(actionParams.l);
     }
 

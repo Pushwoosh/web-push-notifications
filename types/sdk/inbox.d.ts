@@ -17,7 +17,7 @@ type TReadInboxMessagesStatusRange = [TInboxMessageStatusRead, TInboxMessageStat
 
 // Message
 interface IInboxMessageActionParams {
-  l?: string;
+  l?: string | null;
   rm?: string;
   h?: string;
   r?: string;
