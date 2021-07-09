@@ -1,3 +1,9 @@
+import { EventBus } from './core/modules/EventBus';
+import { Data } from './modules/Data/Data';
+import { Api } from './modules/Api/Api';
+
+import { PushServiceDefault } from './services/PushService/drivers/PushServiceDefault/PushServiceDefault';
+
 import {sendFatalLogToRemoteServer} from './helpers/logger';
 import {message as messagesLog} from './storage';
 import {
@@ -16,7 +22,11 @@ import NotificationPayload from './models/NotificationPayload';
 import InboxMessages from './models/InboxMessages';
 import InboxMessagesPublic from './modules/InboxMessagesPublic';
 
-const Pushwoosh = self.Pushwoosh = new WorkerPushwooshGlobal();
+const eventBus = new EventBus();
+const data = new Data();
+const api = new Api(eventBus, data);
+
+const Pushwoosh = self.Pushwoosh = new WorkerPushwooshGlobal(eventBus, data, api);
 const clickedNotifications: string[] = [];
 
 
@@ -29,6 +39,8 @@ self.addEventListener('push', onPushEventHandler);
 self.addEventListener('notificationclick', onClickNotificationEventHandler);
 
 self.addEventListener('notificationclose', onCloseNotificationEventHandler);
+
+self.addEventListener('pushsubscriptionchange', onPushSubscriptionChange);
 
 
 /**
@@ -45,7 +57,7 @@ function onInstallEventHandler(event: ExtendableEvent): void {
     ]);
 
     // PUSH-21674 - not auto closing push if push receive when chrome is closed
-    // await self.skipWaiting();
+    await self.skipWaiting();
   }
 
   return event.waitUntil(
@@ -246,6 +258,40 @@ function onCloseNotificationEventHandler(event: NotificationEvent) {
   )
 }
 
+async function onPushSubscriptionChange(event: PushSubscriptionChangeEvent): Promise<void> {
+  async function changePushSubscription(event: PushSubscriptionChangeEvent): Promise<void>{
+    let subscription = event.newSubscription;
+    if (!subscription) {
+      subscription = await self.registration.pushManager.getSubscription();
+      if (!subscription) {
+        fetch('https://post-log.pushwoosh.com/websdk', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/plain;charset=UTF-8'
+          },
+          body: JSON.stringify({
+            type: 'websdk',
+            error: {
+              code: 0,
+              message: 'Cannot get subscription in service worker!'
+            }
+          })
+        });
+
+        return;
+      }
+    }
+
+    const pushService = new PushServiceDefault(api, data, {});
+    await pushService.subscribe(subscription);
+  }
+
+  event.waitUntil(
+    changePushSubscription(event)
+      .catch(pushSubscriptionChangeFailure)
+  )
+}
+
 /**
  * Post message to all Window Clients
  * @param msg
@@ -387,6 +433,19 @@ async function closeNotificationFailure(error: Error | string): Promise<void> {
   await sendFatalLogToRemoteServer({
     message: 'Error in onNotificationCloseEventHandler',
     code: 'FATAL-SW-005',
+    error,
+    applicationCode,
+    workerVersion
+  });
+}
+
+async function pushSubscriptionChangeFailure(error: Error | string): Promise<void> {
+  const applicationCode = await Pushwoosh.data.getApplicationCode();
+  const workerVersion = await Pushwoosh.data.getServiceWorkerVersion();
+
+  await sendFatalLogToRemoteServer({
+    message: 'Error in onPushSubscriptionChange',
+    code: 'FATAL-SW-006',
     error,
     applicationCode,
     workerVersion

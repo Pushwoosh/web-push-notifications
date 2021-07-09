@@ -81,4 +81,9 @@ interface ServiceWorkerGlobalScope extends EventTarget {
     skipWaiting(): Promise<void>;
 }
 
+interface PushSubscriptionChangeEvent extends ExtendableEvent {
+  readonly newSubscription: PushSubscription | null;
+  readonly oldSubscription: PushSubscription | null;
+}
+
 interface Window extends ServiceWorkerGlobalScope {}

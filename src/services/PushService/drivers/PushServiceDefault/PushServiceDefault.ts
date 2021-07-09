@@ -55,7 +55,8 @@ export class PushServiceDefault implements IPushService {
     return this.data.getTokens();
   }
 
-  public async subscribe(): Promise<void> {
+  public async subscribe(subscription?: PushSubscription): Promise<void> {
+    let currentSubscription = subscription;
     const isPermissionGranted = this.checkIsPermissionGranted();
 
     if (!isPermissionGranted) {
@@ -64,32 +65,27 @@ export class PushServiceDefault implements IPushService {
       return;
     }
 
-    // get browser subscription
-    const subscription = await this.trySubscribe();
-
-    const applicationServerKey = await this.getApplicationServerKey();
-
-    // get sender id
-    const senderId = await this.getSenderIdFromManifest();
-
-    // check new sender id
-    const isChangeSenderId = await this.checkIsChangeSenderId(senderId);
-
-    // if sender id is change need unsubscribe device and resubscribe
-    if(isChangeSenderId) {
-
-      // unregister device
-      await this.unsubscribe();
-
-      // and set new sender id
-      await this.data.setSenderId(senderId);
+    if (!currentSubscription) {
+      currentSubscription = await this.trySubscribe();
+      // get sender id
+      const senderId = await this.getSenderIdFromManifest();
+      // check new sender id
+      const isChangeSenderId = await this.checkIsChangeSenderId(senderId);
+      // if sender id is change need unsubscribe device and resubscribe
+      if(isChangeSenderId) {
+        // unregister device
+        await this.unsubscribe();
+        // and set new sender id
+        await this.data.setSenderId(senderId);
+      }
     }
 
-    // get subscription tokens
-    const pushToken = await this.getPushToken(subscription);
+    const applicationServerKey = await this.getApplicationServerKey();
+    const senderId = await this.data.getSenderId();
+    const pushToken = await this.getPushToken(currentSubscription);
 
-    const _p256dn = subscription.getKey('p256dh');
-    const _auth = subscription.getKey('auth');
+    const _p256dn = currentSubscription.getKey('p256dh');
+    const _auth = currentSubscription.getKey('auth');
 
     if(!_p256dn || !_auth) {
       throw new Error('Can\'t get subscription keys!');
@@ -100,7 +96,7 @@ export class PushServiceDefault implements IPushService {
 
     // register device in fcm
     const { token, pushSet } = await this.getFcmKeys({
-      endpoint: subscription.endpoint,
+      endpoint: currentSubscription.endpoint,
       application_pub_key: applicationServerKey,
       encryption_key: p256dh,
       encryption_auth: auth,
@@ -113,7 +109,7 @@ export class PushServiceDefault implements IPushService {
       authToken: auth,
       fcmPushSet: pushSet,
       fcmToken: token,
-      endpoint: subscription.endpoint,
+      endpoint: currentSubscription.endpoint,
     });
 
     // register device into pushwoosh

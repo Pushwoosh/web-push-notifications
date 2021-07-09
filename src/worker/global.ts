@@ -9,10 +9,10 @@ export default class WorkerPushwooshGlobal {
   public readonly api: Api;
   public readonly data: Data;
 
-  constructor() {
-    this.eventBus = new EventBus();
-    this.data = new Data();
-    this.api = new Api(this.eventBus, this.data);
+  constructor(eventBus: EventBus, data: Data, api: Api) {
+    this.eventBus = eventBus;
+    this.data = data;
+    this.api = api;
   }
 
   _listeners: {[key: string]: TPWCanWaitCallback[]} = {};
