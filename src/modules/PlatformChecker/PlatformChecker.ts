@@ -160,6 +160,12 @@ export class PlatformChecker {
       return `Edge ${matchEdgeVersion[1]}`;
     }
 
+    // edge on chromium
+    const matchEdgVersion = userAgent.match(/\bEdg\/(\d+)/);
+    if (matchEdgVersion !== null) {
+      return `Edge ${matchEdgVersion[1]}`;
+    }
+
     let match = userAgent.match(/(opera|chrome|safari|firefox|msie|trident(?=\/))\/?\s*(\d+)/i) || [];
     const [_, browser = ''] = match;
 
