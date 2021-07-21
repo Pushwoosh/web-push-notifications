@@ -206,8 +206,17 @@ function onClickNotificationEventHandler(event: NotificationEvent): void {
     const message = {type: EVENT_ON_NOTIFICATION_CLICK, payload: notificationOptions};
 
     if (url) {
-      await event.waitUntil(self.clients.matchAll({type: 'window'})
-        .then((clientList: Array<TServiceWorkerClientExtended>) => openWindow(clientList, url, message)));
+      event.waitUntil(
+        self.clients.matchAll({ type: 'window' })
+          .then((windowClients) => {
+            return focusWindow(windowClients, url);
+          })
+          .then((isFocusOnNewWindowClient) => {
+            if (isFocusOnNewWindowClient) {
+              Pushwoosh.data.setDelayedEvent(message);
+            }
+          })
+      );
     }
 
     return Promise.all([
@@ -301,30 +310,33 @@ async function broadcastClients(msg: IPWBroadcastClientsParams) {
   clients.forEach(client => client.postMessage(msg));
 }
 
-async function openWindow(
-  clientList: Array<TServiceWorkerClientExtended>,
-  url: string,
-  message: { type: string, payload: any }
-) {
-  const isExistFocusedWindow = clientList.some((client: TServiceWorkerClientExtended): boolean => client.focused);
-  const hasNewUrl = clientList.every((client: TServiceWorkerClientExtended): boolean => client.url !== url && url !== '/');
+async function focusWindow(windowClients: Array<WindowClient>, url: string): Promise<boolean> {
+  // if opened url without location, use service worker origin
+  const {
+    hostname: openedHostname,
+    pathname: openedPathname,
+  } = new URL(url, self.location.origin);
 
-  if (isExistFocusedWindow && !hasNewUrl) {
-    return;
+  const clientWithSameAddress = windowClients.find((windowClient) => {
+    const {
+      hostname: windowClientHostname,
+      pathname: windowClientPathname
+    } = new URL(windowClient.url);
+
+    // opened url is equal with current window client url if hostname and pathname are equals
+    return windowClientHostname === openedHostname && windowClientPathname === openedPathname;
+  });
+  if (clientWithSameAddress) {
+    await clientWithSameAddress.focus();
+    return false; // focus on exist window client
   }
 
-  for (let index = clientList.length - 1; index > -1; --index) {
-    const client = clientList[index];
-    if ((url === client.url || url === '/') && 'focus' in client) {
-      client.focus();
-      return;
-    }
-  }
-
-  if (self.clients.openWindow) {
-    await Pushwoosh.data.setDelayedEvent(message);
-    return self.clients.openWindow(url);
-  }
+  // if not window client with opened url we must open new window and focus it
+  await self.clients.openWindow(url)
+    .then((newClientWindow) => {
+      newClientWindow.focus();
+    });
+  return true; // focus on new window client
 }
 
 async function parseNotificationEvent(event: NotificationEvent): Promise<INotificationOptions> {

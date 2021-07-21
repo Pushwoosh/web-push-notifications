@@ -1,6 +1,6 @@
 {
   "name": "web-push-notifications",
-  "version": "3.20.2",
+  "version": "3.21.0",
   "description": "Pushwoosh web push notifications",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -10,7 +10,7 @@
     "build:prod": "cross-env NODE_ENV=production webpack",
     "zip": "node scripts/zip.js",
     "release": "npm run build:prod && npm run zip",
-    "start": "cross-env NODE_ENV=development webpack-dev-server",
+    "start": "cross-env NODE_ENV=development webpack-dev-server --history-api-fallback",
     "test": "mocha",
     "test:watch": "mocha --watch",
     "test:coverage": "TS_NODE_CACHE=0 nyc -a mocha"
