@@ -19,7 +19,7 @@ interface WindowClient extends ServiceWorkerClient {
 interface ServiceWorkerClients {
     get(clientId: string): Promise<ServiceWorkerClient>;
     matchAll(options?: ServiceWorkerClientsMatchOptions): Promise<WindowClient[]>;
-    openWindow(url: string): Promise<WindowClient>;
+    openWindow(url: string): Promise<WindowClient | null>;
     claim(): Promise<void>;
 }
 

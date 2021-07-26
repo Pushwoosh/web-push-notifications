@@ -334,6 +334,12 @@ async function focusWindow(windowClients: Array<WindowClient>, url: string): Pro
   // if not window client with opened url we must open new window and focus it
   await self.clients.openWindow(url)
     .then((newClientWindow) => {
+      // if new client window url does not match
+      // of service worker domain then new client window is null
+      if (!newClientWindow) {
+        return;
+      }
+
       newClientWindow.focus();
     });
   return true; // focus on new window client
