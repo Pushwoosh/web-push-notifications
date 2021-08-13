@@ -1,12 +1,12 @@
-import Logger, {logAndRejectError} from './logger';
+import { Logger, logAndRejectError } from "./logger";
 import {keyValue} from "./storage";
 import {KEY_API_BASE_URL} from "./constants";
 import {getPushwooshUrl} from "./functions";
 
-export default function createDoApiXHR(applicationCode: string, pushwooshApiUrl?: string) {
+export default function createDoApiXHR(applicationCode: string, pushwooshApiUrl: string) {
   return function doApiXHR(methodName: string, request: any) {
     return new Promise((resolve, reject) => {
-      getPushwooshUrl(applicationCode, pushwooshApiUrl).then(pushwooshUrl => {
+      getPushwooshUrl(pushwooshApiUrl).then((pushwooshUrl:string) => {
         try {
           const url = `${pushwooshUrl}${methodName}`;
           const params = {request};

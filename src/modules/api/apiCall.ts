@@ -1,4 +1,4 @@
-import Logger, {logAndRejectError} from '../../logger';
+import { Logger, logAndRejectError } from "../../logger";
 import {keyValue} from '../../storage';
 import {KEY_API_BASE_URL} from '../../constants';
 import Params from '../data/Params';

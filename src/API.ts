@@ -21,7 +21,7 @@ import {
 import platformChecker from './modules/PlatformChecker';
 
 import {keyValue} from './storage';
-import Logger, {logAndThrowError} from './logger';
+import { Logger, logAndThrowError } from "./logger";
 import doApiXHR from './modules/api/apiCall';
 import Params from './modules/data/Params';
 

@@ -42,7 +42,7 @@ import {
   PERMISSION_PROMPT
 } from '../constants';
 import {keyValue} from '../storage';
-import Logger from '../logger';
+import {Logger} from '../logger';
 import Params from '../modules/data/Params';
 import {EventBus, TEvents} from '../modules/EventBus/EventBus';
 

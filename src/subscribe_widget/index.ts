@@ -5,17 +5,12 @@ import {
   PERMISSION_DENIED,
   PERMISSION_PROMPT,
 
-  BROWSER_TYPE_CHROME,
-  BROWSER_TYPE_FF,
-  BROWSER_TYPE_SAFARI,
-
   EVENT_SHOW_SUBSCRIBE_BUTTON,
   EVENT_CLICK_SUBSCRIBE_BUTTON,
 
   KEY_SHOW_SUBSCRIBE_WIDGET,
   KEY_CLICK_SUBSCRIBE_WIDGET
 } from '../constants';
-import {getBrowserType, isOperaBrowser} from '../functions';
 
 import {
   SUBSCRIBE_WIDGET_DEFAULT_CONFIG,
@@ -23,6 +18,7 @@ import {
 } from './constants';
 import Positioning from './positioning';
 import bellSVG from './bell';
+import { PlatformChecker } from 'modules/PlatformChecker';
 
 
 class SubscribeWidget {
@@ -32,14 +28,12 @@ class SubscribeWidget {
   style: HTMLElement;
   pw: Pushwoosh;
   config: TBellConfig;
+  platformChecker: PlatformChecker;
 
   constructor(pw: Pushwoosh) {
     // Set Pushwoosh object
     this.pw = pw;
-    if (!this.pw.shouldInit()) {
-      console.warn('Browser does not support push notifications');
-      return;
-    }
+    this.platformChecker = new PlatformChecker();
 
     // Bindings
     this.clickBell = this.clickBell.bind(this);
@@ -217,35 +211,28 @@ class SubscribeWidget {
    */
   helpImageSourceFactory(): Array<string> {
     let preferenceSource, unlockSource;
-
-    if (isOperaBrowser()) {
-      preferenceSource = 'https://cdn.pushwoosh.com/webpush/img/opera.jpg';
-      unlockSource = 'https://cdn.pushwoosh.com/webpush/img/opera_unlock.jpg';
-      return [preferenceSource, unlockSource]
-    }
-
-    switch (getBrowserType()) {
-      case BROWSER_TYPE_CHROME:
-        if (navigator.userAgent.match(/Android/i)) {
-          preferenceSource = 'https://cdn.pushwoosh.com/webpush/img/mobile_chrome.jpg';
-          unlockSource = 'https://cdn.pushwoosh.com/webpush/img/mobile_chrome_unlock.jpg';
-        }
-        else {
-          preferenceSource = 'https://cdn.pushwoosh.com/webpush/img/chrome.jpg';
-          unlockSource = 'https://cdn.pushwoosh.com/webpush/img/chrome_unlock.jpg';
-        }
-        break;
-      case BROWSER_TYPE_FF:
-        preferenceSource = 'https://cdn.pushwoosh.com/webpush/img/FF.jpg';
-        unlockSource = 'https://cdn.pushwoosh.com/webpush/img/FF_unlock.jpg';
-        break;
-      case BROWSER_TYPE_SAFARI:
-        preferenceSource = 'https://cdn.pushwoosh.com/webpush/img/safari.jpg';
-        unlockSource = 'https://cdn.pushwoosh.com/webpush/img/safari_unlock.jpg';
-        break;
-      default:
-        preferenceSource = 'https://cdn.pushwoosh.com/webpush/img/chrome.jpg';
-        unlockSource = 'https://cdn.pushwoosh.com/webpush/img/chrome_unlock.jpg';
+    
+    if (this.platformChecker.isOperaBrowser()) {
+      preferenceSource = "https://cdn.pushwoosh.com/webpush/img/opera.jpg";
+      unlockSource = "https://cdn.pushwoosh.com/webpush/img/opera_unlock.jpg";
+      return [preferenceSource, unlockSource];
+    } else if (this.platformChecker.isSafariBrowser()) {
+      preferenceSource = "https://cdn.pushwoosh.com/webpush/img/safari.jpg";
+      unlockSource = "https://cdn.pushwoosh.com/webpush/img/safari_unlock.jpg";
+    } else if (this.platformChecker.isFirefoxBrowser()) {
+      preferenceSource = "https://cdn.pushwoosh.com/webpush/img/FF.jpg";
+      unlockSource = "https://cdn.pushwoosh.com/webpush/img/FF_unlock.jpg";
+    } else {
+      if (navigator.userAgent.match(/Android/i)) {
+        preferenceSource =
+          "https://cdn.pushwoosh.com/webpush/img/mobile_chrome.jpg";
+        unlockSource =
+          "https://cdn.pushwoosh.com/webpush/img/mobile_chrome_unlock.jpg";
+      } else {
+        preferenceSource = "https://cdn.pushwoosh.com/webpush/img/chrome.jpg";
+        unlockSource =
+          "https://cdn.pushwoosh.com/webpush/img/chrome_unlock.jpg";
+      }
     }
     return [preferenceSource, unlockSource]
   }
@@ -348,15 +335,7 @@ class SubscribeWidget {
    * @returns {Promise<void>}
    */
   async triggerPwEvent(event: string, widget: string) {
-    if (this.pw.api === undefined) {
-      return;
-    }
-
-    const {applicationCode} = await this.pw.getParams();
-    this.pw.api.triggerEvent({
-      event_id: event,
-      application: applicationCode
-    }, widget);
+    return;
   }
 }
 

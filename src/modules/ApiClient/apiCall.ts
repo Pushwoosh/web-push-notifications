@@ -1,4 +1,4 @@
-import Logger, {logAndRejectError} from '../../logger';
+import { Logger, logAndRejectError } from "../../logger";
 import Params from '../data/Params';
 import {
   sendFatalLogToRemoteServer
