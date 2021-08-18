@@ -42,21 +42,21 @@ class SafariDriver implements IPWDriver {
       applicationCode = '',
       webSitePushID = '',
     } = this.params || {};
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
 
       // emit event when permission dialog show
       this.params.eventEmitter.emit(EVENT_ON_SHOW_NOTIFICATION_PERMISSION_DIALOG);
       this.eventBus.emit(TEvents.SHOW_NOTIFICATION_PERMISSION_DIALOG);
+      const {hwid} = await this.getAPIParams();
 
       safari.pushNotification.requestPermission(
         'https://cp.pushwoosh.com/json/1.3/safari',  // get push package url
         webSitePushID,
-        {application: applicationCode},
+        {application: applicationCode, hwid},
         ({ permission }) => {
           // emit event when permission dialog hide with permission state
           this.params.eventEmitter.emit(EVENT_ON_HIDE_NOTIFICATION_PERMISSION_DIALOG, permission);
           this.eventBus.emit(TEvents.HIDE_NOTIFICATION_PERMISSION_DIALOG);
-
 
           if (permission === PERMISSION_GRANTED) {
             eventEmitter.emit(EVENT_ON_PERMISSION_GRANTED);
@@ -85,7 +85,6 @@ class SafariDriver implements IPWDriver {
     const hwid = pushToken || generateHwid(applicationCode, '');
 
     await this.paramsModule.setHwid(hwid);
-
     return {hwid, pushToken};
   }
 }

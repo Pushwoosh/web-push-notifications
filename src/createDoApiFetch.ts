@@ -1,10 +1,10 @@
-import Logger, {logAndRejectError} from './logger';
+import {Logger, logAndRejectError} from './logger';
 import {getPushwooshUrl} from "./functions";
 
 export default function createDoApiFetch(applicationCode: string, pushwooshApiUrl?: string) {
   return function doApiFetch(methodName: string, request: any) {
     return new Promise((resolve, reject) => {
-      getPushwooshUrl(applicationCode, pushwooshApiUrl).then(pushwooshUrl => {
+      getPushwooshUrl(applicationCode).then((pushwooshUrl: string) => {
         try {
           const url = `${pushwooshUrl}${methodName}`;
           const params = {request};
