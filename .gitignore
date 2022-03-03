@@ -1,0 +1,21 @@
+syntax: glob
+
+.idea
+lib/*
+dist/*
+config/config.local.js
+node_modules
+debug.html
+debug.js
+npm-debug.log
+package-lock.json
+yarn.lock
+ts-build
+.DS_Store
+develop/channels
+
+.nyc_output/*
+coverage/*
+*.pem
+*.zip
+
