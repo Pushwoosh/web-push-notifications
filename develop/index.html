@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Web SDK test server</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="shortcut icon" href="develop/favicon.png" type="image/x-icon" />
+    <script>
+        var Pushwoosh = Pushwoosh || [];
+        Pushwoosh.push(["init", <%=htmlWebpackPlugin.options.externals.initParams%>]);
+    </script>
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,700&amp;subset=cyrillic" rel="stylesheet">
+    <style>
+      body {
+        font-family: 'Open Sans', sans-serif;
+        margin: 50px 25px;
+      }
+      .permission-status,
+      .subscription-status {
+          display: none;
+      }
+      .success {
+        color: green;
+      }
+      .error {
+        color: red;
+      }
+      textarea {
+        width: 100%;
+        box-sizing: border-box;
+      }
+      fieldset {
+        margin: 30px 0;
+      }
+      input, button, textarea {
+        font-family: inherit;
+      }
+      #actionSubscribe,
+      #denied {color: red;}
+      #actionUnsubscribe,
+      #granted {color: green;}
+      #prompt {color: blue;}
+
+      .page {
+          font-size: 14px;
+          padding: 0 20px;
+          margin: auto;
+      }
+
+      pre {
+        font-size: 12px;
+      }
+    </style>
+</head>
+<body>
+<div class="page">
+    <h1><a href="/">Pushwoosh Web SDK</a> <span id="pwInbox">🔔</span></h1>
+
+    <p><em>Status === subscribed, when notifications permission granted and device registered.</em></p>
+
+    <p>
+        Permission:
+        <b id="prompt" class="permission-status">Prompt</b>
+        <b id="denied" class="permission-status">Denied</b>
+        <b id="granted" class="permission-status">Granted</b>
+    </p>
+    <p>
+        Status:
+        <b id="actionSubscribe" class="subscription-status">
+          Unsubscribed <br><br><button onclick="Pushwoosh.subscribe()">Subscribe</button>
+        </b>
+        <b id="actionUnsubscribe" class="subscription-status">
+          Subscribed <br><br><button onclick="Pushwoosh.unsubscribe()">Unsubscribe</button>
+        </b>
+    </p>
+
+    <p>Params:</p>
+    <table id="deviceParams" border="1" cellpadding="5" cellspacing="0" bordercolor="lightgrey">
+      <tbody></tbody>
+    </table>
+
+    <fieldset>
+        <legend>GDPR communication</legend>
+        <p>
+            <label for="GDPRSetCommunicationEnabled">
+                <input type="checkbox" id="GDPRSetCommunicationEnabled">
+                Set Communication Enabled
+            </label>
+        </p>
+        <button id="GDPRRemoveAllDeviceData">Remove All Device Data</button>
+    </fieldset>
+
+    <fieldset>
+        <legend>/postEvent</legend>
+        <form id="postEventForm">
+            <div class="success"></div>
+            <div class="error"></div>
+            <p>
+                <input type="text" name="event" placeholder="Specify event name..." required>
+            </p>
+            <p>
+                <textarea name="attributes" placeholder="Specify valid JSON with attributes..." cols="30" rows="10" required></textarea>
+            </p>
+            <button type="submit">Submit</button>
+        </form>
+    </fieldset>
+
+    <fieldset>
+        <legend>/registerUser</legend>
+        <form id="registerUserForm">
+          <div class="success"></div>
+          <div class="error"></div>
+          <p>
+            <input type="text" name="userId" placeholder="Specify userId..." required>
+            <button type="submit">Submit</button>
+          </p>
+        </form>
+    </fieldset>
+
+    <fieldset>
+      <legend>/registerEmail</legend>
+      <form id="registerEmailForm">
+        <div class="success"></div>
+        <div class="error"></div>
+        <p>
+          <input type="text" name="email" placeholder="Specify email..." required>
+          <button type="submit">Submit</button>
+        </p>
+      </form>
+    </fieldset>
+
+    <fieldset>
+        <legend>/setTags</legend>
+        <form id="setTagsForm">
+          <div class="success"></div>
+          <div class="error"></div>
+          <p>
+            <textarea
+              name="tags"
+              placeholder="Specify valid JSON..."
+              cols="30"
+              rows="10"
+              required
+            ></textarea>
+          </p>
+          <button type="submit">Submit</button>
+        </form>
+    </fieldset>
+
+    <script>
+      // On Load Event
+      Pushwoosh.push(['onLoad', function () {
+        console.log('Pushwoosh load!');
+      }]);
+
+      // Ready Event
+      Pushwoosh.push(function (api) {
+        console.log('Pushwoosh ready!');
+      });
+
+      // Subscribe Event
+      Pushwoosh.push(['onLoad', function (api) {
+        Pushwoosh.addEventHandler('subscribe', function (payload) {
+          console.log('Triggered event: subscribe');
+        });
+      }]);
+
+      // Unsubscribe Event
+      Pushwoosh.push(['onLoad', function (api) {
+        Pushwoosh.addEventHandler('unsubscribe', function (payload) {
+          console.log('Triggered event: unsubscribe');
+        });
+      }]);
+
+      // Subscription Widget Events
+      Pushwoosh.push(['onLoad', function (api) {
+        Pushwoosh.addEventHandler('show-subscription-widget', function (payload) {
+          console.log('Triggered event: show-subscription-widget');
+        });
+
+        Pushwoosh.addEventHandler('hide-subscription-widget', function (payload) {
+          console.log('Triggered event: hide-subscription-widget');
+        });
+      }]);
+
+      // Notification Permission Dialog Events
+      Pushwoosh.push(['onLoad', function (api) {
+        Pushwoosh.addEventHandler('show-notification-permission-dialog', function (payload) {
+          console.log('Triggered event: show-notification-permission-dialog');
+        });
+
+        Pushwoosh.addEventHandler('hide-notification-permission-dialog', function (payload) {
+          console.log('Triggered event: hide-notification-permission-dialog', payload.permission);
+        });
+      }]);
+
+      // Permission Events
+      Pushwoosh.push(['onLoad', function (api) {
+        Pushwoosh.addEventHandler('permission-default', function () {
+          console.log('Triggered event: permission-default');
+        });
+
+        Pushwoosh.addEventHandler('permission-denied', function () {
+          console.log('Triggered event: permission-denied');
+        });
+
+        Pushwoosh.addEventHandler('permission-granted', function () {
+          console.log('Triggered event: permission-granted');
+        });
+      }]);
+
+      // Receive Push Event
+      Pushwoosh.push(['onLoad', function (api) {
+        Pushwoosh.addEventHandler('receive-push', function (payload) {
+          console.log('Triggered event: receive-push', payload.notification);
+        });
+      }]);
+
+      // Notification Events
+      Pushwoosh.push(['onLoad', function (api) {
+        Pushwoosh.addEventHandler('open-notification', function (payload) {
+          console.log('Triggered event: open-notification', payload.notification);
+        });
+
+        Pushwoosh.addEventHandler('hide-notification', function (payload) {
+          console.log('Triggered event: hide-notification', payload.notification);
+        });
+      }]);
+
+      // In-Box Events
+      Pushwoosh.push(['onLoad', function (api) {
+        Pushwoosh.addEventHandler('receive-inbox-message', function (payload) {
+          console.log('Triggered event: receive-inbox-message', payload.message);
+        });
+
+        Pushwoosh.addEventHandler('update-inbox-messages', function (payload) {
+          console.log('Triggered event: receive-inbox-message', payload.messages);
+        });
+      }]);
+
+      Pushwoosh.push(function(api) {
+        console.log('EVENT: onReady', api);
+
+        Pushwoosh.isCommunicationEnabled().then(function(isEnabled) {
+            document.querySelector('#GDPRSetCommunicationEnabled').checked = isEnabled;
+        });
+
+        document.querySelector('#GDPRSetCommunicationEnabled').addEventListener('click', function (event) {
+            event.preventDefault();
+            Pushwoosh.setCommunicationEnabled(event.target.checked);
+        }, false);
+
+        document.querySelector('#GDPRRemoveAllDeviceData').addEventListener('click', function() {
+          Pushwoosh.removeAllDeviceData();
+        });
+
+        checkSubscription();
+      });
+
+      Pushwoosh.push(['onChangeCommunicationEnabled', function(api, isEnabled) {
+        console.log('EVENT: onChangeCommunicationEnabled', isEnabled);
+        document.querySelector('#GDPRSetCommunicationEnabled').checked = isEnabled;
+      }]);
+
+      Pushwoosh.push(['onSubscribe', function(api) {
+        console.log('EVENT: onSubscribe', api);
+        checkSubscription();
+      }]);
+
+      Pushwoosh.push(['onUnsubscribe', function(api) {
+        console.log('EVENT: onUnsubscribe', api);
+        checkSubscription();
+      }]);
+
+      Pushwoosh.push(['onRegister', function(api) {
+        console.log('EVENT: onRegister', api);
+        checkSubscription();
+      }]);
+
+      Pushwoosh.push(['onPermissionPrompt', function(api) {
+        console.log('EVENT: onPermissionPrompt', api);
+        toggleNodesVisibility('.permission-status', 'prompt');
+      }]);
+
+      Pushwoosh.push(['onPermissionDenied', function(api) {
+        console.log('EVENT: onPermissionDenied', api);
+        toggleNodesVisibility('.permission-status', 'denied');
+        checkSubscription();
+      }]);
+
+      Pushwoosh.push(['onPermissionGranted', function(api) {
+        console.log('EVENT: onPermissionGranted', api);
+        toggleNodesVisibility('.permission-status', 'granted');
+        checkSubscription();
+      }]);
+
+      Pushwoosh.push(['onPushDelivery', function(api, params) {
+          console.log('EVENT: onPushDelivery', api, params);
+      }]);
+
+      Pushwoosh.push(['onNotificationClick', function(api, params) {
+          console.log('EVENT: onNotificationClick', api, params);
+      }]);
+
+      Pushwoosh.push(['onNotificationClose', function(api, params) {
+          console.log('EVENT: onNotificationClose', api, params);
+      }]);
+
+      Pushwoosh.push(['onSWInitError', function(api) {
+          console.log('EVENT: onSWInitError', api);
+      }]);
+
+      Pushwoosh.push(['onPutNewMessageToInboxStore', function(api, message) {
+        console.log('EVENT: onPutNewMessageToInboxStore', message);
+      }]);
+
+      Pushwoosh.push(['onUpdateInboxMessages', function(api, pwinbox) {
+        pwinbox.loadMessages().then(function(messages) {
+          console.log('EVENT: onUpdateInboxMessages', messages);
+        })
+      }]);
+
+      Pushwoosh.push(['onShowNotificationPermissionDialog', function(api) {
+        console.log('EVENT: onShowNotificationPermissionDialog');
+      }]);
+
+      Pushwoosh.push(['onShowSubscriptionWidget', function(api) {
+        console.log('EVENT: onShowSubscriptionWidget');
+      }]);
+
+      Pushwoosh.push(['onHideSubscriptionWidget', function(api) {
+        console.log('EVENT: onHideSubscriptionWidget');
+      }]);
+
+      Pushwoosh.push(['onHideNotificationPermissionDialog', function(api, permission) {
+        console.log('EVENT: onHideNotificationPermissionDialog', permission);
+        checkSubscription();
+      }]);
+
+      function checkSubscription() {
+        Pushwoosh.isSubscribed().then(function (res) {
+          toggleNodesVisibility('.subscription-status', res ? 'actionUnsubscribe' : 'actionSubscribe');
+        }).catch(function (err) {
+          console.error('Is subscribed error', err);
+        });
+
+        Pushwoosh.getParams().then(function (params) {
+          var table = document.querySelector('#deviceParams tbody');
+          table.innerHTML = '';
+          Object.keys(params).map(function(key) {
+            var row = '<tr><td>'+key+'</td><td><pre>'+JSON.stringify(params[key], null, 2) || ''+'</pre></td></tr>';
+            table.insertAdjacentHTML('beforeend', row);
+          });
+        });
+      }
+
+      function toggleNodesVisibility(selector, id) {
+        var nodes = document.querySelectorAll(selector);
+        [].forEach.call(nodes, function (el) {
+          el.style.display = el.id === id ? 'inline' : 'none';
+        });
+      }
+
+      function toggleNodesVisibility(selector, id) {
+        var nodes = document.querySelectorAll(selector);
+        [].forEach.call(nodes, function(el) {
+          el.style.display = el.id === id ? 'inline' : 'none';
+        });
+      }
+
+      document.querySelector('#registerUserForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        var form = this;
+        var button = form.querySelector('button');
+        var input = form.querySelector('[name="userId"]');
+        var successNode = form.querySelector('.success');
+        var errorNode = form.querySelector('.error');
+        var userId = input.value;
+        button.setAttribute('disabled', 'disabled');
+        Pushwoosh.api.registerUser(userId)
+          .then(function() {
+            input.value = '';
+            errorNode.innerHTML = '';
+            successNode.innerHTML = 'Data successfully submitted ' + new Date();
+          })
+          .catch(function(err) {
+            successNode.innerHTML = '';
+            console.error(err);
+            errorNode.innerHTML = 'Got some error on submit. Check console for details.';
+          })
+          .then(function() {
+            button.removeAttribute('disabled');
+          });
+      });
+
+      document.querySelector('#registerEmailForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        var form = this;
+        var button = form.querySelector('button');
+        var input = form.querySelector('[name="email"]');
+        var successNode = form.querySelector('.success');
+        var errorNode = form.querySelector('.error');
+        var email = input.value;
+        button.setAttribute('disabled', 'disabled');
+        Pushwoosh.api.registerEmail(email)
+          .then(function() {
+            input.value = '';
+            errorNode.innerHTML = '';
+            successNode.innerHTML = 'Data successfully submitted ' + new Date();
+          })
+          .catch(function(err) {
+            successNode.innerHTML = '';
+            console.error(err);
+            errorNode.innerHTML = 'Got some error on submit. Check console for details.';
+          })
+          .then(function() {
+            button.removeAttribute('disabled');
+          });
+      });
+
+      document.querySelector('#setTagsForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        var form = this;
+        var button = form.querySelector('button');
+        var input = form.querySelector('[name="tags"]');
+        var successNode = form.querySelector('.success');
+        var errorNode = form.querySelector('.error');
+        var tags = input.value;
+
+        try {
+          tags = JSON.parse(tags);
+          errorNode.innerHTML = '';
+        }
+        catch (err) {
+          successNode.innerHTML = '';
+          console.error(err);
+          errorNode.innerHTML = 'JSON.parse error. Expected object: {[k: string]: any}';
+          return;
+        }
+
+        button.setAttribute('disabled', 'disabled');
+        Pushwoosh.api.setTags(tags)
+          .then(function(res) {
+            var skipped = res && res.skipped || null;
+            if (!skipped || !skipped.length) {
+              input.value = '';
+              errorNode.innerHTML = '';
+              successNode.innerHTML = 'Data successfully submitted ' + new Date();
+            } else {
+              successNode.innerHTML = '';
+              errorNode.innerHTML = skipped.map(function(item) {
+                return 'Skipped tag "' + item.tag + '", reason "' + item.reason + '".';
+              }).join('n\ ');
+            }
+          })
+          .catch(function(err) {
+            console.error(err);
+            successNode.innerHTML = '';
+            errorNode.innerHTML = 'Got some error on submit. Check console for details.';
+          })
+          .then(function() {
+            button.removeAttribute('disabled');
+          });
+      });
+
+      document.querySelector('#postEventForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        var form = this;
+        var button = form.querySelector('button');
+        var eventControl = form.querySelector('[name="event"]');
+        var attributesControl = form.querySelector('[name="attributes"]');
+        var successNode = form.querySelector('.success');
+        var errorNode = form.querySelector('.error');
+        var attributes = attributesControl.value;
+        var event = eventControl.value;
+
+        successNode.innerHTML = '';
+        errorNode.innerHTML = '';
+
+        if (!event) {
+          errorNode.innerHTML += 'Event name is required.';
+          return;
+        }
+
+        try {
+          attributes = JSON.parse(attributes);
+        }
+        catch (err) {
+          console.error(err);
+          errorNode.innerHTML = 'JSON.parse error. Expected object: {[k: string]: any}';
+          return;
+        }
+
+        button.setAttribute('disabled', 'disabled');
+
+        Pushwoosh.api.postEvent(event, attributes)
+          .then(function() {
+            successNode.innerHTML = 'Data successfully submitted ' + new Date();
+          })
+          .catch(function(err) {
+            errorNode.innerHTML += 'Got some error on submit. Check console for details.';
+            console.error(err);
+          })
+          .then(function() {
+            button.removeAttribute('disabled');
+          });
+      });
+    </script>
+</div>
+</body>
+</html>
