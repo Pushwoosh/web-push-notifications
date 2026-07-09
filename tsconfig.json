@@ -1,0 +1,38 @@
+{
+  "compilerOptions": {
+    "module": "esnext",
+    "target": "es2020",
+    "moduleResolution": "node",
+    "baseUrl": "src",
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact",
+    "paths": {
+      "react": ["../node_modules/preact/compat/"],
+      "react-dom": ["../node_modules/preact/compat/"],
+      "react/jsx-runtime": ["../node_modules/preact/jsx-runtime"]
+    },
+    "allowSyntheticDefaultImports": true,
+    "noImplicitAny": true,
+    "sourceMap": true,
+    "outDir": "output/npm",
+    "strictNullChecks": true,
+    "experimentalDecorators": false,
+    "importHelpers": true,
+    "esModuleInterop": true,
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "webworker",
+      "es2020",
+    ],
+    "typeRoots": [
+      "./node_modules/@types"
+    ]
+  },
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
