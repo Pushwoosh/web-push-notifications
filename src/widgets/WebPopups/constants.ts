@@ -1,0 +1,16 @@
+export const WEB_POPUPS_WIDGET_NAMESPACE = 'pushwoosh-web-popups';
+
+// Prefix for every log line emitted by the web popups widget so its output is
+// easy to spot and filter in the console.
+export const WEB_POPUPS_LOG_PREFIX = '[WebPopups]';
+
+export const POPUP_HOST_Z_INDEX = 2147483647;
+
+// Breathing room between one popup closing and the next one opening. Not
+// cosmetic: without it the click that dismissed the first popup lands on the
+// incoming popup's overlay (which closes on click) or on one of its buttons.
+export const QUEUE_GAP_MS = 400;
+
+// The subscription-form service's public HTTP gateway. Serves
+// email-subscription-form slot submits and view stats for popup-embedded forms.
+export const SUBSCRIPTION_FORMS_API_URL = 'https://subscription-form.svc-nue.pushwoosh.com/api/v1';
