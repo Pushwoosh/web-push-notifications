@@ -1,0 +1,30 @@
+syntax: glob
+
+.idea
+lib/*
+dist/*
+output/*
+config/config.local.*
+node_modules
+debug.html
+debug.js
+npm-debug.log
+package-lock.json
+yarn.lock
+ts-build
+.DS_Store
+develop/channels
+
+.nyc_output/*
+coverage/*
+*.pem
+*.zip
+
+
+# agent workflow scratch: specs/plans and local worktrees
+**/docs/superpowers/
+**/.worktrees/
+**/.superpowers/
+
+*.sw[po]
+*~
