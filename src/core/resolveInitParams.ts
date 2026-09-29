@@ -1,0 +1,70 @@
+import type { IInitParams, ISubscribeWidget } from './Pushwoosh.types';
+import type { ISubscribePopupConfig } from '../widgets/SubscribePopup/types/subscribe-popup';
+import type { ISubscriptionWidgetParams } from '../widgets/SubscriptionWidget/types';
+
+export interface IServerInitParams {
+  autoSubscribe?: boolean;
+  defaultNotificationTitle?: string;
+  defaultNotificationImage?: string;
+  safariWebsitePushID?: string;
+  unifiedPlatform?: boolean;
+  subscribeWidget?: Partial<ISubscribeWidget>;
+  subscriptionWidget?: ISubscriptionWidgetParams;
+}
+
+const SERVER_MANAGED_KEYS = [
+  'autoSubscribe',
+  'defaultNotificationTitle',
+  'defaultNotificationImage',
+  'safariWebsitePushID',
+  'unifiedPlatform',
+  'subscriptionWidget',
+] as const;
+
+// A site moves to panel-managed settings by flipping the mode, not by editing its snippet, so a
+// value saved in the panel overrides the one in init; keys absent from the config are left alone.
+export function resolveInitParams(rawParams: IInitParams, serverParams?: IServerInitParams): Partial<IInitParams> {
+  if (!serverParams) {
+    return {};
+  }
+
+  const resolved: Partial<IInitParams> = {};
+
+  SERVER_MANAGED_KEYS.forEach((key) => {
+    if (serverParams[key] !== undefined) {
+      (resolved as Record<string, unknown>)[key] = serverParams[key];
+    }
+  });
+
+  // A panel-saved unified widget owns subscription UI even while off: the panel has no controls for
+  // the older widgets, so a bell or popup from the snippet would resurface with nothing to hide it.
+  if (serverParams.subscriptionWidget !== undefined) {
+    const subscribeWidget = resolveSubscribeWidget(rawParams.subscribeWidget, serverParams.subscribeWidget) ?? rawParams.subscribeWidget;
+    resolved.subscribeWidget = { ...subscribeWidget, enable: false };
+    resolved.subscribePopup = { ...rawParams.subscribePopup, enable: false } as ISubscribePopupConfig;
+    return resolved;
+  }
+
+  const subscribeWidget = resolveSubscribeWidget(rawParams.subscribeWidget, serverParams.subscribeWidget);
+  if (subscribeWidget) {
+    resolved.subscribeWidget = subscribeWidget;
+  }
+
+  return resolved;
+}
+
+// Merged key by key, not replaced: the panel owns the keys it carries, the snippet keeps the rest.
+// One level deep only — tooltipText and contentImages go as a whole.
+function resolveSubscribeWidget(
+  rawWidget?: ISubscribeWidget,
+  serverWidget?: Partial<ISubscribeWidget>,
+): ISubscribeWidget | undefined {
+  if (!serverWidget) {
+    return undefined;
+  }
+
+  return {
+    ...rawWidget,
+    ...serverWidget,
+  } as ISubscribeWidget;
+}
