@@ -1,0 +1,161 @@
+{
+  "_comment": "getFeatureFlags contract: flag + matched segments + identity -> answer for one flag. SDK repos keep a copy of this file. Buckets for salt-1: user-1=4258, user-2=984, hwid-1=7647, hwid-2=6851.",
+  "cases": [
+    {
+      "name": "everyone rule at 100% enables the flag and applies overrides",
+      "flag": {
+        "key": "new_checkout",
+        "status": "active",
+        "salt": "salt-1",
+        "properties": [{"key": "color", "type": "string", "default": "blue"}, {"key": "limit", "type": "number", "default": 3}],
+        "rules": [{"rule_id": "r_00000001", "filter_code": null, "percent_bp": 10000, "overrides": {"color": "green"}}]
+      },
+      "matched_filters": [],
+      "user_id": "",
+      "hwid": "hwid-1",
+      "want": {"enabled": true, "rule_id": "r_00000001", "properties": {"color": "green", "limit": 3}},
+      "want_assignment": "r_00000001:1"
+    },
+    {
+      "name": "device stops at the first matched rule even when its percent is 0",
+      "flag": {
+        "key": "new_checkout",
+        "status": "active",
+        "salt": "salt-1",
+        "properties": [{"key": "color", "type": "string", "default": "blue"}],
+        "rules": [
+          {"rule_id": "r_00000001", "filter_code": "GERMANY", "percent_bp": 0, "overrides": {"color": "red"}},
+          {"rule_id": "r_00000002", "filter_code": null, "percent_bp": 10000, "overrides": {"color": "green"}}
+        ]
+      },
+      "matched_filters": ["GERMANY"],
+      "user_id": "",
+      "hwid": "hwid-1",
+      "want": {"enabled": false, "rule_id": "r_00000001", "properties": {"color": "blue"}},
+      "want_assignment": "r_00000001:0"
+    },
+    {
+      "name": "device outside the first segment falls through to the next rule",
+      "flag": {
+        "key": "new_checkout",
+        "status": "active",
+        "salt": "salt-1",
+        "properties": [{"key": "color", "type": "string", "default": "blue"}],
+        "rules": [
+          {"rule_id": "r_00000001", "filter_code": "GERMANY", "percent_bp": 0, "overrides": {"color": "red"}},
+          {"rule_id": "r_00000002", "filter_code": null, "percent_bp": 10000, "overrides": {"color": "green"}}
+        ]
+      },
+      "matched_filters": [],
+      "user_id": "",
+      "hwid": "hwid-1",
+      "want": {"enabled": true, "rule_id": "r_00000002", "properties": {"color": "green"}},
+      "want_assignment": "r_00000002:1"
+    },
+    {
+      "name": "bucket under the percent is on",
+      "flag": {
+        "key": "beta",
+        "status": "active",
+        "salt": "salt-1",
+        "properties": [],
+        "rules": [{"rule_id": "r_00000001", "filter_code": null, "percent_bp": 5000, "overrides": {}}]
+      },
+      "matched_filters": [],
+      "user_id": "user-2",
+      "hwid": "hwid-2",
+      "want": {"enabled": true, "rule_id": "r_00000001", "properties": {}},
+      "want_assignment": "r_00000001:1"
+    },
+    {
+      "name": "bucket over the percent is off and keeps defaults",
+      "flag": {
+        "key": "beta",
+        "status": "active",
+        "salt": "salt-1",
+        "properties": [{"key": "color", "type": "string", "default": "blue"}],
+        "rules": [{"rule_id": "r_00000001", "filter_code": null, "percent_bp": 5000, "overrides": {"color": "green"}}]
+      },
+      "matched_filters": [],
+      "user_id": "",
+      "hwid": "hwid-1",
+      "want": {"enabled": false, "rule_id": "r_00000001", "properties": {"color": "blue"}},
+      "want_assignment": "r_00000001:0"
+    },
+    {
+      "name": "user id wins over hwid for the bucket",
+      "flag": {
+        "key": "beta",
+        "status": "active",
+        "salt": "salt-1",
+        "properties": [],
+        "rules": [{"rule_id": "r_00000001", "filter_code": null, "percent_bp": 5000, "overrides": {}}]
+      },
+      "matched_filters": [],
+      "user_id": "user-1",
+      "hwid": "hwid-1",
+      "want": {"enabled": true, "rule_id": "r_00000001", "properties": {}},
+      "want_assignment": "r_00000001:1"
+    },
+    {
+      "name": "blank user id falls back to hwid",
+      "flag": {
+        "key": "beta",
+        "status": "active",
+        "salt": "salt-1",
+        "properties": [],
+        "rules": [{"rule_id": "r_00000001", "filter_code": null, "percent_bp": 5000, "overrides": {}}]
+      },
+      "matched_filters": [],
+      "user_id": "  ",
+      "hwid": "hwid-1",
+      "want": {"enabled": false, "rule_id": "r_00000001", "properties": {}},
+      "want_assignment": "r_00000001:0"
+    },
+    {
+      "name": "no rule audience matched gives the default rule",
+      "flag": {
+        "key": "beta",
+        "status": "active",
+        "salt": "salt-1",
+        "properties": [{"key": "color", "type": "string", "default": "blue"}],
+        "rules": [{"rule_id": "r_00000001", "filter_code": "GERMANY", "percent_bp": 10000, "overrides": {"color": "green"}}]
+      },
+      "matched_filters": ["FRANCE"],
+      "user_id": "",
+      "hwid": "hwid-1",
+      "want": {"enabled": false, "rule_id": "default", "properties": {"color": "blue"}},
+      "want_assignment": "default:0"
+    },
+    {
+      "name": "killed flag is off with no rule and defaults",
+      "flag": {
+        "key": "beta",
+        "status": "killed",
+        "salt": "salt-1",
+        "properties": [{"key": "color", "type": "string", "default": "blue"}],
+        "rules": [{"rule_id": "r_00000001", "filter_code": null, "percent_bp": 10000, "overrides": {"color": "green"}}]
+      },
+      "matched_filters": [],
+      "user_id": "",
+      "hwid": "hwid-1",
+      "want": {"enabled": false, "rule_id": "", "properties": {"color": "blue"}},
+      "want_assignment": "killed:0"
+    },
+    {
+      "name": "override of a removed property is dropped",
+      "flag": {
+        "key": "beta",
+        "status": "active",
+        "salt": "salt-1",
+        "properties": [{"key": "color", "type": "string", "default": "blue"}],
+        "rules": [{"rule_id": "r_00000001", "filter_code": null, "percent_bp": 10000, "overrides": {"color": "green", "gone": 1}}]
+      },
+      "matched_filters": [],
+      "user_id": "",
+      "hwid": "hwid-1",
+      "want": {"enabled": true, "rule_id": "r_00000001", "properties": {"color": "green"}},
+      "want_assignment": "r_00000001:1"
+    }
+  ]
+}
