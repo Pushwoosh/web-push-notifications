@@ -1,0 +1,661 @@
+export = PW;
+export as namespace PW;
+
+declare namespace PW {
+  class Pushwoosh {
+    constructor();
+
+    /**
+     * Method that puts the stored error/info messages to browser console.
+     * @type {{showLog: (() => Promise<any>); showKeyValues: (() => Promise<any>); showMessages: (() => Promise<any>)}}
+     */
+    debug: any;
+
+    /**
+     * Polymorph PW method.
+     * Can get an array in the format of [string, params | callback] or a function.
+     *
+     *  // with callback:
+     *  Pushwoosh.push(['onNotificationClick', function(api, payload) {
+     *    // click on the notification
+     *  }]);
+     *
+     *  // with function:
+     *  Pushwoosh.push(function(api) {
+     *    // this is a bit easier way to subscribe to onReady
+     *  });
+     *
+     *  // with params:
+     *  // initiates Pushwoosh service and notification subscription
+     *  Pushwoosh.push(['init', {
+     *    applicationCode: 'XXXXX-XXXXX',
+     *    // see more about params in documentation
+     *    // https://docs.pushwoosh.com/docs/web-push-sdk-30#section-integration
+     *  }]);
+     *
+     */
+    push(input: EventHandler | [EventName, EventHandler] | ['init', InitParams]): void;
+
+    /**
+     * Subscribe to an SDK event by name, e.g. 'web-popups-ready',
+     * 'show-web-popup', 'hide-web-popup', 'change-permission'
+     * (payload ChangePermissionEventPayload: sent once per change of the notification permission).
+     */
+    addEventHandler(name: string, handler: (payload: any) => void): void;
+
+    /**
+     * Remove a handler previously added with addEventHandler.
+     */
+    removeEventHandler(name: string, handler: (payload: any) => void): void;
+
+    /**
+     * Programmatic interfaces published by the loaded widgets.
+     * Every entry is optional, and when it appears differs per widget:
+     * `webPopups` registers as soon as its bundle loads, while `subscribePopup`
+     * and `subscriptionPrompt` register only if their own startup decides they
+     * are active this session.
+     */
+    moduleRegistry: ModuleRegistry;
+
+    /** Feature flags evaluated by the server for this device; get() reads the cache only and returns null without one. */
+    featureFlags: FeatureFlags;
+
+    /**
+     * Checks device's subscription status
+     * @returns {boolean | Promise<boolean>}
+     */
+    isSubscribed(): boolean | Promise<boolean>;
+
+    /**
+     * Method returns hardware id.
+     * @returns {Promise<string>}
+     */
+    getHWID(): Promise<string>;
+
+    /**
+     * Method returns push token.
+     * @returns {Promise<string>}
+     */
+    getPushToken(): Promise<string>;
+
+    /**
+     * Method returns userId
+     * @returns {Promise<string | null>}
+     */
+    getUserId(): Promise<string>;
+
+    /**
+     * Reports a product page view as the `PW_ProductView` event: the input of the "viewed"
+     * recommendations and of the product pairs. One event per product in 30 seconds.
+     */
+    trackProductView(product: ProductView): Promise<void>;
+
+    /**
+     * Onsite product recommendations: `fetch` for a block the site renders itself,
+     * `trackClick` for its clicks. The `[data-pw-recommendations]` widget uses the same calls.
+     */
+    recommendations: RecommendationsApi;
+
+    /**
+     * Method returns an object with all params.
+     * @returns {Promise<PWParams>}
+     */
+    getParams(): Promise<PWParams>;
+
+    /** True when the site can subscribe: browser supports push, it is configured and `pushNotifications` is not false. */
+    isPushAvailable(): boolean;
+
+    /**
+     * The visitor's push permission as the SDK reports it to Pushwoosh (the `Push Permission Status` tag).
+     * Web content campaigns with a push permission condition are matched against it on every page:
+     * 'not_determined' matches DEFAULT, 'granted_explicit' GRANTED, 'denied' DENIED, 'unsupported' UNSUPPORTED.
+     */
+    getPushPermissionStatus(): PushPermissionStatus;
+
+    /**
+     * Method initializes the permission dialog on the device
+     * and registers through the API in case the device hasn't been registered before.
+     * @param {{registerLess?: boolean}} params
+     * @returns {Promise<void>}
+     */
+    subscribe(): Promise<void>;
+
+    /**
+     * Unsubscribes the device.
+     * @returns {Promise<void>}
+     */
+    unsubscribe(): Promise<void>;
+  }
+
+  type EventHandler = (api: API, params?: any) => void;
+
+  type PushPermissionStatus = 'not_determined' | 'granted_explicit' | 'denied' | 'unsupported';
+
+  /** `change-permission`: the new notification permission, after a dialog answer or a change in the site settings. */
+  type ChangePermissionEventPayload = { permission: NotificationPermission };
+
+  type EventName = 'onReady'
+    | 'onSubscribe'
+    | 'onUnsubscribe'
+    | 'onRegister'
+    | 'onPermissionPrompt'
+    | 'onPermissionDenied'
+    | 'onPermissionGranted'
+    | 'onNotificationClick'
+    | 'onPushDelivery'
+    | 'onNotificationClose'
+    | 'onSWInitError'
+    | 'onChangeCommunicationEnabled';
+
+  interface API {
+    /**
+     * Calls API method applicationOpen with device parameters.
+     * @returns {Promise<void>}
+     */
+    applicationOpen(): Promise<void>;
+
+    /**
+     * Calls Pushwoosh API method.
+     * @param {string} methodName
+     * @param params
+     * @returns {Promise<any>}
+     */
+    callAPI(methodName: string, params?: any): Promise<any>;
+
+    /**
+     * Calls API method getTags.
+     * Retrieves a list of Tags with corresponding values for the device.
+     * @returns {{[p: string]: any}}
+     */
+    getTags(): { [key: string]: any };
+
+    /**
+     * Calls API method messageDeliveryEvent.
+     * Registers push delivery event for the device.
+     * @param {string} hash
+     * @param {boolean} isTrackingLogOnFailure
+     * @returns {Promise<void>}
+     */
+    messageDeliveryEvent(hash: string, isTrackingLogOnFailure: boolean): Promise<void>;
+
+    /**
+     * Calls API method postEvent.
+     * Calls the event within the particular application.
+     * Event name is humanized, and should match the event name in Pushwoosh Control Panel.
+     * @param {string} eventName
+     * @param {{[p: string]: any}} params
+     * @returns {Promise<void>}
+     */
+    postEvent(eventName: string, params: { [key: string]: any }): Promise<void>;
+
+    /**
+     * Calls API method pushStat.
+     * Registers a push open event
+     * @param {string} hash
+     * @param {boolean} isTrackingLogOnFailure
+     * @returns {Promise<void>}
+     */
+    pushStat(hash: string, isTrackingLogOnFailure: boolean): Promise<void>;
+
+    /**
+     * Calls API method registerDevice with device parameters.
+     * Saves the registration status to localStorage.
+     * @returns {Promise<void>}
+     */
+    registerDevice(): Promise<void>;
+
+    /**
+     * Calls API method registerUser with user parameters.
+     * Sets new user data to IndexedDB if needed.
+     * @param {string} userId
+     * @returns {Promise<void>}
+     */
+    registerUser(userId: string): Promise<void>;
+
+    /**
+     * Calls API method setTags.
+     * Sets Tag values for the device.
+     * @param {{[p: string]: any}} tags
+     * @returns {Promise<void>}
+     */
+    setTags(tags: { [key: string]: any }): Promise<void>;
+
+    /**
+     * Sets the device language. Takes priority over initParams tags.Language
+     * and the browser's navigator.language. Also sends the value as a "Language" tag.
+     * @param {string} language - language locale (ISO-639-1, lowercase two-letter code recommended)
+     * @returns {Promise<void>}
+     */
+    setLanguage(language: string): Promise<void>;
+
+    /**
+     * Calls API method unregisterDevice.
+     * Removes the registration status from localStorage.
+     * @returns {Promise<void>}
+     */
+    unregisterDevice(): Promise<void>;
+
+    /**
+     * Send "GDPRConsent" postEvent and depends on param "isEnabled"
+     * device will be registered/unregistered from all communication channels.
+     * @param {boolean} isEnabled
+     * @returns {Promise<void>}
+     */
+    setCommunicationEnabled(isEnabled: boolean): Promise<void>;
+
+    /**
+     * Check current communication enabled
+     * @returns {Promise<boolean>}
+     */
+    isCommunicationEnabled(): Promise<boolean>;
+
+    /**
+     * Send "GDPRDelete" postEvent and remove all device device data from Pushwoosh.
+     * @returns {Promise<void>}
+     */
+    removeAllDeviceData(): Promise<void>;
+
+    /**
+     * Calls API method checkDevice with code and hwid parameters.
+     * @param {string} code
+     * @param {string} hwid
+     * @returns {Promise<any>}
+     */
+    checkDevice(code: string, hwid: string): Promise<any>;
+  }
+
+  /**
+   * Onsite recommendations configuration, passed as `recommendations` in the init params.
+   */
+  interface RecommendationsConfig {
+    /** Base URL of the onsite feed. Defaults to the Pushwoosh one. */
+    endpoint?: string;
+    /** `false` never loads the widget bundle, even with `[data-pw-recommendations]` on the page. */
+    widget?: boolean;
+    /**
+     * Single-page apps: keep watching the page for `[data-pw-recommendations]` blocks rendered after load.
+     * Off by default: the SDK then looks for blocks once, when it is ready.
+     */
+    spa?: boolean;
+  }
+
+  type RecommendationStrategy = 'viewed' | 'bestsellers_30d' | 'also_bought';
+
+  interface ProductView {
+    id: string;
+    name?: string;
+    price?: number;
+    currency?: string;
+    category?: string;
+    url?: string;
+    imageUrl?: string;
+  }
+
+  interface RecommendationsRequest {
+    strategy: RecommendationStrategy;
+    /** Served when the strategy has nothing; `bestsellers_30d` by default, `'none'` for an empty answer. */
+    fallback?: RecommendationStrategy | 'none';
+    /** 1-12, 6 by default. */
+    limit?: number;
+    /** The product on screen: the anchor of `also_bought`. */
+    productId?: string;
+    /** Product ids not to show (the cart, the product on screen), up to 50. */
+    exclude?: string[];
+    /** Marks the product links (`pw_block`) and the click event. */
+    block?: string;
+  }
+
+  interface RecommendedProduct {
+    id: string;
+    title: string;
+    description: string;
+    image_url: string;
+    /** Carries `utm_medium=onsite`, `pw_block` and `pw_strategy`. */
+    url: string;
+    price: number;
+    price_formatted: string;
+    old_price_formatted?: string;
+    currency: string;
+    category: string;
+    sku: string;
+  }
+
+  interface RecommendationsApi {
+    /** Without communication consent the request is anonymous, so `viewed` falls back. */
+    fetch(request: RecommendationsRequest): Promise<{ items: RecommendedProduct[]; strategy: RecommendationStrategy | 'none' }>;
+    /** Sends `PW_RecommendationClick`; it survives the navigation the click starts. */
+    trackClick(click: { block?: string; strategy?: string; productId: string; position?: number }): Promise<void>;
+  }
+
+  /**
+   * Web popups configuration, passed as `webPopups` in the init params.
+   */
+  interface WebPopupsConfig {
+    /**
+     * `false` turns the widget off entirely: the bundle is never loaded.
+     * Defaults to `true`, so web popups run unless the site opts out.
+     */
+    enable?: boolean;
+    /** Which palette a dark-mode popup renders with; 'auto' (default) = the
+     * visitor's OS setting, which a site with its own theme can override here. */
+    colorScheme?: 'auto' | 'light' | 'dark';
+    /**
+     * `false` turns off automatic display entirely: popups are still loaded but
+     * never shown by the SDK itself, leaving the site to call
+     * `Pushwoosh.moduleRegistry.webPopups.show(code)`. Defaults to `true`.
+     */
+    autoShow?: boolean;
+  }
+
+  /**
+   * Snapshot of the web popups pipeline, for debugging and integration.
+   */
+  interface WebPopupsState {
+    /** Code of the popup currently on screen, if any. */
+    visible: string | null;
+    /** Popups whose delay has elapsed, waiting for the display slot. */
+    queued: string[];
+    /** Popups whose delay timer is armed for the current page. */
+    waiting: string[];
+    /** Every popup code the server returned for this device. */
+    available: string[];
+  }
+
+  /**
+   * Web popups programmatic API, available as
+   * `Pushwoosh.moduleRegistry.webPopups` once the widget bundle has loaded.
+   *
+   * At most one popup is on screen at a time; popups that become eligible
+   * meanwhile wait in a queue and show once the current one closes.
+   */
+  interface WebPopupsApi {
+    /**
+     * Show a popup by its code, ignoring the display conditions: delay, page
+     * rules, device type, visitor type, frequency capping and the campaign's
+     * trigger setting. The campaign's push permission status still applies, and so does a countdown
+     * that has run out — for a POPUP campaign only. A POPUP campaign closes the currently visible popup,
+     * if any; a popup already on screen resolves true whatever the status.
+     *
+     * `code` is a campaign code or, failing that, a popup content code (as
+     * opened from App Inbox), which records no campaign stats.
+     *
+     * An EMBEDDED campaign renders into the first element its CSS selector matches,
+     * leaves the visible popup alone and resolves false when no element matches.
+     * The block then stays across SPA navigation until its element leaves the page.
+     * An element added after the SDK is ready is not watched: call show(code) once it is on the page.
+     *
+     * Resolves true when the popup was shown, false when the code is unknown, the push permission
+     * status does not match, the content could not be loaded, a content code opens a form (forms need
+     * a campaign code), an EMBEDDED campaign finds no element, or a POPUP's countdown has run out. Never rejects.
+     */
+    show(code: string): Promise<boolean>;
+
+    /**
+     * Hide the visible popup, or only the given one when a code is passed.
+     * Returns false when nothing was hidden.
+     */
+    hide(code?: string): boolean;
+
+    /**
+     * Hide the visible popup and dismiss everything still pending for this page
+     * load. `show()` keeps working afterwards.
+     */
+    hideAll(): boolean;
+
+    /** Whether any popup — or the given one — is on screen. */
+    isVisible(code?: string): boolean;
+
+    /** Code of the popup on screen, or null. */
+    getVisibleCode(): string | null;
+
+    /** Every popup code the server returned for this device. */
+    getAvailableCodes(): string[];
+
+    /** Snapshot of the display pipeline. */
+    getState(): WebPopupsState;
+  }
+
+  class FeatureFlag {
+    readonly key: string;
+    readonly enabled: boolean;
+    /** '' for a flag switched off by the kill switch, 'default' when no rule audience matched. */
+    readonly ruleId: string;
+    getString(property: string, defaultValue: string): string;
+    getNumber(property: string, defaultValue: number): number;
+    getBool(property: string, defaultValue: boolean): boolean;
+    getJson<T = unknown>(property: string, defaultValue: T): T;
+    getProperties(): Record<string, unknown>;
+  }
+
+  interface FeatureFlags {
+    get(key: string): FeatureFlag | null;
+    isEnabled(key: string, defaultValue: boolean): boolean;
+    /** Fetches the flags; at most once per 5 minutes while a valid cache exists, otherwise resolves at once. */
+    refresh(): Promise<void>;
+    /** Called after a refresh that changed any value. */
+    addUpdateListener(listener: () => void): void;
+    removeUpdateListener(listener: () => void): void;
+    /** Posts PW_FeatureFlagImpression once per page for the flag's current rule and state; also call it for a disabled flag. */
+    logImpression(key: string): Promise<void>;
+  }
+
+  /**
+   * Programmatic interfaces published by the loaded widgets.
+   */
+  interface ModuleRegistry {
+    webPopups?: WebPopupsApi;
+    subscribePopup?: {
+      show(): void;
+      hide(): void;
+      toggle(isShown?: boolean): void;
+    };
+    subscriptionPrompt?: {
+      show(): void;
+      hide(): void;
+    };
+    subscriptionWidget?: SubscriptionWidgetApi;
+    [key: string]: any;
+  }
+
+  /**
+   * Initialization parameters.
+   */
+  interface InitParams {
+    applicationCode: string;
+    autoSubscribe?: boolean;
+    defaultNotificationImage?: string;
+    defaultNotificationTitle?: string;
+    logLevel?: 'error' | 'info' | 'debug';
+    /**
+     * `false` turns the push part off (service worker, prompt, widgets), keeping popups and inbox.
+     * Devices subscribed earlier are NOT unsubscribed: call `unsubscribe()` for that.
+     */
+    pushNotifications?: boolean;
+    pushwooshApiUrl?: string;
+    pushwooshUrl?: string;
+    safariWebsitePushID?: string;
+    scope?: string;
+    serviceWorkerUrl?: string | null;
+    subscribeWidget?: SubscribeWidget;
+    subscriptionWidget?: SubscriptionWidgetConfig;
+    inboxWidget?: InboxWidget;
+    webPopups?: WebPopupsConfig;
+    recommendations?: RecommendationsConfig;
+    tags?: { [key: string]: any };
+    userId?: string;
+  }
+
+  /**
+   * Init params and driver api params
+   */
+  interface PWParams {
+    applicationCode: string;
+    autoSubscribe?: boolean;
+    defaultNotificationImage?: string;
+    defaultNotificationTitle?: string;
+    logLevel?: 'error' | 'info' | 'debug';
+    pushNotifications?: boolean;
+    pushwooshApiUrl?: string;
+    safariWebsitePushID?: string;
+    scope?: string;
+    subscribeWidget?: SubscribeWidget;
+    subscriptionWidget?: SubscriptionWidgetConfig;
+    inboxWidget?: InboxWidget;
+    webPopups?: WebPopupsConfig;
+    tags?: {
+      Language: string;
+      'Device Model': string;
+      [key: string]: any;
+    };
+    userId?: string;
+    pushwooshUrl?: string;
+    deviceType?: number;
+    serviceWorkerUrl?: string | null;
+    authToken?: string;
+    hwid?: string;
+    publicKey?: string;
+    pushToken?: string;
+  }
+
+  /**
+   * The unified subscription widget, passed as `subscriptionWidget` in the init params (or saved in the
+   * Control Panel): a prompt and a bell switched on independently. While either is on,
+   * `subscribeWidget`, `subscribePopup` and the Subscription Prompt do not load. Every field is optional;
+   * invalid values fall back to the defaults.
+   */
+  interface SubscriptionWidgetConfig {
+    prompt?: {
+      enabled?: boolean;
+      /** `card` at an edge or corner, full-width `bar`, or a centered `modal`. Defaults to `card`. */
+      layout?: 'card' | 'bar' | 'modal';
+      /** `card`: top, bottom or a corner; `bar`: top or bottom; `modal`: center. */
+      position?: 'top' | 'bottom' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center';
+      iconUrl?: string;
+      borderRadius?: number;
+      overlay?: boolean;
+    };
+    launcher?: {
+      /** The floating bell: opens the prompt when it is on, asks the browser directly otherwise. */
+      enabled?: boolean;
+      position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+      offset?: number;
+      /** Pixels, 16–200; default 48. */
+      width?: number;
+      height?: number;
+      /** Picture drawn instead of the round bell. */
+      imageUrl?: string;
+      /** Round button fill; defaults to the accent colour. */
+      background?: string;
+      /** Bell glyph colour; defaults to the label colour over the accent. */
+      iconColor?: string;
+    };
+    display?: {
+      /** `auto` opens after `delay`, `launcher` only on a bell click, `manual` only through the API. */
+      trigger?: 'auto' | 'launcher' | 'manual';
+      /** Seconds after page load. */
+      delay?: number;
+      /** Auto shows per visitor, 0 = unlimited. */
+      cappingCount?: number;
+      /** Hours between auto shows. */
+      cappingInterval?: number;
+    };
+    texts?: {
+      title?: string;
+      message?: string;
+      acceptText?: string;
+      declineText?: string;
+      closeText?: string;
+      blockedTitle?: string;
+      blockedMessage?: string;
+      launcherLabel?: string;
+      launcherBlockedLabel?: string;
+    };
+    colors?: {
+      background?: string;
+      accent?: string;
+      text?: string;
+      textSecondary?: string;
+    };
+    fontFamily?: string;
+    zIndex?: number;
+  }
+
+  /**
+   * `Pushwoosh.moduleRegistry.subscriptionWidget`, published once the widget bundle has loaded.
+   */
+  interface SubscriptionWidgetApi {
+    show(): void;
+    hide(): void;
+    toggle(isShown?: boolean): void;
+    isVisible(): boolean;
+  }
+
+  /**
+   * Sets subscription widget interface parameters.
+   */
+  interface SubscribeWidget {
+    enable: boolean;
+    position?: string;
+    bgColor?: string;
+    bellColor?: string;
+    shadow?: string;
+    size?: string;
+    indent?: string;
+    zIndex?: string;
+    tooltipText?: TooltipText;
+  }
+
+  /**
+   * Sets inbox widget interface parameters.
+   */
+  interface InboxWidget {
+    enable: boolean;
+    triggerId?: string;
+    position?: string;
+  }
+
+  /**
+   * Sets subscribe widget tooltip interface parameters.
+   */
+  interface TooltipText {
+    successSubscribe?: string;
+    needSubscribe?: string;
+    blockSubscribe?: string;
+    alreadySubscribed?: string;
+  }
+
+  /**
+   * Payload for onPushDelivery event callback.
+   *
+   * Pushwoosh.push['onPushDelivery', (api: PW.API, payload: PW.onPushDeliveryPayload) => {}]
+   */
+  interface onPushDeliveryPayload {
+    title: string;
+    body: string;
+    icon: string;
+    openUrl: string;
+    messageHash: string;
+    customData?: { [key: string]: any };
+  }
+
+  /**
+   * Payload for onNotificationClick event callback.
+   *
+   * Pushwoosh.push['onNotificationClick', (api: PW.API, payload: PW.onNotificationClickPayload) => {}]
+   */
+  interface onNotificationClickPayload {
+    url: string;
+    messageHash: string;
+    customData?: { [key: string]: any };
+  }
+
+  /**
+   * Payload for onNotificationClose event callback.
+   *
+   * Pushwoosh.push['onNotificationClose', (api: PW.API, payload: PW.onNotificationClosePayload) => {}]
+   */
+  interface onNotificationClosePayload {
+    url: string;
+    messageHash: string;
+  }
+}
