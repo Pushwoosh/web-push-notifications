@@ -1,0 +1,1 @@
+export { PlatformChecker } from './PlatformChecker';
